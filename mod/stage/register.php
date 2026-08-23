@@ -167,6 +167,8 @@ if ($mode === 'single') {
 
 // Création en masse : mêmes thématique/structure/dates/durée pour plusieurs étudiants sélectionnés.
 if ($mode === 'bulk') {
+    $bulkresults = null;
+
     if (data_submitted() && confirm_sesskey() && optional_param('bulkregister', 0, PARAM_INT)) {
         $themeid = required_param('themeid', PARAM_INT);
         $structure = optional_param('structure', '', PARAM_TEXT);
@@ -178,18 +180,41 @@ if ($mode === 'bulk') {
         $start = $datestartraw ? strtotime($datestartraw) : null;
         $end = $dateendraw ? strtotime($dateendraw) : null;
 
-        $count = 0;
-        foreach ($studentids as $studentid) {
-            stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration);
-            $count++;
+        // Un même étudiant a déjà un stage sur cette thématique : on l'écarte plutôt que
+        // de créer un doublon silencieux.
+        $existing = stage_get_existing_theme_pairs($stage->id);
+        $studentsbyid = [];
+        foreach ($students as $student) {
+            $studentsbyid[$student->id] = $student;
         }
-        redirect($baseurl, get_string('bulkregistered', 'mod_stage', $count), null,
-            \core\output\notification::NOTIFY_SUCCESS);
+
+        $bulkresults = (object) ['created' => 0, 'duplicates' => []];
+        foreach ($studentids as $studentid) {
+            if (isset($existing[$studentid . ':' . $themeid])) {
+                $bulkresults->duplicates[] = isset($studentsbyid[$studentid])
+                    ? fullname($studentsbyid[$studentid]) : "#$studentid";
+                continue;
+            }
+            stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration);
+            $existing[$studentid . ':' . $themeid] = true;
+            $bulkresults->created++;
+        }
     }
 
     echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('bulkregisterstages', 'mod_stage'));
     echo html_writer::link($baseurl, get_string('back'));
+
+    if ($bulkresults) {
+        echo $OUTPUT->notification(get_string('bulkregistered', 'mod_stage', $bulkresults->created),
+            \core\output\notification::NOTIFY_SUCCESS);
+        if (!empty($bulkresults->duplicates)) {
+            echo $OUTPUT->notification(
+                get_string('bulkduplicatesskipped', 'mod_stage', implode(', ', $bulkresults->duplicates)),
+                \core\output\notification::NOTIFY_WARNING
+            );
+        }
+    }
 
     $bulkactionurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'bulk']);
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $bulkactionurl]);

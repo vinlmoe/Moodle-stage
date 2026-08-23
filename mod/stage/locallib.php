@@ -537,3 +537,21 @@ function stage_render_answers_readonly(array $questions, array $answers) {
 
     return $out;
 }
+
+/**
+ * Renvoie l'ensemble des couples étudiant/thématique déjà enregistrés pour une activité,
+ * pour détecter les doublons lors d'un enregistrement en masse ou d'un import.
+ *
+ * @param int $stageid
+ * @return array "userid:themeid" => true
+ */
+function stage_get_existing_theme_pairs($stageid) {
+    global $DB;
+
+    $pairs = [];
+    $rows = $DB->get_records('stage_entry', ['stageid' => $stageid], '', 'id, userid, themeid');
+    foreach ($rows as $row) {
+        $pairs[$row->userid . ':' . $row->themeid] = true;
+    }
+    return $pairs;
+}

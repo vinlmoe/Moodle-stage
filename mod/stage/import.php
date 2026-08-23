@@ -86,6 +86,10 @@ if (data_submitted() && confirm_sesskey()) {
             // La première ligne est consommée comme en-tête par load_csv_content().
             $linenum = 1;
 
+            // Doublons détectés contre les stages déjà enregistrés, et entre les lignes
+            // du fichier lui-même (un même étudiant répété deux fois sur la même thématique).
+            $existingpairs = stage_get_existing_theme_pairs($stage->id);
+
             while ($row = $cir->next()) {
                 $linenum++;
                 // Colonnes attendues : email, theme, structure, datestart, dateend, duration.
@@ -116,6 +120,15 @@ if (data_submitted() && confirm_sesskey()) {
                     ]);
                     continue;
                 }
+
+                $pairkey = $student->id . ':' . $theme->id;
+                if (isset($existingpairs[$pairkey])) {
+                    $results->errors[] = get_string('importerrorduplicate', 'mod_stage', (object) [
+                        'line' => $linenum, 'email' => $email, 'theme' => $themename,
+                    ]);
+                    continue;
+                }
+                $existingpairs[$pairkey] = true;
 
                 $start = $datestartraw ? strtotime($datestartraw) : false;
                 $end = $dateendraw ? strtotime($dateendraw) : false;

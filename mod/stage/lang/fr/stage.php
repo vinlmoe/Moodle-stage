@@ -62,6 +62,8 @@ $string['importresult'] = '{$a} stage(s) importé(s) avec succès.';
 $string['importerrorupload'] = "Le fichier n'a pas pu être téléversé. Vérifiez sa taille et réessayez.";
 $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit avec l\'adresse "{$a->email}".';
 $string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
+$string['importerrorduplicate'] = 'Ligne {$a->line} : "{$a->email}" a déjà un stage sur la thématique "{$a->theme}", '
+    . 'ligne ignorée.';
 $string['registerstage'] = 'Enregistrer un stage';
 $string['editstage'] = 'Modifier un stage';
 $string['bulkregisterstages'] = 'Enregistrer des stages en masse';
@@ -135,6 +137,7 @@ $string['teachersassigned'] = 'Les enseignants référents ont été mis à jour
 $string['evalsaved'] = "L'évaluation a été enregistrée.";
 $string['bulkvalidated'] = '{$a} stage(s) ont été validés.';
 $string['bulkregistered'] = '{$a} stage(s) ont été enregistrés.';
+$string['bulkduplicatesskipped'] = 'Déjà enregistrés sur cette thématique, ignorés : {$a}';
 $string['nothemesyet'] = "Aucune thématique n'a encore été créée.";
 $string['nomandatorythemes'] = 'Aucune thématique obligatoire pour le moment.';
 $string['nostages'] = "Aucun stage n'a été déclaré.";

@@ -72,12 +72,23 @@ class register_entries extends \external_api {
         $stage = $DB->get_record('stage', ['id' => $cm->instance], '*', MUST_EXIST);
         $enrolled = array_flip(array_keys(stage_get_enrolled_students($context)));
         $validthemeids = array_flip(array_keys(stage_get_themes($stage->id)));
+        // Un même étudiant a déjà un stage sur cette thématique : on l'écarte plutôt que
+        // de créer un doublon silencieux via l'API.
+        $existingpairs = stage_get_existing_theme_pairs($stage->id);
 
         $created = [];
+        $duplicates = [];
         foreach ($params['entries'] as $entrydata) {
             if (!isset($enrolled[$entrydata['userid']]) || !isset($validthemeids[$entrydata['themeid']])) {
                 continue;
             }
+            $pairkey = $entrydata['userid'] . ':' . $entrydata['themeid'];
+            if (isset($existingpairs[$pairkey])) {
+                $duplicates[] = $entrydata['userid'];
+                continue;
+            }
+            $existingpairs[$pairkey] = true;
+
             $id = stage_register_entry(
                 $stage->id,
                 $entrydata['userid'],
@@ -90,7 +101,11 @@ class register_entries extends \external_api {
             $created[] = $id;
         }
 
-        return ['createdentryids' => $created, 'createdcount' => count($created)];
+        return [
+            'createdentryids' => $created,
+            'createdcount' => count($created),
+            'duplicateuserids' => $duplicates,
+        ];
     }
 
     /**
@@ -102,6 +117,9 @@ class register_entries extends \external_api {
         return new \external_single_structure([
             'createdentryids' => new \external_multiple_structure(new \external_value(PARAM_INT, 'Id de saisie créée')),
             'createdcount' => new \external_value(PARAM_INT, 'Nombre de stages créés'),
+            'duplicateuserids' => new \external_multiple_structure(
+                new \external_value(PARAM_INT, 'Id étudiant écarté (stage déjà existant sur cette thématique)')
+            ),
         ]);
     }
 }
