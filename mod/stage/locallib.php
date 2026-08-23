@@ -210,6 +210,61 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
 }
 
 /**
+ * Enregistre un stage pour un étudiant, à l'initiative de la DEVE.
+ *
+ * @param int $stageid
+ * @param int $studentid
+ * @param int $themeid
+ * @param string $structure
+ * @param int $datestart
+ * @param int $dateend
+ * @param int $declaredduration
+ * @return int Id de la saisie créée.
+ */
+function stage_register_entry($stageid, $studentid, $themeid, $structure, $datestart, $dateend, $declaredduration) {
+    global $DB;
+
+    $record = new stdClass();
+    $record->stageid = $stageid;
+    $record->userid = $studentid;
+    $record->themeid = $themeid;
+    $record->structure = $structure;
+    $record->datestart = $datestart;
+    $record->dateend = $dateend;
+    $record->declaredduration = $declaredduration;
+    $record->retainedduration = 0;
+    $record->status = STAGE_STATUS_ENREGISTRE;
+    $record->timecreated = time();
+    $record->timemodified = time();
+
+    return $DB->insert_record('stage_entry', $record);
+}
+
+/**
+ * Met à jour les données de fond (thématique, structure, dates, durée) d'une saisie de stage,
+ * à l'initiative de la DEVE.
+ *
+ * @param stdClass $entry
+ * @param int $themeid
+ * @param string $structure
+ * @param int $datestart
+ * @param int $dateend
+ * @param int $declaredduration
+ * @return void
+ */
+function stage_update_entry_details(stdClass $entry, $themeid, $structure, $datestart, $dateend, $declaredduration) {
+    global $DB;
+
+    $entry->themeid = $themeid;
+    $entry->structure = $structure;
+    $entry->datestart = $datestart;
+    $entry->dateend = $dateend;
+    $entry->declaredduration = $declaredduration;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
  * Applique la validation étudiant (auto-évaluation) sur une saisie de stage.
  *
  * @param stdClass $entry

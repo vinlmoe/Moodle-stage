@@ -22,7 +22,7 @@ archétypes de rôles suivants (voir `db/access.php`) :
 
 | Rôle Moodle à attribuer                | Capacités obtenues dans l'activité |
 |-----------------------------------------|-------------------------------------|
-| **Étudiant** (archétype `student`)      | Voir + saisir/auto-évaluer ses propres stages |
+| **Étudiant** (archétype `student`)      | Voir + auto-évaluer les stages que la DEVE lui a enregistrés |
 | **Enseignant non-éditeur** (`teacher`)  | Voir + évaluer les stages des étudiants qui lui sont attribués (rôle **référent**) |
 | **Enseignant éditeur** (`editingteacher`) ou **Manager** | Voir + gérer les thématiques + attribuer les référents + validation finale DEVE + voir tous les stages (**rôle DEVE**) |
 
@@ -72,7 +72,27 @@ décochées.
      simultanément, puis **Enregistrer les modifications** (un seul
      formulaire pour toutes les lignes du tableau).
 
-## 5. Attribution des enseignants référents (DEVE)
+## 5. Enregistrement des stages (DEVE)
+
+C'est la DEVE qui crée les stages des étudiants — les étudiants ne peuvent
+pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistrés.
+
+1. Ouvrir l'activité, puis le lien **Enregistrer des stages** : la liste de
+   tous les stages déjà enregistrés s'affiche, avec un lien « Modifier »
+   sur chaque ligne.
+2. **Enregistrement unitaire** : bouton « Enregistrer un stage » →
+   choisir l'étudiant, la thématique, la structure d'accueil, les dates et
+   la durée déclarée, puis Enregistrer.
+3. **Enregistrement en masse** : bouton « Enregistrer des stages en masse » →
+   choisir une thématique, une structure/dates/durée communes, cocher tous
+   les étudiants concernés, puis « Enregistrer pour les étudiants cochés » :
+   un stage identique est créé pour chacun des étudiants sélectionnés.
+4. **Modifier un stage déjà enregistré** : depuis la liste, lien « Modifier »
+   sur la ligne concernée (thématique, structure, dates, durée déclarée
+   restent modifiables par la DEVE à tout moment, y compris après
+   auto-évaluation ou évaluation enseignant).
+
+## 6. Attribution des enseignants référents (DEVE)
 
 1. Ouvrir l'activité, puis le lien **Attribuer les enseignants référents**.
 2. Un tableau liste chaque étudiant inscrit avec, sur la même ligne, une
@@ -85,11 +105,12 @@ décochées.
    la sauvegarde remplace entièrement les référents précédemment attribués
    à chaque étudiant modifié.
 
-## 6. Utilisation courante
+## 7. Utilisation courante
 
-- **Étudiant** : sur la page de l'activité, bouton « Déclarer un stage »,
-  puis suivi de l'avancement des thématiques obligatoires et de la liste de
-  ses propres stages uniquement.
+- **Étudiant** : sur la page de l'activité, suivi de l'avancement des
+  thématiques obligatoires et de la liste de ses propres stages
+  (enregistrés par la DEVE) uniquement, avec un lien « Auto-évaluer mon
+  stage » sur chacun.
 - **Enseignant référent** : lien « Validation enseignant », qui liste
   uniquement les stages des étudiants qui lui ont été attribués, avec un
   commentaire d'évaluation.

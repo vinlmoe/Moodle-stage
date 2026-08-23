@@ -54,6 +54,10 @@ if ($stage->intro) {
 }
 
 $navlinks = [];
+if (has_capability('mod/stage:registerstages', $context)) {
+    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
+        get_string('registerstages', 'mod_stage'));
+}
 if (has_capability('mod/stage:managethemes', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id]),
         get_string('managethemes', 'mod_stage'));
@@ -77,9 +81,7 @@ if (!empty($navlinks)) {
 // Student's own dashboard: always shown if the user has submit capability.
 if (has_capability('mod/stage:submit', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
-
-    echo html_writer::link(new moodle_url('/mod/stage/entry.php', ['id' => $cm->id]),
-        get_string('addstage', 'mod_stage'), ['class' => 'btn btn-primary mb-3']);
+    echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');
 
     $progress = stage_get_student_progress($stage->id, $USER->id);
 
@@ -129,7 +131,7 @@ if (has_capability('mod/stage:submit', $context)) {
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $actions = html_writer::link(
             new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-            get_string('edit')
+            get_string('selfeval', 'mod_stage')
         );
         $table->data[] = [
             $themename,

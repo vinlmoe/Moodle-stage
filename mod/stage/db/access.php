@@ -57,6 +57,16 @@ $capabilities = [
         ],
     ],
 
+    // DEVE : enregistrer les stages des étudiants (création, en masse ou unitaire).
+    'mod/stage:registerstages' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
     // DEVE : gérer les thématiques obligatoires et valider (masse ou unitaire).
     'mod/stage:managethemes' => [
         'captype' => 'write',
