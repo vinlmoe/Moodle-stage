@@ -1,0 +1,114 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * English strings for mod_stage.
+ *
+ * @package   mod_stage
+ * @copyright 2026 Vetbrain
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+$string['pluginname'] = 'Internship management';
+$string['modulename'] = 'Internship management';
+$string['modulenameplural'] = 'Internship managements';
+$string['modulename_help'] = 'This module allows students to declare their internships by theme, self-assess them, '
+    . 'referent teachers to evaluate them, and the academic office to manage mandatory themes and give the final '
+    . 'validation of internships, either in bulk or one by one.';
+$string['pluginadministration'] = 'Internship management administration';
+$string['stagename'] = 'Activity name';
+
+// Capabilities.
+$string['stage:view'] = 'View the internship management activity';
+$string['stage:submit'] = 'Submit own internships';
+$string['stage:evaluateteacher'] = 'Evaluate internships as a referent teacher';
+$string['stage:managethemes'] = 'Manage internship themes';
+$string['stage:validatedeve'] = 'Give final validation of internships (academic office)';
+$string['stage:viewall'] = 'View all internships of all students';
+$string['stage:manageteachers'] = 'Assign referent teachers';
+
+// Navigation / actions.
+$string['managethemes'] = 'Manage themes';
+$string['manageteachers'] = 'Assign referent teachers';
+$string['devevalidation'] = 'Academic office validation';
+$string['teachervalidation'] = 'Teacher validation';
+$string['mystages'] = 'My internships';
+$string['addstage'] = 'Declare an internship';
+$string['allmystages'] = 'All my internships';
+$string['mandatorythemes'] = 'Mandatory themes';
+$string['back'] = 'Back';
+$string['actions'] = 'Actions';
+
+// Fields.
+$string['theme'] = 'Theme';
+$string['structure'] = 'Host structure';
+$string['datestart'] = 'Start date';
+$string['dateend'] = 'End date';
+$string['declaredduration'] = 'Declared duration (hours)';
+$string['retainedduration'] = 'Retained duration (hours)';
+$string['requiredduration'] = 'Required duration (hours)';
+$string['status'] = 'Status';
+$string['mandatory'] = 'Mandatory';
+$string['sortorder'] = 'Order';
+$string['studentselfeval'] = 'Student self-assessment';
+$string['teachereval'] = 'Teacher evaluation';
+$string['devecomment'] = 'Academic office comment';
+$string['student'] = 'Student';
+$string['referentteachers'] = 'Referent teachers';
+
+// Statuses.
+$string['status_enregistre'] = 'Registered';
+$string['status_evaletudiant'] = 'Self-assessed by student';
+$string['status_evalenseignant'] = 'Evaluated by teacher';
+$string['status_valideDeve'] = 'Validated';
+$string['themedone'] = 'Completed';
+$string['themetodo'] = 'To complete';
+
+// Actions / buttons.
+$string['addtheme'] = 'Add a theme';
+$string['savebulkchanges'] = 'Save changes';
+$string['savechanges'] = 'Save changes';
+$string['toggle'] = 'Toggle mandatory';
+$string['evaluate'] = 'Evaluate';
+$string['validate'] = 'Validate';
+$string['selectall'] = 'Select all';
+$string['bulkvalidateselected'] = 'Validate selection';
+
+// Messages.
+$string['stagesaved'] = 'Internship saved.';
+$string['themesaved'] = 'Theme saved.';
+$string['themedeleted'] = 'Theme deleted.';
+$string['themeinuse'] = 'Cannot delete: internships use this theme.';
+$string['bulkthemessaved'] = 'Themes updated.';
+$string['teachersassigned'] = 'Referent teachers updated.';
+$string['evalsaved'] = 'Evaluation saved.';
+$string['bulkvalidated'] = '{$a} internship(s) validated.';
+$string['nothemesyet'] = 'No theme has been created yet.';
+$string['nomandatorythemes'] = 'No mandatory theme for now.';
+$string['nostages'] = 'No internship declared.';
+$string['nostudents'] = 'No student enrolled in this course.';
+$string['noteachers'] = 'No potential referent teacher enrolled in this course.';
+$string['noassignedstudents'] = 'No student assigned to you yet.';
+$string['nopendingstages'] = 'No internship pending validation.';
+$string['confirmdeletetheme'] = 'Delete this theme?';
+$string['totalretained'] = 'Total retained duration: {$a} hours';
+$string['numstages'] = '{$a} internship(s) declared';
+
+// Headings.
+$string['evaluatestage'] = 'Evaluate the internship of {$a}';
+$string['validatestage'] = 'Validate the internship of {$a}';
