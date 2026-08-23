@@ -31,6 +31,48 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_stage_upgrade($oldversion) {
-    // No upgrade steps yet; this is the initial version of the plugin.
+    global $DB;
+
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026082303) {
+        $table = new xmldb_table('stage_question');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('stageid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('themeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('evaltype', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('qtype', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('name', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null);
+        $table->add_field('options', XMLDB_TYPE_TEXT, null, null, null, null);
+        $table->add_field('required', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1');
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('stageid', XMLDB_KEY_FOREIGN, ['stageid'], 'stage', ['id']);
+        $table->add_key('themeid', XMLDB_KEY_FOREIGN, ['themeid'], 'stage_theme', ['id']);
+        $table->add_index('themeid-evaltype', XMLDB_INDEX_NOTUNIQUE, ['themeid', 'evaltype']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $table = new xmldb_table('stage_answer');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('entryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('answertext', XMLDB_TYPE_TEXT, null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('entryid', XMLDB_KEY_FOREIGN, ['entryid'], 'stage_entry', ['id']);
+        $table->add_key('questionid', XMLDB_KEY_FOREIGN, ['questionid'], 'stage_question', ['id']);
+        $table->add_index('entryid-questionid', XMLDB_INDEX_UNIQUE, ['entryid', 'questionid']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_mod_savepoint(true, 2026082303, 'stage');
+    }
+
     return true;
 }

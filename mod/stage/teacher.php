@@ -52,9 +52,20 @@ if ($entryid) {
         throw new moodle_exception('nopermissions', 'error', '', get_string('teachervalidation', 'mod_stage'));
     }
 
+    $questions = stage_get_questions($entry->themeid, 'teacher');
+
     if (data_submitted() && confirm_sesskey()) {
-        $comment = optional_param('teachereval', '', PARAM_RAW);
-        stage_apply_teacher_eval($entry, $USER->id, $comment);
+        if (!empty($questions)) {
+            $submitted = [];
+            foreach ($questions as $question) {
+                $submitted[$question->id] = optional_param('q_' . $question->id, '', PARAM_TEXT);
+            }
+            stage_save_answers($entry->id, $questions, $submitted);
+            stage_apply_teacher_eval($entry, $USER->id, '');
+        } else {
+            $comment = optional_param('teachereval', '', PARAM_RAW);
+            stage_apply_teacher_eval($entry, $USER->id, $comment);
+        }
         redirect($baseurl, get_string('evalsaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
 
@@ -71,11 +82,46 @@ if ($entryid) {
     echo html_writer::tag('div',
         get_string('studentselfeval', 'mod_stage') . ' : ' . format_text($entry->studentselfeval, FORMAT_HTML));
 
-    echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl . '&entryid=' . $entry->id]);
+    $formurl = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    echo html_writer::start_tag('form', ['method' => 'post', 'action' => $formurl]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-    echo html_writer::tag('label', get_string('teachereval', 'mod_stage'), ['for' => 'teachereval']);
-    echo html_writer::tag('textarea', s($entry->teachereval),
-        ['name' => 'teachereval', 'id' => 'teachereval', 'rows' => 5, 'class' => 'form-control']);
+
+    if (!empty($questions)) {
+        // Formulaire dynamique défini par la DEVE pour cette thématique.
+        $answers = stage_get_answers($entry->id);
+        foreach ($questions as $question) {
+            $current = $answers[$question->id]->answertext ?? '';
+            $required = $question->required ? ['required' => 'required'] : [];
+
+            echo html_writer::start_tag('div', ['class' => 'form-group mb-3']);
+            echo html_writer::tag('label', format_string($question->name) . ($question->required ? ' *' : ''),
+                ['for' => 'q_' . $question->id]);
+
+            if ($question->qtype === 'choice') {
+                foreach (stage_question_options($question) as $option) {
+                    echo html_writer::start_tag('div', ['class' => 'form-check']);
+                    echo html_writer::empty_tag('input', array_merge([
+                        'type' => 'radio', 'name' => 'q_' . $question->id, 'value' => $option,
+                        'id' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-input',
+                        'checked' => ($current === $option) ? 'checked' : null,
+                    ], $required));
+                    echo html_writer::tag('label', s($option),
+                        ['for' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-label']);
+                    echo html_writer::end_tag('div');
+                }
+            } else {
+                echo html_writer::tag('textarea', s($current), array_merge([
+                    'name' => 'q_' . $question->id, 'id' => 'q_' . $question->id, 'rows' => 3, 'class' => 'form-control',
+                ], $required));
+            }
+            echo html_writer::end_tag('div');
+        }
+    } else {
+        echo html_writer::tag('label', get_string('teachereval', 'mod_stage'), ['for' => 'teachereval']);
+        echo html_writer::tag('textarea', s($entry->teachereval),
+            ['name' => 'teachereval', 'id' => 'teachereval', 'rows' => 5, 'class' => 'form-control']);
+    }
+
     echo html_writer::empty_tag('input', [
         'type' => 'submit', 'value' => get_string('validate', 'mod_stage'), 'class' => 'btn btn-primary mt-2',
     ]);

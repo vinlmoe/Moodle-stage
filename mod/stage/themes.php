@@ -168,9 +168,11 @@ if (empty($themes)) {
             ['id' => $cm->id, 'action' => 'togglemandatory', 'themeid' => $theme->id, 'sesskey' => sesskey()]);
         $deleteurl = new moodle_url('/mod/stage/themes.php',
             ['id' => $cm->id, 'action' => 'delete', 'themeid' => $theme->id, 'sesskey' => sesskey()]);
+        $questionsurl = new moodle_url('/mod/stage/questions.php', ['id' => $cm->id, 'themeid' => $theme->id]);
 
         $actions = html_writer::link($editurl, get_string('edit')) . ' | '
             . html_writer::link($toggleurl, get_string('toggle', 'mod_stage')) . ' | '
+            . html_writer::link($questionsurl, get_string('evalquestions', 'mod_stage')) . ' | '
             . html_writer::link($deleteurl, get_string('delete'),
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
 

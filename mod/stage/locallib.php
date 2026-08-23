@@ -323,3 +323,80 @@ function stage_apply_deve_validation(stdClass $entry, $deveuserid, $retaineddura
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
 }
+
+/**
+ * Liste les questions d'évaluation définies par la DEVE pour une thématique et un type
+ * d'évaluation donnés ('student' ou 'teacher').
+ *
+ * @param int $themeid
+ * @param string $evaltype 'student' ou 'teacher'
+ * @return array
+ */
+function stage_get_questions($themeid, $evaltype) {
+    global $DB;
+
+    return $DB->get_records('stage_question', ['themeid' => $themeid, 'evaltype' => $evaltype], 'sortorder ASC, id ASC');
+}
+
+/**
+ * Découpe le champ "options" (une option par ligne) d'une question à choix multiples.
+ *
+ * @param stdClass $question
+ * @return array
+ */
+function stage_question_options(stdClass $question) {
+    $lines = preg_split('/\r\n|\r|\n/', (string) $question->options);
+    $options = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line !== '') {
+            $options[] = $line;
+        }
+    }
+    return $options;
+}
+
+/**
+ * Récupère les réponses déjà enregistrées pour une saisie de stage, indexées par question.
+ *
+ * @param int $entryid
+ * @return array questionid => stdClass
+ */
+function stage_get_answers($entryid) {
+    global $DB;
+
+    return $DB->get_records('stage_answer', ['entryid' => $entryid], '', 'questionid, id, answertext');
+}
+
+/**
+ * Enregistre les réponses soumises pour un jeu de questions et une saisie de stage.
+ *
+ * @param int $entryid
+ * @param array $questions Liste de stage_question
+ * @param array $submitted Tableau questionid => valeur soumise
+ * @return void
+ */
+function stage_save_answers($entryid, array $questions, array $submitted) {
+    global $DB;
+
+    $existing = stage_get_answers($entryid);
+    foreach ($questions as $question) {
+        $value = $submitted[$question->id] ?? '';
+        $value = is_array($value) ? implode(', ', $value) : (string) $value;
+
+        if (isset($existing[$question->id])) {
+            $answer = $existing[$question->id];
+            $answer->answertext = $value;
+            $answer->timemodified = time();
+            $DB->update_record('stage_answer', $answer);
+        } else {
+            $DB->insert_record('stage_answer', (object) [
+                'entryid' => $entryid,
+                'questionid' => $question->id,
+                'answertext' => $value,
+                'timecreated' => time(),
+                'timemodified' => time(),
+            ]);
+        }
+    }
+}

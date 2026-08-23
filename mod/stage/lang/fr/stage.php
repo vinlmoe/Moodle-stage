@@ -100,6 +100,22 @@ $string['themetodo'] = 'À compléter';
 
 // Actions / buttons.
 $string['addtheme'] = 'Ajouter une thématique';
+$string['evalquestions'] = "Questions d'évaluation";
+$string['addquestion'] = 'Ajouter une question';
+$string['evaltype'] = "Formulaire concerné";
+$string['evaltype_student'] = "Auto-évaluation de l'étudiant";
+$string['evaltype_teacher'] = "Évaluation de l'enseignant";
+$string['qtype'] = 'Type de question';
+$string['qtype_choice'] = 'Choix multiples';
+$string['qtype_text'] = 'Commentaire libre';
+$string['questionlabel'] = 'Intitulé de la question';
+$string['choiceoptions'] = 'Options du QCM (une par ligne)';
+$string['choiceoptionsrequired'] = 'Veuillez saisir au moins une option, une par ligne.';
+$string['questionrequired'] = 'Réponse obligatoire';
+$string['questionsaved'] = 'La question a été enregistrée.';
+$string['questiondeleted'] = 'La question a été supprimée.';
+$string['noquestionsyet'] = "Aucune question définie pour ce formulaire : un commentaire libre générique sera utilisé.";
+$string['confirmdeletequestion'] = 'Supprimer cette question et les réponses associées ?';
 $string['savebulkchanges'] = 'Enregistrer les modifications';
 $string['savechanges'] = 'Enregistrer';
 $string['toggle'] = 'Basculer obligatoire';

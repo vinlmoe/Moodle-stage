@@ -18,6 +18,10 @@
  * Auto-évaluation par l'étudiant d'un stage préalablement enregistré par la DEVE.
  * La création des stages est réservée à la DEVE (voir register.php).
  *
+ * Si la DEVE a défini des questions d'évaluation (choix multiples ou commentaire libre)
+ * pour la thématique du stage, elles sont affichées à la place du commentaire libre
+ * générique. Sinon, un simple champ de commentaire libre est proposé.
+ *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -51,35 +55,98 @@ $PAGE->set_title(format_string($stage->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-$themes = stage_get_themes($stage->id, true);
+$questions = stage_get_questions($entry->themeid, 'student');
 
-// Seule l'auto-évaluation est modifiable par l'étudiant : les données de fond (thématique,
-// structure, dates, durée déclarée) sont saisies par la DEVE et restent figées ici.
-$customdata = ['themes' => $themes, 'locked' => true];
-$mform = new entry_form(null, $customdata);
-
-$toform = new stdClass();
-$toform->id = $cm->id;
-$toform->entryid = $entryid;
-$toform->themeid = $entry->themeid;
-$toform->structure = $entry->structure;
-$toform->datestart = $entry->datestart;
-$toform->dateend = $entry->dateend;
-$toform->declaredduration = $entry->declaredduration;
-$toform->studentselfeval = ['text' => $entry->studentselfeval, 'format' => FORMAT_HTML];
-$mform->set_data($toform);
-
-if ($mform->is_cancelled()) {
-    redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]));
-} else if ($data = $mform->get_data()) {
-    $selfeval = is_array($data->studentselfeval) ? $data->studentselfeval['text'] : $data->studentselfeval;
-    stage_apply_student_eval($entry, $selfeval);
+// Traite la soumission du formulaire dynamique avant tout affichage, pour permettre la redirection.
+if (!empty($questions) && data_submitted() && confirm_sesskey()) {
+    $submitted = [];
+    foreach ($questions as $question) {
+        $submitted[$question->id] = optional_param('q_' . $question->id, '', PARAM_TEXT);
+    }
+    stage_save_answers($entry->id, $questions, $submitted);
+    stage_apply_student_eval($entry, '');
 
     redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
         get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
+// Formulaire de repli (commentaire libre) si aucune question n'est définie pour la thématique :
+// construit et traité avant tout affichage, pour permettre la redirection après soumission.
+$mform = null;
+if (empty($questions)) {
+    $customdata = ['themes' => stage_get_themes($stage->id, true), 'locked' => true];
+    $mform = new entry_form(null, $customdata);
+
+    $toform = new stdClass();
+    $toform->id = $cm->id;
+    $toform->entryid = $entryid;
+    $toform->themeid = $entry->themeid;
+    $toform->structure = $entry->structure;
+    $toform->datestart = $entry->datestart;
+    $toform->dateend = $entry->dateend;
+    $toform->declaredduration = $entry->declaredduration;
+    $toform->studentselfeval = ['text' => $entry->studentselfeval, 'format' => FORMAT_HTML];
+    $mform->set_data($toform);
+
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]));
+    } else if ($data = $mform->get_data()) {
+        $selfeval = is_array($data->studentselfeval) ? $data->studentselfeval['text'] : $data->studentselfeval;
+        stage_apply_student_eval($entry, $selfeval);
+
+        redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
+            get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+    }
+}
+
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('selfeval', 'mod_stage'));
-$mform->display();
+
+if (!empty($questions)) {
+    // Formulaire dynamique défini par la DEVE pour cette thématique.
+    $answers = stage_get_answers($entry->id);
+
+    echo html_writer::start_tag('form', [
+        'method' => 'post',
+        'action' => new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+    ]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+
+    foreach ($questions as $question) {
+        $current = $answers[$question->id]->answertext ?? '';
+        $required = $question->required ? ['required' => 'required'] : [];
+
+        echo html_writer::start_tag('div', ['class' => 'form-group mb-3']);
+        echo html_writer::tag('label', format_string($question->name) . ($question->required ? ' *' : ''),
+            ['for' => 'q_' . $question->id]);
+
+        if ($question->qtype === 'choice') {
+            foreach (stage_question_options($question) as $option) {
+                echo html_writer::start_tag('div', ['class' => 'form-check']);
+                echo html_writer::empty_tag('input', array_merge([
+                    'type' => 'radio', 'name' => 'q_' . $question->id, 'value' => $option,
+                    'id' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-input',
+                    'checked' => ($current === $option) ? 'checked' : null,
+                ], $required));
+                echo html_writer::tag('label', s($option),
+                    ['for' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-label']);
+                echo html_writer::end_tag('div');
+            }
+        } else {
+            echo html_writer::tag('textarea', s($current), array_merge([
+                'name' => 'q_' . $question->id, 'id' => 'q_' . $question->id, 'rows' => 3, 'class' => 'form-control',
+            ], $required));
+        }
+        echo html_writer::end_tag('div');
+    }
+
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit', 'value' => get_string('savechanges'), 'class' => 'btn btn-primary',
+    ]);
+    echo html_writer::end_tag('form');
+} else {
+    // Aucune question définie pour cette thématique : commentaire libre générique.
+    $mform->display();
+}
+
 echo $OUTPUT->footer();

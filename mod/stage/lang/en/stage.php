@@ -100,6 +100,22 @@ $string['themetodo'] = 'To complete';
 
 // Actions / buttons.
 $string['addtheme'] = 'Add a theme';
+$string['evalquestions'] = 'Evaluation questions';
+$string['addquestion'] = 'Add a question';
+$string['evaltype'] = 'Applies to form';
+$string['evaltype_student'] = 'Student self-assessment';
+$string['evaltype_teacher'] = 'Teacher evaluation';
+$string['qtype'] = 'Question type';
+$string['qtype_choice'] = 'Multiple choice';
+$string['qtype_text'] = 'Free comment';
+$string['questionlabel'] = 'Question label';
+$string['choiceoptions'] = 'Choice options (one per line)';
+$string['choiceoptionsrequired'] = 'Please enter at least one option, one per line.';
+$string['questionrequired'] = 'Answer required';
+$string['questionsaved'] = 'Question saved.';
+$string['questiondeleted'] = 'Question deleted.';
+$string['noquestionsyet'] = 'No question defined for this form: a generic free comment will be used.';
+$string['confirmdeletequestion'] = 'Delete this question and its answers?';
 $string['savebulkchanges'] = 'Save changes';
 $string['savechanges'] = 'Save changes';
 $string['toggle'] = 'Toggle mandatory';

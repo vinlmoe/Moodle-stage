@@ -92,6 +92,24 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    restent modifiables par la DEVE à tout moment, y compris après
    auto-évaluation ou évaluation enseignant).
 
+### Questions d'évaluation personnalisées par thématique
+
+Pour chaque thématique, la DEVE peut définir des questions qui remplacent le
+commentaire libre générique dans le formulaire d'auto-évaluation de
+l'étudiant et/ou dans le formulaire d'évaluation de l'enseignant référent :
+
+1. Sur la page **Gérer les thématiques**, cliquer sur **Questions
+   d'évaluation** en face de la thématique concernée.
+2. **Ajouter une question** : choisir à quel formulaire elle s'applique
+   (auto-évaluation étudiant ou évaluation enseignant), son type (« Choix
+   multiples » avec une liste d'options, une par ligne, ou « Commentaire
+   libre »), son intitulé, si elle est obligatoire, et son ordre
+   d'affichage.
+3. Tant qu'aucune question n'est définie pour un formulaire donné sur une
+   thématique, un simple champ de commentaire libre reste proposé par
+   défaut ; dès qu'au moins une question existe, le formulaire dynamique
+   (QCM et/ou commentaires libres définis) remplace ce champ générique.
+
 ### Import depuis Excel
 
 Un bouton **Importer un fichier CSV** est disponible sur la page « Enregistrer
