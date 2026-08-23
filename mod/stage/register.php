@@ -81,6 +81,10 @@ if ($mode === 'list') {
     );
 
     $entries = $DB->get_records('stage_entry', ['stageid' => $stage->id], 'timecreated DESC');
+    $students = stage_get_entry_users($entries);
+    // Pour l'affichage, on résout aussi les thématiques masquées, sur lesquelles des
+    // stages ont pu être enregistrés avant leur masquage.
+    $allthemes = stage_get_themes($stage->id);
 
     $table = new html_table();
     $table->head = [
@@ -91,8 +95,8 @@ if ($mode === 'list') {
         get_string('actions', 'mod_stage'),
     ];
     foreach ($entries as $entry) {
-        $student = $DB->get_record('user', ['id' => $entry->userid]);
-        $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
+        $student = $students[$entry->userid] ?? null;
+        $themename = isset($allthemes[$entry->themeid]) ? format_string($allthemes[$entry->themeid]->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
         $table->data[] = [

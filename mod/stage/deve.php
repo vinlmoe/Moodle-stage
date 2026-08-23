@@ -63,12 +63,28 @@ if ($entryid) {
 
     echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : ' . format_string($theme->name));
     echo html_writer::tag('p', get_string('declaredduration', 'mod_stage') . ' : ' . $entry->declaredduration);
-    if ($entry->teachereval) {
-        echo html_writer::tag('div',
-            get_string('teachereval', 'mod_stage') . ' : ' . format_text($entry->teachereval, FORMAT_PLAIN));
+
+    // Les deux évaluations amont, telles qu'elles ont été saisies (questions ou commentaire libre).
+    $answers = stage_get_answers($entry->id);
+
+    $studentquestions = stage_get_questions($entry->themeid, 'student');
+    if (!empty($studentquestions) || $entry->studentselfeval) {
+        echo $OUTPUT->heading(get_string('studentselfeval', 'mod_stage'), 4);
+        echo !empty($studentquestions)
+            ? stage_render_answers_readonly($studentquestions, $answers)
+            : html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
     }
 
-    echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl . '&entryid=' . $entry->id]);
+    $teacherquestions = stage_get_questions($entry->themeid, 'teacher');
+    if (!empty($teacherquestions) || $entry->teachereval) {
+        echo $OUTPUT->heading(get_string('teachereval', 'mod_stage'), 4);
+        echo !empty($teacherquestions)
+            ? stage_render_answers_readonly($teacherquestions, $answers)
+            : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
+    }
+
+    $formurl = new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    echo html_writer::start_tag('form', ['method' => 'post', 'action' => $formurl]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
     echo html_writer::tag('label', get_string('retainedduration', 'mod_stage'), ['for' => 'retainedduration']);
     echo html_writer::empty_tag('input', [
@@ -124,14 +140,22 @@ if (empty($entries)) {
         get_string('status', 'mod_stage'),
         get_string('actions', 'mod_stage'),
     ];
+    $students = stage_get_entry_users($entries);
     foreach ($entries as $entry) {
-        $student = $DB->get_record('user', ['id' => $entry->userid]);
+        $student = $students[$entry->userid] ?? null;
         $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $checkbox = html_writer::checkbox('selected[]', $entry->id, false, '', ['class' => 'stageselect']);
         $action = html_writer::link(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]),
             get_string('validate', 'mod_stage'));
-        $table->data[] = [$checkbox, fullname($student), $themename, $entry->declaredduration, $badge, $action];
+        $table->data[] = [
+            $checkbox,
+            $student ? fullname($student) : '-',
+            $themename,
+            $entry->declaredduration,
+            $badge,
+            $action,
+        ];
     }
     echo html_writer::table($table);
 

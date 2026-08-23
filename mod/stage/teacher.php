@@ -56,12 +56,8 @@ if ($entryid) {
 
     if (data_submitted() && confirm_sesskey()) {
         if (!empty($questions)) {
-            $submitted = [];
-            foreach ($questions as $question) {
-                $submitted[$question->id] = optional_param('q_' . $question->id, '', PARAM_TEXT);
-            }
-            stage_save_answers($entry->id, $questions, $submitted);
-            stage_apply_teacher_eval($entry, $USER->id, '');
+            stage_save_answers($entry->id, $questions, stage_get_submitted_answers($questions));
+            stage_apply_teacher_eval($entry, $USER->id);
         } else {
             $comment = optional_param('teachereval', '', PARAM_RAW);
             stage_apply_teacher_eval($entry, $USER->id, $comment);
@@ -79,8 +75,15 @@ if ($entryid) {
     echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : ' . format_string($theme->name));
     echo html_writer::tag('p', get_string('structure', 'mod_stage') . ' : ' . s($entry->structure));
     echo html_writer::tag('p', get_string('declaredduration', 'mod_stage') . ' : ' . $entry->declaredduration);
-    echo html_writer::tag('div',
-        get_string('studentselfeval', 'mod_stage') . ' : ' . format_text($entry->studentselfeval, FORMAT_HTML));
+    // Auto-évaluation de l'étudiant : réponses au formulaire défini par la DEVE si
+    // des questions existent pour cette thématique, sinon commentaire libre.
+    echo $OUTPUT->heading(get_string('studentselfeval', 'mod_stage'), 4);
+    $studentquestions = stage_get_questions($entry->themeid, 'student');
+    if (!empty($studentquestions)) {
+        echo stage_render_answers_readonly($studentquestions, stage_get_answers($entry->id));
+    } else {
+        echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
+    }
 
     $formurl = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $formurl]);
@@ -88,34 +91,7 @@ if ($entryid) {
 
     if (!empty($questions)) {
         // Formulaire dynamique défini par la DEVE pour cette thématique.
-        $answers = stage_get_answers($entry->id);
-        foreach ($questions as $question) {
-            $current = $answers[$question->id]->answertext ?? '';
-            $required = $question->required ? ['required' => 'required'] : [];
-
-            echo html_writer::start_tag('div', ['class' => 'form-group mb-3']);
-            echo html_writer::tag('label', format_string($question->name) . ($question->required ? ' *' : ''),
-                ['for' => 'q_' . $question->id]);
-
-            if ($question->qtype === 'choice') {
-                foreach (stage_question_options($question) as $option) {
-                    echo html_writer::start_tag('div', ['class' => 'form-check']);
-                    echo html_writer::empty_tag('input', array_merge([
-                        'type' => 'radio', 'name' => 'q_' . $question->id, 'value' => $option,
-                        'id' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-input',
-                        'checked' => ($current === $option) ? 'checked' : null,
-                    ], $required));
-                    echo html_writer::tag('label', s($option),
-                        ['for' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-label']);
-                    echo html_writer::end_tag('div');
-                }
-            } else {
-                echo html_writer::tag('textarea', s($current), array_merge([
-                    'name' => 'q_' . $question->id, 'id' => 'q_' . $question->id, 'rows' => 3, 'class' => 'form-control',
-                ], $required));
-            }
-            echo html_writer::end_tag('div');
-        }
+        echo stage_render_question_fields($questions, stage_get_answers($entry->id));
     } else {
         echo html_writer::tag('label', get_string('teachereval', 'mod_stage'), ['for' => 'teachereval']);
         echo html_writer::tag('textarea', s($entry->teachereval),
@@ -152,13 +128,20 @@ if (empty($assignedids)) {
         get_string('status', 'mod_stage'),
         get_string('actions', 'mod_stage'),
     ];
+    $students = stage_get_entry_users($entries);
     foreach ($entries as $entry) {
-        $student = $DB->get_record('user', ['id' => $entry->userid]);
+        $student = $students[$entry->userid] ?? null;
         $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $action = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]),
             get_string('evaluate', 'mod_stage'));
-        $table->data[] = [fullname($student), $themename, $entry->declaredduration, $badge, $action];
+        $table->data[] = [
+            $student ? fullname($student) : '-',
+            $themename,
+            $entry->declaredduration,
+            $badge,
+            $action,
+        ];
     }
 
     if (empty($table->data)) {

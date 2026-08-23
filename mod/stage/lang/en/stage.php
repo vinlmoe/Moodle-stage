@@ -34,6 +34,7 @@ $string['pluginadministration'] = 'Internship management administration';
 $string['stagename'] = 'Activity name';
 
 // Capabilities.
+$string['stage:addinstance'] = 'Add a new internship management activity';
 $string['stage:view'] = 'View the internship management activity';
 $string['stage:submit'] = 'Submit own internships';
 $string['stage:evaluateteacher'] = 'Evaluate internships as a referent teacher';
@@ -58,6 +59,7 @@ $string['importcsv_help'] = 'Import a CSV file (saved from Excel via "Save As > 
     . 'enrolled in the course, <em>theme</em> the exact name of an existing theme, the dates in YYYY-MM-DD format '
     . '(optional), and <em>duration</em> the declared duration in hours.';
 $string['importresult'] = '{$a} internship(s) successfully imported.';
+$string['importerrorupload'] = 'The file could not be uploaded. Check its size and try again.';
 $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with email "{$a->email}".';
 $string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
 $string['registerstage'] = 'Register an internship';
@@ -70,7 +72,6 @@ $string['registeredbydeve'] = 'Internships are registered by the academic office
     . 'internships below.';
 $string['allmystages'] = 'All my internships';
 $string['mandatorythemes'] = 'Mandatory themes';
-$string['back'] = 'Back';
 $string['actions'] = 'Actions';
 
 // Fields.
@@ -94,7 +95,7 @@ $string['referentteachers'] = 'Referent teachers';
 $string['status_enregistre'] = 'Registered';
 $string['status_evaletudiant'] = 'Self-assessed by student';
 $string['status_evalenseignant'] = 'Evaluated by teacher';
-$string['status_valideDeve'] = 'Validated';
+$string['status_validedeve'] = 'Validated';
 $string['themedone'] = 'Completed';
 $string['themetodo'] = 'To complete';
 
@@ -114,10 +115,10 @@ $string['choiceoptionsrequired'] = 'Please enter at least one option, one per li
 $string['questionrequired'] = 'Answer required';
 $string['questionsaved'] = 'Question saved.';
 $string['questiondeleted'] = 'Question deleted.';
+$string['noanswer'] = 'Not answered';
 $string['noquestionsyet'] = 'No question defined for this form: a generic free comment will be used.';
 $string['confirmdeletequestion'] = 'Delete this question and its answers?';
 $string['savebulkchanges'] = 'Save changes';
-$string['savechanges'] = 'Save changes';
 $string['toggle'] = 'Toggle mandatory';
 $string['evaluate'] = 'Evaluate';
 $string['validate'] = 'Validate';

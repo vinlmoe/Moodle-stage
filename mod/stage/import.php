@@ -62,66 +62,97 @@ foreach ($themes as $theme) {
 }
 
 $results = null;
+$uploaderror = null;
 
-if (data_submitted() && confirm_sesskey() && !empty($_FILES['csvfile']['tmp_name'])) {
-    $content = file_get_contents($_FILES['csvfile']['tmp_name']);
-    $delimiter = (strpos($content, ';') !== false) ? 'semicolon' : 'comma';
+if (data_submitted() && confirm_sesskey()) {
+    $upload = $_FILES['csvfile'] ?? null;
 
-    $iid = csv_import_reader::get_new_iid('stage');
-    $cir = new csv_import_reader($iid, 'stage');
-    $readcount = $cir->load_csv_content($content, 'UTF-8', $delimiter);
-    $cir->init();
+    if (empty($upload) || $upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'])) {
+        $uploaderror = get_string('importerrorupload', 'mod_stage');
+    } else {
+        $content = file_get_contents($upload['tmp_name']);
+        // Excel francophone exporte en points-virgules ; on accepte aussi la virgule.
+        $delimiter = (strpos($content, ';') !== false) ? 'semicolon' : 'comma';
 
-    $results = (object) ['created' => 0, 'errors' => []];
-    $linenum = 1;
+        $cir = new csv_import_reader(csv_import_reader::get_new_iid('stage'), 'stage');
 
-    while ($row = $cir->next()) {
-        $linenum++;
-        // Colonnes attendues : email, theme, structure, datestart, dateend, duration.
-        $email = isset($row[0]) ? trim($row[0]) : '';
-        $themename = isset($row[1]) ? trim($row[1]) : '';
-        $structure = isset($row[2]) ? trim($row[2]) : '';
-        $datestartraw = isset($row[3]) ? trim($row[3]) : '';
-        $dateendraw = isset($row[4]) ? trim($row[4]) : '';
-        $duration = isset($row[5]) ? (int) trim($row[5]) : 0;
+        if ($cir->load_csv_content($content, 'UTF-8', $delimiter) === false) {
+            $uploaderror = $cir->get_error();
+            $cir->cleanup(true);
+        } else {
+            $results = (object) ['created' => 0, 'errors' => []];
+            $records = [];
+            $cir->init();
+            // La première ligne est consommée comme en-tête par load_csv_content().
+            $linenum = 1;
 
-        if ($email === '' || $themename === '') {
-            continue;
+            while ($row = $cir->next()) {
+                $linenum++;
+                // Colonnes attendues : email, theme, structure, datestart, dateend, duration.
+                $email = isset($row[0]) ? trim($row[0]) : '';
+                $themename = isset($row[1]) ? trim($row[1]) : '';
+                $structure = isset($row[2]) ? trim($row[2]) : '';
+                $datestartraw = isset($row[3]) ? trim($row[3]) : '';
+                $dateendraw = isset($row[4]) ? trim($row[4]) : '';
+                $duration = isset($row[5]) ? (int) trim($row[5]) : 0;
+
+                // Ignore les lignes vides et une éventuelle seconde ligne d'en-tête.
+                if ($email === '' || $themename === '' || core_text::strtolower($email) === 'email') {
+                    continue;
+                }
+
+                $student = $studentsbyemail[core_text::strtolower($email)] ?? null;
+                if (!$student) {
+                    $results->errors[] = get_string('importerrorunknownemail', 'mod_stage', (object) [
+                        'line' => $linenum, 'email' => $email,
+                    ]);
+                    continue;
+                }
+
+                $theme = $themesbyname[core_text::strtolower($themename)] ?? null;
+                if (!$theme) {
+                    $results->errors[] = get_string('importerrorunknowntheme', 'mod_stage', (object) [
+                        'line' => $linenum, 'theme' => $themename,
+                    ]);
+                    continue;
+                }
+
+                $start = $datestartraw ? strtotime($datestartraw) : false;
+                $end = $dateendraw ? strtotime($dateendraw) : false;
+
+                $records[] = (object) [
+                    'stageid' => $stage->id,
+                    'userid' => $student->id,
+                    'themeid' => $theme->id,
+                    'structure' => $structure,
+                    'datestart' => $start ?: null,
+                    'dateend' => $end ?: null,
+                    'declaredduration' => $duration,
+                    'retainedduration' => 0,
+                    'status' => STAGE_STATUS_ENREGISTRE,
+                    'timecreated' => time(),
+                    'timemodified' => time(),
+                ];
+            }
+            $cir->cleanup(true);
+
+            // Insertion groupée : un import de plusieurs centaines de lignes ne doit pas
+            // déclencher autant de requêtes individuelles.
+            if ($records) {
+                $DB->insert_records('stage_entry', $records);
+                $results->created = count($records);
+            }
         }
-        if (core_text::strtolower($email) === 'email') {
-            // Skip a header row if present.
-            continue;
-        }
-
-        $student = $studentsbyemail[core_text::strtolower($email)] ?? null;
-        if (!$student) {
-            $results->errors[] = get_string('importerrorunknownemail', 'mod_stage', (object) [
-                'line' => $linenum, 'email' => $email,
-            ]);
-            continue;
-        }
-
-        $theme = $themesbyname[core_text::strtolower($themename)] ?? null;
-        if (!$theme) {
-            $results->errors[] = get_string('importerrorunknowntheme', 'mod_stage', (object) [
-                'line' => $linenum, 'theme' => $themename,
-            ]);
-            continue;
-        }
-
-        $start = $datestartraw ? strtotime($datestartraw) : null;
-        $end = $dateendraw ? strtotime($dateendraw) : null;
-
-        stage_register_entry($stage->id, $student->id, $theme->id, $structure, $start ?: null, $end ?: null, $duration);
-        $results->created++;
     }
-
-    $cir->cleanup(true);
 }
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('importcsv', 'mod_stage'));
 echo html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]), get_string('back'));
+
+if ($uploaderror !== null) {
+    echo $OUTPUT->notification($uploaderror, \core\output\notification::NOTIFY_ERROR);
+}
 
 if ($results) {
     echo $OUTPUT->notification(get_string('importresult', 'mod_stage', $results->created),

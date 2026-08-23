@@ -66,7 +66,10 @@ if ($action === 'edit') {
     $question = null;
     if ($questionid) {
         $question = $DB->get_record('stage_question', ['id' => $questionid, 'themeid' => $theme->id], '*', MUST_EXIST);
-        $mform->set_data($question + ['id' => $cm->id, 'themeid' => $theme->id, 'questionid' => $question->id]);
+        $question->questionid = $question->id;
+        $question->id = $cm->id;
+        $question->themeid = $theme->id;
+        $mform->set_data($question);
     } else {
         $mform->set_data(['id' => $cm->id, 'themeid' => $theme->id, 'questionid' => 0, 'qtype' => 'text']);
     }

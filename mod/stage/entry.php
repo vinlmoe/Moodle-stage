@@ -59,12 +59,8 @@ $questions = stage_get_questions($entry->themeid, 'student');
 
 // Traite la soumission du formulaire dynamique avant tout affichage, pour permettre la redirection.
 if (!empty($questions) && data_submitted() && confirm_sesskey()) {
-    $submitted = [];
-    foreach ($questions as $question) {
-        $submitted[$question->id] = optional_param('q_' . $question->id, '', PARAM_TEXT);
-    }
-    stage_save_answers($entry->id, $questions, $submitted);
-    stage_apply_student_eval($entry, '');
+    stage_save_answers($entry->id, $questions, stage_get_submitted_answers($questions));
+    stage_apply_student_eval($entry);
 
     redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
         get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
@@ -112,33 +108,7 @@ if (!empty($questions)) {
     ]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
-    foreach ($questions as $question) {
-        $current = $answers[$question->id]->answertext ?? '';
-        $required = $question->required ? ['required' => 'required'] : [];
-
-        echo html_writer::start_tag('div', ['class' => 'form-group mb-3']);
-        echo html_writer::tag('label', format_string($question->name) . ($question->required ? ' *' : ''),
-            ['for' => 'q_' . $question->id]);
-
-        if ($question->qtype === 'choice') {
-            foreach (stage_question_options($question) as $option) {
-                echo html_writer::start_tag('div', ['class' => 'form-check']);
-                echo html_writer::empty_tag('input', array_merge([
-                    'type' => 'radio', 'name' => 'q_' . $question->id, 'value' => $option,
-                    'id' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-input',
-                    'checked' => ($current === $option) ? 'checked' : null,
-                ], $required));
-                echo html_writer::tag('label', s($option),
-                    ['for' => 'q_' . $question->id . '_' . md5($option), 'class' => 'form-check-label']);
-                echo html_writer::end_tag('div');
-            }
-        } else {
-            echo html_writer::tag('textarea', s($current), array_merge([
-                'name' => 'q_' . $question->id, 'id' => 'q_' . $question->id, 'rows' => 3, 'class' => 'form-control',
-            ], $required));
-        }
-        echo html_writer::end_tag('div');
-    }
+    echo stage_render_question_fields($questions, $answers);
 
     echo html_writer::empty_tag('input', [
         'type' => 'submit', 'value' => get_string('savechanges'), 'class' => 'btn btn-primary',

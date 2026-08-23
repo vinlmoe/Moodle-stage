@@ -41,11 +41,6 @@ $PAGE->set_title(format_string($stage->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-// Redirects for management pages, according to the highest capability the user holds.
-if (has_capability('mod/stage:managethemes', $context)) {
-    $PAGE->set_secondary_navigation(false);
-}
-
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($stage->name));
 

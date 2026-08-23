@@ -26,6 +26,18 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
 
+    // Ajouter une instance de l'activité dans un cours.
+    'mod/stage:addinstance' => [
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'moodle/course:manageactivities',
+    ],
+
     // Voir l'activité (tous les rôles inscrits).
     'mod/stage:view' => [
         'captype' => 'read',

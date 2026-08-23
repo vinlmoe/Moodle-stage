@@ -76,7 +76,9 @@ if ($action === 'edit') {
     $theme = null;
     if ($themeid) {
         $theme = $DB->get_record('stage_theme', ['id' => $themeid, 'stageid' => $stage->id], '*', MUST_EXIST);
-        $mform->set_data($theme + ['id' => $cm->id, 'themeid' => $theme->id]);
+        $theme->themeid = $theme->id;
+        $theme->id = $cm->id;
+        $mform->set_data($theme);
     } else {
         $mform->set_data(['id' => $cm->id, 'themeid' => 0]);
     }

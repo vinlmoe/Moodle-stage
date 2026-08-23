@@ -34,6 +34,7 @@ $string['pluginadministration'] = 'Administration de la gestion des stages';
 $string['stagename'] = "Nom de l'activité";
 
 // Capabilities.
+$string['stage:addinstance'] = 'Ajouter une activité de gestion des stages';
 $string['stage:view'] = "Voir l'activité de gestion des stages";
 $string['stage:submit'] = 'Saisir ses propres stages';
 $string['stage:evaluateteacher'] = 'Évaluer les stages en tant que référent';
@@ -58,6 +59,7 @@ $string['importcsv_help'] = "Importez un fichier CSV (enregistré depuis Excel v
     . "étudiant inscrit au cours, <em>theme</em> au nom exact d'une thématique existante, les dates au format "
     . 'AAAA-MM-JJ (facultatives), et <em>duration</em> à la durée déclarée en heures.';
 $string['importresult'] = '{$a} stage(s) importé(s) avec succès.';
+$string['importerrorupload'] = "Le fichier n'a pas pu être téléversé. Vérifiez sa taille et réessayez.";
 $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit avec l\'adresse "{$a->email}".';
 $string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
 $string['registerstage'] = 'Enregistrer un stage';
@@ -70,7 +72,6 @@ $string['registeredbydeve'] = "Les stages sont enregistrés par la DEVE. Vous po
     . 'ci-dessous.';
 $string['allmystages'] = 'Tous mes stages';
 $string['mandatorythemes'] = 'Thématiques obligatoires';
-$string['back'] = 'Retour';
 $string['actions'] = 'Actions';
 
 // Fields.
@@ -94,7 +95,7 @@ $string['referentteachers'] = 'Enseignants référents';
 $string['status_enregistre'] = 'Enregistré';
 $string['status_evaletudiant'] = 'Évalué par l\'étudiant';
 $string['status_evalenseignant'] = "Évalué par l'enseignant";
-$string['status_valideDeve'] = 'Validé DEVE';
+$string['status_validedeve'] = 'Validé DEVE';
 $string['themedone'] = 'Complété';
 $string['themetodo'] = 'À compléter';
 
@@ -114,10 +115,10 @@ $string['choiceoptionsrequired'] = 'Veuillez saisir au moins une option, une par
 $string['questionrequired'] = 'Réponse obligatoire';
 $string['questionsaved'] = 'La question a été enregistrée.';
 $string['questiondeleted'] = 'La question a été supprimée.';
+$string['noanswer'] = 'Non renseigné';
 $string['noquestionsyet'] = "Aucune question définie pour ce formulaire : un commentaire libre générique sera utilisé.";
 $string['confirmdeletequestion'] = 'Supprimer cette question et les réponses associées ?';
 $string['savebulkchanges'] = 'Enregistrer les modifications';
-$string['savechanges'] = 'Enregistrer';
 $string['toggle'] = 'Basculer obligatoire';
 $string['evaluate'] = 'Évaluer';
 $string['validate'] = 'Valider';

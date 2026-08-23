@@ -65,16 +65,21 @@ if (empty($students)) {
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
+    // Toutes les affectations de l'activité en une requête, regroupées par étudiant.
+    $assignments = [];
+    foreach ($DB->get_records('stage_entry_teacher', ['stageid' => $stage->id], '', 'id, studentid, teacherid')
+            as $assignment) {
+        $assignments[$assignment->studentid][$assignment->teacherid] = true;
+    }
+
     $table = new html_table();
     $table->head = [get_string('student', 'mod_stage'), get_string('referentteachers', 'mod_stage')];
     foreach ($students as $student) {
-        $current = $DB->get_fieldset_select('stage_entry_teacher', 'teacherid',
-            'stageid = :stageid AND studentid = :studentid',
-            ['stageid' => $stage->id, 'studentid' => $student->id]);
+        $current = $assignments[$student->id] ?? [];
 
         $checkboxes = [];
         foreach ($teachers as $teacher) {
-            $checked = in_array($teacher->id, $current);
+            $checked = isset($current[$teacher->id]);
             $checkboxes[] = html_writer::start_tag('label', ['class' => 'mr-3']) .
                 html_writer::checkbox('teachers_' . $student->id . '[]', $teacher->id, $checked, ' ' . fullname($teacher)) .
                 html_writer::end_tag('label');
