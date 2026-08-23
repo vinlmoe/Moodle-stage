@@ -64,6 +64,7 @@ $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with 
 $string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
 $string['importerrorduplicate'] = 'Line {$a->line}: "{$a->email}" already has an internship on theme "{$a->theme}" '
     . 'with these same dates, line skipped.';
+$string['errorduplicateentry'] = 'This student already has an internship registered on this theme with these same dates.';
 $string['registerstage'] = 'Register an internship';
 $string['editstage'] = 'Edit an internship';
 $string['bulkregisterstages'] = 'Register internships in bulk';

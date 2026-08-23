@@ -569,3 +569,35 @@ function stage_get_existing_theme_pairs($stageid) {
     }
     return $pairs;
 }
+
+/**
+ * Indique si un étudiant a déjà un stage sur cette thématique avec ces mêmes dates, pour
+ * empêcher la création d'un doublon depuis le formulaire d'enregistrement unitaire de la DEVE.
+ *
+ * @param int $stageid
+ * @param int $userid
+ * @param int $themeid
+ * @param int|null $datestart
+ * @param int|null $dateend
+ * @param int $excludeentryid Saisie à ignorer (cas d'une édition sur elle-même).
+ * @return bool
+ */
+function stage_entry_is_duplicate($stageid, $userid, $themeid, $datestart, $dateend, $excludeentryid = 0) {
+    global $DB;
+
+    $params = [
+        'stageid' => $stageid,
+        'userid' => $userid,
+        'themeid' => $themeid,
+        'datestart' => (int) $datestart,
+        'dateend' => (int) $dateend,
+    ];
+    $sql = 'stageid = :stageid AND userid = :userid AND themeid = :themeid
+            AND COALESCE(datestart, 0) = :datestart AND COALESCE(dateend, 0) = :dateend';
+    if ($excludeentryid) {
+        $sql .= ' AND id <> :excludeentryid';
+        $params['excludeentryid'] = $excludeentryid;
+    }
+
+    return $DB->record_exists_select('stage_entry', $sql, $params);
+}

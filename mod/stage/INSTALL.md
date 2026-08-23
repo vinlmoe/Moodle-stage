@@ -82,7 +82,9 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    sur chaque ligne.
 2. **Enregistrement unitaire** : bouton « Enregistrer un stage » →
    choisir l'étudiant, la thématique, la structure d'accueil, les dates et
-   la durée déclarée, puis Enregistrer.
+   la durée déclarée, puis Enregistrer. Si cet étudiant a déjà un stage sur
+   cette thématique avec ces mêmes dates, le formulaire refuse
+   l'enregistrement et affiche une erreur sur le champ thématique.
 3. **Enregistrement en masse** : bouton « Enregistrer des stages en masse » →
    choisir une thématique, une structure/dates/durée communes, cocher tous
    les étudiants concernés, puis « Enregistrer pour les étudiants cochés » :

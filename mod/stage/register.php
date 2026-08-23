@@ -129,6 +129,7 @@ if ($mode === 'single') {
         'themes' => $themes,
         'students' => $students,
         'lockstudent' => (bool) $entry,
+        'stageid' => $stage->id,
     ]);
 
     $toform = new stdClass();

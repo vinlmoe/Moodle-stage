@@ -73,4 +73,30 @@ class deve_entry_form extends \moodleform {
 
         $this->add_action_buttons();
     }
+
+    /**
+     * Server-side validation : empêche la création d'un doublon (même étudiant, même
+     * thématique, mêmes dates).
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $duplicate = stage_entry_is_duplicate(
+            $this->_customdata['stageid'],
+            $data['userid'],
+            $data['themeid'],
+            $data['datestart'],
+            $data['dateend'],
+            $data['entryid']
+        );
+        if ($duplicate) {
+            $errors['themeid'] = get_string('errorduplicateentry', 'mod_stage');
+        }
+
+        return $errors;
+    }
 }

@@ -64,6 +64,7 @@ $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit
 $string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
 $string['importerrorduplicate'] = 'Ligne {$a->line} : "{$a->email}" a déjà un stage sur la thématique "{$a->theme}" '
     . 'avec ces mêmes dates, ligne ignorée.';
+$string['errorduplicateentry'] = 'Cet étudiant a déjà un stage enregistré sur cette thématique avec ces mêmes dates.';
 $string['registerstage'] = 'Enregistrer un stage';
 $string['editstage'] = 'Modifier un stage';
 $string['bulkregisterstages'] = 'Enregistrer des stages en masse';
