@@ -50,6 +50,16 @@ $string['devevalidation'] = 'Academic office validation';
 $string['teachervalidation'] = 'Teacher validation';
 $string['mystages'] = 'My internships';
 $string['registerstages'] = 'Register internships';
+$string['importcsv'] = 'Import a CSV file';
+$string['import'] = 'Import';
+$string['importcsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following columns, '
+    . 'separated by semicolons or commas, with an optional header row: '
+    . '<code>email;theme;structure;datestart;dateend;duration</code>. The <em>email</em> field must match a student '
+    . 'enrolled in the course, <em>theme</em> the exact name of an existing theme, the dates in YYYY-MM-DD format '
+    . '(optional), and <em>duration</em> the declared duration in hours.';
+$string['importresult'] = '{$a} internship(s) successfully imported.';
+$string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with email "{$a->email}".';
+$string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
 $string['registerstage'] = 'Register an internship';
 $string['editstage'] = 'Edit an internship';
 $string['bulkregisterstages'] = 'Register internships in bulk';

@@ -50,6 +50,16 @@ $string['devevalidation'] = 'Validation DEVE';
 $string['teachervalidation'] = 'Validation enseignant';
 $string['mystages'] = 'Mes stages';
 $string['registerstages'] = 'Enregistrer des stages';
+$string['importcsv'] = 'Importer un fichier CSV';
+$string['import'] = 'Importer';
+$string['importcsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec les "
+    . 'colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '
+    . '<code>email;theme;structure;datestart;dateend;duration</code>. Le champ <em>email</em> doit correspondre à un '
+    . "étudiant inscrit au cours, <em>theme</em> au nom exact d'une thématique existante, les dates au format "
+    . 'AAAA-MM-JJ (facultatives), et <em>duration</em> à la durée déclarée en heures.';
+$string['importresult'] = '{$a} stage(s) importé(s) avec succès.';
+$string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit avec l\'adresse "{$a->email}".';
+$string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
 $string['registerstage'] = 'Enregistrer un stage';
 $string['editstage'] = 'Modifier un stage';
 $string['bulkregisterstages'] = 'Enregistrer des stages en masse';

@@ -92,6 +92,26 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    restent modifiables par la DEVE à tout moment, y compris après
    auto-évaluation ou évaluation enseignant).
 
+### Import depuis Excel
+
+Un bouton **Importer un fichier CSV** est disponible sur la page « Enregistrer
+des stages ». Il permet d'enregistrer en masse des stages à partir d'un
+fichier préparé dans Excel :
+
+1. Dans Excel, préparer un tableau avec les colonnes (avec ou sans ligne
+   d'en-tête) : `email ; theme ; structure ; datestart ; dateend ; duration`
+   - `email` : adresse de l'étudiant, telle qu'inscrite au cours ;
+   - `theme` : nom exact d'une thématique déjà créée dans l'activité ;
+   - `structure` : structure d'accueil (facultatif) ;
+   - `datestart` / `dateend` : dates au format AAAA-MM-JJ (facultatif) ;
+   - `duration` : durée déclarée, en heures.
+2. **Fichier > Enregistrer sous > CSV (séparateur point-virgule) (.csv)**.
+3. Sur la page **Importer un fichier CSV** du module, sélectionner ce
+   fichier et cliquer sur **Importer**.
+4. Un stage « Enregistré » est créé pour chaque ligne valide ; les lignes
+   dont l'e-mail ou la thématique ne correspond à rien sont signalées sans
+   bloquer l'import des autres lignes.
+
 ## 6. Attribution des enseignants référents (DEVE)
 
 1. Ouvrir l'activité, puis le lien **Attribuer les enseignants référents**.
@@ -118,3 +138,38 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
   (durée retenue + commentaire) ou en masse (sélection de plusieurs lignes
   + bouton « Valider la sélection ») — que le stage ait été ou non évalué
   au préalable par un enseignant référent.
+
+## 8. API web services
+
+Le module expose deux fonctions de service web Moodle (`db/services.php`),
+regroupées dans le service prédéfini **« Gestion des stages (mod_stage) »** :
+
+| Fonction | Capacité requise | Rôle |
+|---|---|---|
+| `mod_stage_register_entries` | `mod/stage:registerstages` | Enregistre un ou plusieurs stages pour des étudiants (équivalent API de l'enregistrement unitaire/en masse/import). Prend un tableau `entries[]` (`userid`, `themeid`, `structure`, `datestart`, `dateend`, `declaredduration`). |
+| `mod_stage_get_my_stages` | `mod/stage:submit` | Renvoie les stages de l'utilisateur authentifié pour l'activité donnée. |
+
+Pour les activer et les utiliser depuis un système externe :
+
+1. **Administration du site > Serveur web > Vue d'ensemble des services web** :
+   activer les web services (protocole REST par exemple).
+2. **Administration du site > Serveur web > Services externes** : le service
+   « Gestion des stages (mod_stage) » apparaît, désactivé par défaut —
+   l'activer, puis y ajouter les utilisateurs autorisés (typiquement un
+   compte de service dédié à la DEVE) et générer un jeton (**Gérer les
+   jetons**).
+3. Appeler la fonction via l'endpoint REST, par exemple :
+
+   ```
+   POST https://votre-moodle/webservice/rest/server.php
+        ?wstoken=VOTRE_JETON
+        &wsfunction=mod_stage_register_entries
+        &moodlewsrestformat=json
+   ```
+   avec en paramètres `cmid` (id du module) et
+   `entries[0][userid]`, `entries[0][themeid]`,
+   `entries[0][declaredduration]`, etc.
+
+Ce point d'entrée permet d'automatiser l'enregistrement des stages depuis un
+outil externe (script, ENT, tableur converti côté client) sans passer par
+l'import CSV manuel.

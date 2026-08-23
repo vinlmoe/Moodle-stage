@@ -74,7 +74,9 @@ if ($mode === 'list') {
         html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single']),
             get_string('registerstage', 'mod_stage'), ['class' => 'btn btn-primary mr-2'])
         . html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'bulk']),
-            get_string('bulkregisterstages', 'mod_stage'), ['class' => 'btn btn-secondary']),
+            get_string('bulkregisterstages', 'mod_stage'), ['class' => 'btn btn-secondary mr-2'])
+        . html_writer::link(new moodle_url('/mod/stage/import.php', ['id' => $cm->id]),
+            get_string('importcsv', 'mod_stage'), ['class' => 'btn btn-secondary']),
         'my-3'
     );
 
