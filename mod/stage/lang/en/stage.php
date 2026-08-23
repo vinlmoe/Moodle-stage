@@ -62,8 +62,8 @@ $string['importresult'] = '{$a} internship(s) successfully imported.';
 $string['importerrorupload'] = 'The file could not be uploaded. Check its size and try again.';
 $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with email "{$a->email}".';
 $string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
-$string['importerrorduplicate'] = 'Line {$a->line}: "{$a->email}" already has an internship on theme "{$a->theme}", '
-    . 'line skipped.';
+$string['importerrorduplicate'] = 'Line {$a->line}: "{$a->email}" already has an internship on theme "{$a->theme}" '
+    . 'with these same dates, line skipped.';
 $string['registerstage'] = 'Register an internship';
 $string['editstage'] = 'Edit an internship';
 $string['bulkregisterstages'] = 'Register internships in bulk';
@@ -137,7 +137,7 @@ $string['teachersassigned'] = 'Referent teachers updated.';
 $string['evalsaved'] = 'Evaluation saved.';
 $string['bulkvalidated'] = '{$a} internship(s) validated.';
 $string['bulkregistered'] = '{$a} internship(s) registered.';
-$string['bulkduplicatesskipped'] = 'Already registered on this theme, skipped: {$a}';
+$string['bulkduplicatesskipped'] = 'Already registered on this theme with these same dates, skipped: {$a}';
 $string['nothemesyet'] = 'No theme has been created yet.';
 $string['nomandatorythemes'] = 'No mandatory theme for now.';
 $string['nostages'] = 'No internship declared.';

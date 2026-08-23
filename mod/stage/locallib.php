@@ -539,19 +539,33 @@ function stage_render_answers_readonly(array $questions, array $answers) {
 }
 
 /**
- * Renvoie l'ensemble des couples étudiant/thématique déjà enregistrés pour une activité,
- * pour détecter les doublons lors d'un enregistrement en masse ou d'un import.
+ * Construit la clé identifiant un doublon : même étudiant, même thématique et mêmes dates
+ * de stage (un étudiant peut légitimement refaire la même thématique à une autre période).
+ *
+ * @param int $userid
+ * @param int $themeid
+ * @param int|null $datestart
+ * @param int|null $dateend
+ * @return string
+ */
+function stage_duplicate_key($userid, $themeid, $datestart, $dateend) {
+    return $userid . ':' . $themeid . ':' . (int) $datestart . ':' . (int) $dateend;
+}
+
+/**
+ * Renvoie l'ensemble des stages déjà enregistrés pour une activité (étudiant, thématique et
+ * dates), pour détecter les doublons lors d'un enregistrement en masse ou d'un import.
  *
  * @param int $stageid
- * @return array "userid:themeid" => true
+ * @return array clé stage_duplicate_key() => true
  */
 function stage_get_existing_theme_pairs($stageid) {
     global $DB;
 
     $pairs = [];
-    $rows = $DB->get_records('stage_entry', ['stageid' => $stageid], '', 'id, userid, themeid');
+    $rows = $DB->get_records('stage_entry', ['stageid' => $stageid], '', 'id, userid, themeid, datestart, dateend');
     foreach ($rows as $row) {
-        $pairs[$row->userid . ':' . $row->themeid] = true;
+        $pairs[stage_duplicate_key($row->userid, $row->themeid, $row->datestart, $row->dateend)] = true;
     }
     return $pairs;
 }

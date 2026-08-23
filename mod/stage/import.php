@@ -121,7 +121,10 @@ if (data_submitted() && confirm_sesskey()) {
                     continue;
                 }
 
-                $pairkey = $student->id . ':' . $theme->id;
+                $start = $datestartraw ? strtotime($datestartraw) : false;
+                $end = $dateendraw ? strtotime($dateendraw) : false;
+
+                $pairkey = stage_duplicate_key($student->id, $theme->id, $start ?: null, $end ?: null);
                 if (isset($existingpairs[$pairkey])) {
                     $results->errors[] = get_string('importerrorduplicate', 'mod_stage', (object) [
                         'line' => $linenum, 'email' => $email, 'theme' => $themename,
@@ -129,9 +132,6 @@ if (data_submitted() && confirm_sesskey()) {
                     continue;
                 }
                 $existingpairs[$pairkey] = true;
-
-                $start = $datestartraw ? strtotime($datestartraw) : false;
-                $end = $dateendraw ? strtotime($dateendraw) : false;
 
                 $records[] = (object) [
                     'stageid' => $stage->id,

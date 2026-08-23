@@ -82,7 +82,9 @@ class register_entries extends \external_api {
             if (!isset($enrolled[$entrydata['userid']]) || !isset($validthemeids[$entrydata['themeid']])) {
                 continue;
             }
-            $pairkey = $entrydata['userid'] . ':' . $entrydata['themeid'];
+            $pairkey = stage_duplicate_key(
+                $entrydata['userid'], $entrydata['themeid'], $entrydata['datestart'] ?: null, $entrydata['dateend'] ?: null
+            );
             if (isset($existingpairs[$pairkey])) {
                 $duplicates[] = $entrydata['userid'];
                 continue;

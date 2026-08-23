@@ -87,10 +87,10 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    choisir une thématique, une structure/dates/durée communes, cocher tous
    les étudiants concernés, puis « Enregistrer pour les étudiants cochés » :
    un stage identique est créé pour chacun des étudiants sélectionnés. Si un
-   étudiant coché a déjà un stage enregistré sur cette même thématique, la
-   ligne le concernant est ignorée (pas de doublon créé) et son nom est
-   listé dans un avertissement à l'écran, avec le nombre de stages
-   effectivement créés.
+   étudiant coché a déjà un stage enregistré sur cette même thématique avec
+   les mêmes dates de début/fin, la ligne le concernant est ignorée (pas de
+   doublon créé) et son nom est listé dans un avertissement à l'écran, avec
+   le nombre de stages effectivement créés.
 4. **Modifier un stage déjà enregistré** : depuis la liste, lien « Modifier »
    sur la ligne concernée (thématique, structure, dates, durée déclarée
    restent modifiables par la DEVE à tout moment, y compris après
@@ -133,9 +133,9 @@ fichier préparé dans Excel :
 4. Un stage « Enregistré » est créé pour chaque ligne valide ; les lignes
    dont l'e-mail ou la thématique ne correspond à rien sont signalées sans
    bloquer l'import des autres lignes. Une ligne concernant un étudiant qui
-   a déjà un stage sur la même thématique (déjà en base, ou déjà rencontré
-   plus haut dans le même fichier) est elle aussi ignorée et signalée,
-   plutôt que de créer un doublon.
+   a déjà un stage sur la même thématique et les mêmes dates (déjà en base,
+   ou déjà rencontré plus haut dans le même fichier) est elle aussi ignorée
+   et signalée, plutôt que de créer un doublon.
 
 ## 6. Attribution des enseignants référents (DEVE)
 

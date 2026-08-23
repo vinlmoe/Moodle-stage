@@ -180,8 +180,8 @@ if ($mode === 'bulk') {
         $start = $datestartraw ? strtotime($datestartraw) : null;
         $end = $dateendraw ? strtotime($dateendraw) : null;
 
-        // Un même étudiant a déjà un stage sur cette thématique : on l'écarte plutôt que
-        // de créer un doublon silencieux.
+        // Un même étudiant a déjà un stage sur cette thématique et ces mêmes dates : on
+        // l'écarte plutôt que de créer un doublon silencieux.
         $existing = stage_get_existing_theme_pairs($stage->id);
         $studentsbyid = [];
         foreach ($students as $student) {
@@ -190,13 +190,14 @@ if ($mode === 'bulk') {
 
         $bulkresults = (object) ['created' => 0, 'duplicates' => []];
         foreach ($studentids as $studentid) {
-            if (isset($existing[$studentid . ':' . $themeid])) {
+            $key = stage_duplicate_key($studentid, $themeid, $start, $end);
+            if (isset($existing[$key])) {
                 $bulkresults->duplicates[] = isset($studentsbyid[$studentid])
                     ? fullname($studentsbyid[$studentid]) : "#$studentid";
                 continue;
             }
             stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration);
-            $existing[$studentid . ':' . $themeid] = true;
+            $existing[$key] = true;
             $bulkresults->created++;
         }
     }
