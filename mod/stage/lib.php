@@ -34,6 +34,8 @@ define('STAGE_STATUS_EVAL_ENSEIGNANT', 2);
 define('STAGE_STATUS_VALIDE_DEVE', 3);
 /** Rejeté (par l'enseignant référent ou la DEVE) : nécessite une réinitialisation par la DEVE. */
 define('STAGE_STATUS_NON_VALIDE', -1);
+/** Nombre de lignes par page pour les listes paginées (DEVE / enseignant référent). */
+define('STAGE_LIST_PERPAGE', 40);
 
 /**
  * Returns the list of features supported by this module.

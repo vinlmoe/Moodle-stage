@@ -32,6 +32,7 @@ $studentid = optional_param('studentid', 0, PARAM_INT);
 $search = optional_param('search', '', PARAM_TEXT);
 $tsort = optional_param('tsort', 'student', PARAM_ALPHA);
 $tdir = optional_param('tdir', 'ASC', PARAM_ALPHA);
+$page = optional_param('page', 0, PARAM_INT);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -127,6 +128,8 @@ if (strtoupper($tdir) === 'DESC') {
 if (empty($rows)) {
     echo $OUTPUT->notification(get_string('nostudents', 'mod_stage'), 'info');
 } else {
+    [$rows, $pagingbarhtml] = stage_paginate($rows, $page, $listurl);
+
     $table = new html_table();
     $table->head = [
         stage_sort_header(get_string('student', 'mod_stage'), 'student', $listurl, $sortkey, $tdir),
@@ -155,6 +158,7 @@ if (empty($rows)) {
         ];
     }
     echo html_writer::table($table);
+    echo $pagingbarhtml;
 }
 
 echo $OUTPUT->footer();

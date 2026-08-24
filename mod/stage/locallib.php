@@ -1010,6 +1010,28 @@ function stage_render_list_filters(moodle_url $baseurl, array $themes, $search, 
 }
 
 /**
+ * Découpe un tableau pour l'affichage d'une page, et rend la barre de pagination correspondante.
+ * Le tableau complet est supposé déjà filtré/trié : on ne pagine que l'affichage.
+ *
+ * @param array $items
+ * @param int $page Page courante (0-indexée).
+ * @param moodle_url $baseurl URL de la page, avec les filtres déjà appliqués (le paramètre
+ *                            "page" y est ajouté par la barre de pagination elle-même).
+ * @param int $perpage
+ * @return array [page d'éléments à afficher, html de la barre de pagination]
+ */
+function stage_paginate(array $items, $page, moodle_url $baseurl, $perpage = STAGE_LIST_PERPAGE) {
+    global $OUTPUT;
+
+    $items = array_values($items);
+    $total = count($items);
+    $pageitems = array_slice($items, $page * $perpage, $perpage);
+    $pagingbar = $total > $perpage ? $OUTPUT->render(new paging_bar($total, $page, $perpage, $baseurl)) : '';
+
+    return [$pageitems, $pagingbar];
+}
+
+/**
  * Vue de pilotage DEVE : pour chaque étudiant inscrit, l'avancement des thématiques
  * obligatoires, la durée totale retenue et le nombre de saisies encore en attente.
  *

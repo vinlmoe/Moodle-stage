@@ -33,6 +33,7 @@ $filterthemeid = optional_param('themeid', 0, PARAM_INT);
 $filterstatus = optional_param('status', '', PARAM_RAW);
 $tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
 $tdir = optional_param('tdir', 'ASC', PARAM_ALPHA);
+$page = optional_param('page', 0, PARAM_INT);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -161,11 +162,12 @@ $listurl = new moodle_url($baseurl, [
 ]);
 echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, $filterstatus);
 
-$entries = stage_get_filtered_entries($stage->id,
+$allentries = stage_get_filtered_entries($stage->id,
     ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus, 'statuslt' => STAGE_STATUS_VALIDE_DEVE],
     $tsort, $tdir);
+[$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $listurl);
 
-if (empty($entries)) {
+if (empty($allentries)) {
     echo $OUTPUT->notification(get_string('nopendingstages', 'mod_stage'), 'info');
 } else {
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl]);
@@ -203,6 +205,8 @@ if (empty($entries)) {
     echo html_writer::tag('button', get_string('bulkvalidateselected', 'mod_stage'),
         ['type' => 'submit', 'name' => 'bulkvalidate', 'value' => 1, 'class' => 'btn btn-success mt-2']);
     echo html_writer::end_tag('form');
+
+    echo $pagingbarhtml;
 }
 
 echo $OUTPUT->footer();

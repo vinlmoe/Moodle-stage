@@ -38,6 +38,7 @@ $filterthemeid = optional_param('themeid', 0, PARAM_INT);
 $filterstatus = optional_param('status', '', PARAM_RAW);
 $tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
 $tdir = optional_param('tdir', 'DESC', PARAM_ALPHA);
+$page = optional_param('page', 0, PARAM_INT);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -105,8 +106,9 @@ if ($mode === 'list') {
     ]);
     echo stage_render_list_filters($listurl, $allthemes, $search, $filterthemeid, $filterstatus);
 
-    $entries = stage_get_filtered_entries($stage->id,
+    $allentries = stage_get_filtered_entries($stage->id,
         ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus], $tsort, $tdir);
+    [$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $listurl);
     $students = stage_get_entry_users($entries);
 
     $table = new html_table();
@@ -137,10 +139,11 @@ if ($mode === 'list') {
             $actions,
         ];
     }
-    if (empty($table->data)) {
+    if (empty($allentries)) {
         echo $OUTPUT->notification(get_string('nostages', 'mod_stage'), 'info');
     } else {
         echo html_writer::table($table);
+        echo $pagingbarhtml;
     }
 
     echo $OUTPUT->footer();

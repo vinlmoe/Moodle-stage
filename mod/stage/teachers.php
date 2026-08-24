@@ -35,7 +35,6 @@ $id = required_param('id', PARAM_INT);
 $search = optional_param('search', '', PARAM_TEXT);
 $onlyunassigned = optional_param('onlyunassigned', 0, PARAM_INT);
 $page = optional_param('page', 0, PARAM_INT);
-$perpage = 40;
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -74,11 +73,8 @@ if ($onlyunassigned) {
         return empty($assignments[$student->id]);
     });
 }
-$students = array_values($students);
-$total = count($students);
-$pagestudents = array_slice($students, $page * $perpage, $perpage);
-
 $listurl = new moodle_url($baseurl, ['search' => $search, 'onlyunassigned' => $onlyunassigned]);
+[$pagestudents, $pagingbarhtml] = stage_paginate($students, $page, $listurl);
 
 // N'écrit que les affectations des étudiants réellement affichés sur la page soumise :
 // les autres pages ne sont pas concernées par cette soumission.
@@ -117,7 +113,7 @@ if (empty($allstudents)) {
     echo html_writer::link($baseurl, get_string('resetfilters', 'mod_stage'), ['class' => 'btn btn-link']);
     echo html_writer::end_tag('form');
 
-    if (empty($pagestudents)) {
+    if (empty($students)) {
         echo $OUTPUT->notification(get_string('nostudents', 'mod_stage'), 'info');
     } else {
         echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl]);
@@ -150,8 +146,7 @@ if (empty($allstudents)) {
         ]);
         echo html_writer::end_tag('form');
 
-        $pagingbar = new paging_bar($total, $page, $perpage, $listurl);
-        echo $OUTPUT->render($pagingbar);
+        echo $pagingbarhtml;
     }
 }
 
