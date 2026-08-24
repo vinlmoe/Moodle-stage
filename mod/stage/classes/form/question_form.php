@@ -35,6 +35,7 @@ class question_form extends \moodleform {
      */
     public function definition() {
         $mform = $this->_form;
+        $themes = $this->_customdata['themes'] ?? [];
 
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
@@ -42,6 +43,11 @@ class question_form extends \moodleform {
         $mform->setType('themeid', PARAM_INT);
         $mform->addElement('hidden', 'questionid');
         $mform->setType('questionid', PARAM_INT);
+
+        $mform->addElement('select', 'themeids', get_string('assignedthemes', 'mod_stage'), $themes,
+            ['multiple' => 'multiple', 'size' => min(8, max(3, count($themes)))]);
+        $mform->addRule('themeids', null, 'required', null, 'client');
+        $mform->addHelpButton('themeids', 'assignedthemes', 'mod_stage');
 
         $mform->addElement('select', 'evaltype', get_string('evaltype', 'mod_stage'), [
             'student' => get_string('evaltype_student', 'mod_stage'),
@@ -83,6 +89,9 @@ class question_form extends \moodleform {
         $errors = parent::validation($data, $files);
         if ($data['qtype'] === 'choice' && trim((string) $data['options']) === '') {
             $errors['options'] = get_string('choiceoptionsrequired', 'mod_stage');
+        }
+        if (empty($data['themeids'])) {
+            $errors['themeids'] = get_string('themesrequired', 'mod_stage');
         }
         return $errors;
     }

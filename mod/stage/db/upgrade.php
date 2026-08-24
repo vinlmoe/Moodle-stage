@@ -74,5 +74,36 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082303, 'stage');
     }
 
+    if ($oldversion < 2026082311) {
+        $table = new xmldb_table('stage_question_theme');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('themeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('questionid', XMLDB_KEY_FOREIGN, ['questionid'], 'stage_question', ['id']);
+        $table->add_key('themeid', XMLDB_KEY_FOREIGN, ['themeid'], 'stage_theme', ['id']);
+        $table->add_index('questionid-themeid', XMLDB_INDEX_UNIQUE, ['questionid', 'themeid']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Fait migrer l'affectation thématique existante (une seule) de chaque question vers la
+        // table d'association, qui permet désormais d'en réutiliser une pour plusieurs thématiques.
+        $existing = $DB->get_records('stage_question', null, '', 'id, themeid, timecreated');
+        foreach ($existing as $question) {
+            if (!$DB->record_exists('stage_question_theme',
+                    ['questionid' => $question->id, 'themeid' => $question->themeid])) {
+                $DB->insert_record('stage_question_theme', (object) [
+                    'questionid' => $question->id,
+                    'themeid' => $question->themeid,
+                    'timecreated' => $question->timecreated,
+                ]);
+            }
+        }
+
+        upgrade_mod_savepoint(true, 2026082311, 'stage');
+    }
+
     return true;
 }

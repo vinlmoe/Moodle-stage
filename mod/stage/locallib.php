@@ -357,7 +357,99 @@ function stage_apply_deve_validation(stdClass $entry, $deveuserid, $retaineddura
 function stage_get_questions($themeid, $evaltype) {
     global $DB;
 
-    return $DB->get_records('stage_question', ['themeid' => $themeid, 'evaltype' => $evaltype], 'sortorder ASC, id ASC');
+    $sql = "SELECT q.*
+              FROM {stage_question} q
+              JOIN {stage_question_theme} qt ON qt.questionid = q.id
+             WHERE qt.themeid = :themeid AND q.evaltype = :evaltype
+          ORDER BY q.sortorder ASC, q.id ASC";
+    return $DB->get_records_sql($sql, ['themeid' => $themeid, 'evaltype' => $evaltype]);
+}
+
+/**
+ * Liste les ids des thématiques auxquelles une question est actuellement associée.
+ *
+ * @param int $questionid
+ * @return int[]
+ */
+function stage_get_question_themeids($questionid) {
+    global $DB;
+
+    return array_values($DB->get_fieldset_select('stage_question_theme', 'themeid', 'questionid = ?', [$questionid]));
+}
+
+/**
+ * Remplace les associations thématique(s) <-> question par la liste donnée, ce qui permet de
+ * réutiliser une même question (même intitulé, mêmes options) pour plusieurs thématiques.
+ *
+ * @param int $questionid
+ * @param int[] $themeids
+ * @return void
+ */
+function stage_set_question_themes($questionid, array $themeids) {
+    global $DB;
+
+    $themeids = array_unique(array_map('intval', $themeids));
+
+    if (empty($themeids)) {
+        $DB->delete_records('stage_question_theme', ['questionid' => $questionid]);
+        return;
+    }
+
+    [$insql, $inparams] = $DB->get_in_or_equal($themeids, SQL_PARAMS_NAMED, 'th', false);
+    $DB->delete_records_select('stage_question_theme', "questionid = :questionid AND themeid $insql",
+        array_merge(['questionid' => $questionid], $inparams));
+
+    foreach ($themeids as $themeid) {
+        if (!$DB->record_exists('stage_question_theme', ['questionid' => $questionid, 'themeid' => $themeid])) {
+            $DB->insert_record('stage_question_theme', (object) [
+                'questionid' => $questionid,
+                'themeid' => $themeid,
+                'timecreated' => time(),
+            ]);
+        }
+    }
+}
+
+/**
+ * Supprime l'association d'une question à une thématique donnée. Si la question n'est plus
+ * associée à aucune thématique après cette suppression, elle est entièrement supprimée (avec
+ * les réponses déjà enregistrées pour cette question).
+ *
+ * @param int $questionid
+ * @param int $themeid
+ * @return void
+ */
+function stage_unlink_question_theme($questionid, $themeid) {
+    global $DB;
+
+    $DB->delete_records('stage_question_theme', ['questionid' => $questionid, 'themeid' => $themeid]);
+
+    if (!$DB->record_exists('stage_question_theme', ['questionid' => $questionid])) {
+        $DB->delete_records('stage_answer', ['questionid' => $questionid]);
+        $DB->delete_records('stage_question', ['id' => $questionid]);
+    }
+}
+
+/**
+ * Liste les questions d'un stage déjà définies pour d'autres thématiques que celle donnée, afin
+ * de permettre à la DEVE de réutiliser une question existante plutôt que de la recréer.
+ *
+ * @param int $stageid
+ * @param int $themeid Thématique courante, exclue des associations déjà en place.
+ * @return array
+ */
+function stage_get_reusable_questions($stageid, $themeid) {
+    global $DB;
+
+    $sql = "SELECT DISTINCT q.*
+              FROM {stage_question} q
+              JOIN {stage_question_theme} qt ON qt.questionid = q.id
+             WHERE q.stageid = :stageid
+               AND q.id NOT IN (
+                    SELECT questionid FROM {stage_question_theme} WHERE themeid = :themeid
+               )
+          ORDER BY q.name ASC";
+    return $DB->get_records_sql($sql, ['stageid' => $stageid, 'themeid' => $themeid]);
 }
 
 /**

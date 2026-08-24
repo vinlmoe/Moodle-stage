@@ -109,6 +109,11 @@ function stage_delete_instance($id) {
     }
     $DB->delete_records('stage_entry_teacher', ['stageid' => $id]);
     $DB->delete_records('stage_entry', ['stageid' => $id]);
+    $questionids = $DB->get_fieldset_select('stage_question', 'id', 'stageid = ?', [$id]);
+    if ($questionids) {
+        [$insql, $inparams] = $DB->get_in_or_equal($questionids);
+        $DB->delete_records_select('stage_question_theme', "questionid $insql", $inparams);
+    }
     $DB->delete_records('stage_question', ['stageid' => $id]);
     $DB->delete_records('stage_theme', ['stageid' => $id]);
     $DB->delete_records('stage', ['id' => $id]);
