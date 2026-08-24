@@ -39,7 +39,15 @@ $stage = $DB->get_record('stage', ['id' => $cm->instance], '*', MUST_EXIST);
 
 require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
-require_capability('mod/stage:viewall', $context);
+
+// Accessible à la DEVE (vision de tous les étudiants) et aux enseignants référents (vision
+// restreinte aux étudiants qui leur sont attribués).
+$isdeve = has_capability('mod/stage:viewall', $context);
+$isteacher = has_capability('mod/stage:evaluateteacher', $context);
+if (!$isdeve && !$isteacher) {
+    require_capability('mod/stage:viewall', $context);
+}
+$restrictuserids = $isdeve ? null : array_keys(stage_get_assigned_students($stage->id, $USER->id));
 
 $baseurl = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]);
 $PAGE->set_url($baseurl);
@@ -50,7 +58,7 @@ $PAGE->set_context($context);
 // Situation détaillée d'un étudiant donné.
 if ($studentid) {
     $student = $DB->get_record('user', ['id' => $studentid], '*', MUST_EXIST);
-    if (!is_enrolled($context, $student)) {
+    if (!is_enrolled($context, $student) || ($restrictuserids !== null && !in_array($studentid, $restrictuserids))) {
         throw new moodle_exception('nopermissions', 'error', '', get_string('pilotage', 'mod_stage'));
     }
 
@@ -58,7 +66,7 @@ if ($studentid) {
     echo $OUTPUT->heading(get_string('pilotage', 'mod_stage') . ' - ' . fullname($student));
     echo html_writer::link($baseurl, get_string('back'));
 
-    stage_print_student_dashboard($stage, $student->id);
+    stage_print_student_dashboard($stage, $student->id, $cm, false, true);
 
     echo $OUTPUT->footer();
     exit;
@@ -82,7 +90,7 @@ echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string(
 echo html_writer::link($searchformurl, get_string('resetfilters', 'mod_stage'), ['class' => 'btn btn-link']);
 echo html_writer::end_tag('form');
 
-$rows = stage_get_pilotage_overview($stage->id, $context);
+$rows = stage_get_pilotage_overview($stage->id, $context, $restrictuserids);
 
 if ($search !== '') {
     $needle = core_text::strtolower($search);

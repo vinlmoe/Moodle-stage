@@ -32,6 +32,8 @@ define('STAGE_STATUS_EVAL_ETUDIANT', 1);
 define('STAGE_STATUS_EVAL_ENSEIGNANT', 2);
 /** Validé par la DEVE (validation finale). */
 define('STAGE_STATUS_VALIDE_DEVE', 3);
+/** Rejeté (par l'enseignant référent ou la DEVE) : nécessite une réinitialisation par la DEVE. */
+define('STAGE_STATUS_NON_VALIDE', -1);
 
 /**
  * Returns the list of features supported by this module.

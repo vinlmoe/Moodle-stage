@@ -69,9 +69,11 @@ if (has_capability('mod/stage:evaluateteacher', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
         get_string('teachervalidation', 'mod_stage'));
 }
-if (has_capability('mod/stage:viewall', $context)) {
+if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
         get_string('pilotage', 'mod_stage'));
+}
+if (has_capability('mod/stage:viewall', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
         get_string('exportexcel', 'mod_stage'));
 }
@@ -84,7 +86,7 @@ if (has_capability('mod/stage:submit', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
     echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');
 
-    stage_print_student_dashboard($stage, $USER->id, $cm);
+    stage_print_student_dashboard($stage, $USER->id, $cm, true, false);
 }
 
 echo $OUTPUT->footer();

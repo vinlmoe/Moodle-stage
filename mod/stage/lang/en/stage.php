@@ -65,6 +65,14 @@ $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with 
 $string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
 $string['importerrorduplicate'] = 'Line {$a->line}: "{$a->email}" already has an internship on theme "{$a->theme}" '
     . 'with these same dates, line skipped.';
+$string['importteacherscsv'] = 'Import a CSV file';
+$string['importteacherscsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following '
+    . 'columns, separated by semicolons or commas, with an optional header row: '
+    . '<code>studentemail;teacher1email;teacher2email</code>. The <em>studentemail</em> field must match a student '
+    . 'enrolled on the course, <em>teacher1email</em> a potential referent teacher enrolled on the course; '
+    . '<em>teacher2email</em> is optional (second referent). Each line replaces the student\'s existing assignment.';
+$string['importteachersresult'] = '{$a} student(s) updated successfully.';
+$string['importerrorunknownteacher'] = 'Line {$a->line}: no potential referent teacher with email "{$a->email}".';
 $string['errorduplicateentry'] = 'This student already has an internship registered on this theme with these same dates.';
 $string['registerstage'] = 'Register an internship';
 $string['editstage'] = 'Edit an internship';
@@ -103,6 +111,7 @@ $string['status_enregistre'] = 'Registered';
 $string['status_evaletudiant'] = 'Self-assessed by student';
 $string['status_evalenseignant'] = 'Evaluated by teacher';
 $string['status_validedeve'] = 'Validated';
+$string['status_nonvalide'] = 'Not validated';
 $string['themedone'] = 'Completed';
 $string['themetodo'] = 'To complete';
 
@@ -146,6 +155,17 @@ $string['allthemes'] = 'All themes';
 $string['allstatuses'] = 'All steps';
 $string['resetfilters'] = 'Reset';
 $string['registeredon'] = 'Registered on';
+$string['markinvalid'] = 'Mark as not validated';
+$string['rejectcomment'] = 'Reason for non-validation';
+$string['entrynoteditable'] = 'This entry has already been evaluated and can no longer be edited. '
+    . 'Only the DEVE can reset it to allow a new submission.';
+$string['resetentry'] = 'Reset (allow a new submission)';
+$string['entryreset'] = 'The entry has been reset: a new self-assessment is now possible.';
+$string['confirmresetentry'] = 'Reset this entry? The student and the referent teacher will be able to edit it again.';
+$string['onlyunassigned'] = 'Students without a referent only';
+$string['selfevalnotifsubject'] = 'Internship self-assessment ready for review - {$a}';
+$string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
+    . 'You can view and evaluate this entry here: {$a->url}';
 
 // Messages.
 $string['stagesaved'] = 'Internship saved.';

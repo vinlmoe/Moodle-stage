@@ -58,9 +58,15 @@ if ($entryid) {
     }
 
     $questions = stage_get_questions($entry->themeid, 'teacher');
+    // L'évaluation n'est modifiable que tant qu'elle n'a pas encore été soumise : une fois
+    // évaluée (ou rejetée), seule la DEVE peut réinitialiser la saisie pour la rouvrir.
+    $editable = ((int) $entry->status === STAGE_STATUS_EVAL_ETUDIANT);
 
-    if (data_submitted() && confirm_sesskey()) {
-        if (!empty($questions)) {
+    if ($editable && data_submitted() && confirm_sesskey()) {
+        if (optional_param('rejectstage', '', PARAM_RAW) !== '') {
+            $rejectcomment = optional_param('rejectcomment', '', PARAM_RAW);
+            stage_reject_by_teacher($entry, $USER->id, $rejectcomment);
+        } else if (!empty($questions)) {
             stage_save_answers($entry->id, $questions, stage_get_submitted_answers($questions));
             stage_apply_teacher_eval($entry, $USER->id);
         } else {
@@ -80,6 +86,8 @@ if ($entryid) {
     echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : ' . format_string($theme->name));
     echo html_writer::tag('p', get_string('structure', 'mod_stage') . ' : ' . s($entry->structure));
     echo html_writer::tag('p', get_string('declaredduration', 'mod_stage') . ' : ' . $entry->declaredduration);
+    echo html_writer::tag('p', get_string('status', 'mod_stage') . ' : '
+        . html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status)));
     // Auto-évaluation de l'étudiant : réponses au formulaire défini par la DEVE si
     // des questions existent pour cette thématique, sinon commentaire libre.
     echo $OUTPUT->heading(get_string('studentselfeval', 'mod_stage'), 4);
@@ -88,6 +96,18 @@ if ($entryid) {
         echo stage_render_answers_readonly($studentquestions, stage_get_answers($entry->id));
     } else {
         echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
+    }
+
+    if (!$editable) {
+        echo $OUTPUT->notification(get_string('entrynoteditable', 'mod_stage'), 'info');
+        if (!empty($questions)) {
+            echo stage_render_answers_readonly($questions, stage_get_answers($entry->id));
+        } else if ($entry->teachereval) {
+            echo $OUTPUT->heading(get_string('teachereval', 'mod_stage'), 4);
+            echo html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
+        }
+        echo $OUTPUT->footer();
+        exit;
     }
 
     $formurl = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
@@ -104,7 +124,16 @@ if ($entryid) {
     }
 
     echo html_writer::empty_tag('input', [
-        'type' => 'submit', 'value' => get_string('validate', 'mod_stage'), 'class' => 'btn btn-primary mt-2',
+        'type' => 'submit', 'name' => 'validatestage', 'value' => get_string('validate', 'mod_stage'),
+        'class' => 'btn btn-primary mt-2 mr-2',
+    ]);
+
+    echo html_writer::tag('label', get_string('rejectcomment', 'mod_stage'), ['for' => 'rejectcomment']);
+    echo html_writer::tag('textarea', '',
+        ['name' => 'rejectcomment', 'id' => 'rejectcomment', 'rows' => 3, 'class' => 'form-control']);
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit', 'name' => 'rejectstage', 'value' => get_string('markinvalid', 'mod_stage'),
+        'class' => 'btn btn-danger mt-2',
     ]);
     echo html_writer::end_tag('form');
     echo $OUTPUT->footer();

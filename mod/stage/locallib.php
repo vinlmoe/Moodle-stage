@@ -34,6 +34,8 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
  */
 function stage_status_label($status) {
     switch ((int) $status) {
+        case STAGE_STATUS_NON_VALIDE:
+            return get_string('status_nonvalide', 'mod_stage');
         case STAGE_STATUS_ENREGISTRE:
             return get_string('status_enregistre', 'mod_stage');
         case STAGE_STATUS_EVAL_ETUDIANT:
@@ -55,6 +57,8 @@ function stage_status_label($status) {
  */
 function stage_status_badgeclass($status) {
     switch ((int) $status) {
+        case STAGE_STATUS_NON_VALIDE:
+            return 'badge-danger';
         case STAGE_STATUS_ENREGISTRE:
             return 'badge-secondary';
         case STAGE_STATUS_EVAL_ETUDIANT:
@@ -387,6 +391,110 @@ function stage_apply_deve_validation(stdClass $entry, $deveuserid, $retaineddura
     $entry->status = STAGE_STATUS_VALIDE_DEVE;
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Marque une saisie de stage comme non validée par l'enseignant référent, à la place de la
+ * valider. Comme pour une évaluation normale, la saisie n'est alors plus modifiable par
+ * l'étudiant ni par l'enseignant : seule la DEVE peut la réinitialiser (stage_reset_entry).
+ *
+ * @param stdClass $entry
+ * @param int $teacherid
+ * @param string $comment Motif de non-validation.
+ * @return void
+ */
+function stage_reject_by_teacher(stdClass $entry, $teacherid, $comment) {
+    global $DB;
+
+    $entry->teacherid = $teacherid;
+    $entry->teachereval = $comment;
+    $entry->teachertime = time();
+    $entry->status = STAGE_STATUS_NON_VALIDE;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Marque une saisie de stage comme non validée par la DEVE, à la place de la valider.
+ *
+ * @param stdClass $entry
+ * @param int $deveuserid
+ * @param string $comment Motif de non-validation.
+ * @return void
+ */
+function stage_reject_by_deve(stdClass $entry, $deveuserid, $comment) {
+    global $DB;
+
+    $entry->deveuserid = $deveuserid;
+    $entry->devecomment = $comment;
+    $entry->devetime = time();
+    $entry->status = STAGE_STATUS_NON_VALIDE;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Réinitialise une saisie de stage à son état initial (à faire auto-évaluer), pour permettre à
+ * l'étudiant et à l'enseignant référent de la modifier à nouveau. Action réservée à la DEVE :
+ * l'auto-évaluation et l'évaluation enseignant ne sont pas modifiables une fois soumises, sauf
+ * après ce type de réinitialisation.
+ *
+ * @param stdClass $entry
+ * @return void
+ */
+function stage_reset_entry(stdClass $entry) {
+    global $DB;
+
+    $entry->status = STAGE_STATUS_ENREGISTRE;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Liste les enseignants référents attribués à un étudiant pour un stage donné.
+ *
+ * @param int $stageid
+ * @param int $studentid
+ * @return array Enregistrements user, indexés par id.
+ */
+function stage_get_student_teachers($stageid, $studentid) {
+    global $DB;
+
+    $sql = "SELECT u.*
+              FROM {stage_entry_teacher} et
+              JOIN {user} u ON u.id = et.teacherid
+             WHERE et.stageid = :stageid AND et.studentid = :studentid";
+    return $DB->get_records_sql($sql, ['stageid' => $stageid, 'studentid' => $studentid]);
+}
+
+/**
+ * Envoie un e-mail aux enseignants référents d'un étudiant lorsque celui-ci vient de
+ * s'auto-évaluer, pour qu'ils sachent qu'une saisie attend leur évaluation.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @param stdClass $student
+ * @return void
+ */
+function stage_notify_teachers_selfeval(stdClass $stage, stdClass $cm, stdClass $entry, stdClass $student) {
+    $teachers = stage_get_student_teachers($stage->id, $entry->userid);
+    if (empty($teachers)) {
+        return;
+    }
+
+    $url = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    $subject = get_string('selfevalnotifsubject', 'mod_stage', format_string($stage->name));
+    $noreply = core_user::get_noreply_user();
+
+    foreach ($teachers as $teacher) {
+        $body = get_string('selfevalnotifbody', 'mod_stage', (object) [
+            'student' => fullname($student),
+            'stage' => format_string($stage->name),
+            'url' => $url->out(false),
+        ]);
+        email_to_user($teacher, $noreply, $subject, $body);
+    }
 }
 
 /**
@@ -885,8 +993,8 @@ function stage_render_list_filters(moodle_url $baseurl, array $themes, $search, 
 
     if ($showstatus) {
         $statusoptions = ['' => get_string('allstatuses', 'mod_stage')];
-        foreach ([STAGE_STATUS_ENREGISTRE, STAGE_STATUS_EVAL_ETUDIANT, STAGE_STATUS_EVAL_ENSEIGNANT, STAGE_STATUS_VALIDE_DEVE]
-                as $statuscode) {
+        foreach ([STAGE_STATUS_NON_VALIDE, STAGE_STATUS_ENREGISTRE, STAGE_STATUS_EVAL_ETUDIANT, STAGE_STATUS_EVAL_ENSEIGNANT,
+                STAGE_STATUS_VALIDE_DEVE] as $statuscode) {
             $statusoptions[$statuscode] = stage_status_label($statuscode);
         }
         $out .= html_writer::select($statusoptions, 'status', $status, false, ['class' => 'form-control mr-2']);
@@ -907,10 +1015,16 @@ function stage_render_list_filters(moodle_url $baseurl, array $themes, $search, 
  *
  * @param int $stageid
  * @param context $context
+ * @param array|null $restrictuserids Si fourni, limite aux étudiants de cette liste (enseignant référent).
  * @return array Liste d'objets {user, progress, entrycount, pendingcount, mandatorytotal, mandatorydone, complete}
  */
-function stage_get_pilotage_overview($stageid, context $context) {
+function stage_get_pilotage_overview($stageid, context $context, ?array $restrictuserids = null) {
     $students = stage_get_enrolled_students($context);
+    if ($restrictuserids !== null) {
+        $students = array_filter($students, function($student) use ($restrictuserids) {
+            return in_array($student->id, $restrictuserids);
+        });
+    }
 
     $rows = [];
     foreach ($students as $student) {
@@ -956,10 +1070,14 @@ function stage_get_pilotage_overview($stageid, context $context) {
  *
  * @param stdClass $stage
  * @param int $userid
- * @param stdClass|null $cm Course module, pour afficher le lien d'auto-évaluation de l'étudiant.
+ * @param stdClass|null $cm Course module, pour afficher les liens d'action.
+ * @param bool $selfevallink Affiche le lien de saisie de l'auto-évaluation de l'étudiant
+ *                            (page de l'étudiant lui-même uniquement).
+ * @param bool $detaillink Affiche un lien vers le détail en lecture seule de chaque saisie
+ *                          (tableau de pilotage DEVE / enseignant référent).
  * @return void
  */
-function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
+function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $selfevallink = false, $detaillink = false) {
     global $OUTPUT;
 
     $progress = stage_get_student_progress($stage->id, $userid);
@@ -1016,7 +1134,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
         get_string('retainedduration', 'mod_stage'),
         get_string('status', 'mod_stage'),
     ];
-    if ($cm) {
+    if ($cm && ($selfevallink || $detaillink)) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
     foreach ($entries as $entry) {
@@ -1031,11 +1149,21 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
             $entry->retainedduration,
             $badge,
         ];
-        if ($cm) {
-            $row[] = html_writer::link(
-                new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                get_string('selfeval', 'mod_stage')
-            );
+        if ($cm && ($selfevallink || $detaillink)) {
+            $actions = [];
+            if ($selfevallink) {
+                $actions[] = html_writer::link(
+                    new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                    get_string('selfeval', 'mod_stage')
+                );
+            }
+            if ($detaillink) {
+                $actions[] = html_writer::link(
+                    new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                    get_string('viewdetails', 'mod_stage')
+                );
+            }
+            $row[] = implode(' | ', $actions);
         }
         $table->data[] = $row;
     }

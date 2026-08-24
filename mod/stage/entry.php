@@ -57,10 +57,15 @@ $PAGE->set_context($context);
 
 $questions = stage_get_questions($entry->themeid, 'student');
 
+// L'auto-évaluation n'est modifiable que tant qu'elle n'a pas encore été soumise : une fois
+// soumise (ou la saisie rejetée), seule la DEVE peut réinitialiser la saisie pour la rouvrir.
+$editable = ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
+
 // Traite la soumission du formulaire dynamique avant tout affichage, pour permettre la redirection.
-if (!empty($questions) && data_submitted() && confirm_sesskey()) {
+if ($editable && !empty($questions) && data_submitted() && confirm_sesskey()) {
     stage_save_answers($entry->id, $questions, stage_get_submitted_answers($questions));
     stage_apply_student_eval($entry);
+    stage_notify_teachers_selfeval($stage, $cm, $entry, $USER);
 
     redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
         get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
@@ -69,7 +74,7 @@ if (!empty($questions) && data_submitted() && confirm_sesskey()) {
 // Formulaire de repli (commentaire libre) si aucune question n'est définie pour la thématique :
 // construit et traité avant tout affichage, pour permettre la redirection après soumission.
 $mform = null;
-if (empty($questions)) {
+if ($editable && empty($questions)) {
     $customdata = ['themes' => stage_get_themes($stage->id, true), 'locked' => true];
     $mform = new entry_form(null, $customdata);
 
@@ -89,6 +94,7 @@ if (empty($questions)) {
     } else if ($data = $mform->get_data()) {
         $selfeval = is_array($data->studentselfeval) ? $data->studentselfeval['text'] : $data->studentselfeval;
         stage_apply_student_eval($entry, $selfeval);
+        stage_notify_teachers_selfeval($stage, $cm, $entry, $USER);
 
         redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
             get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
@@ -97,6 +103,18 @@ if (empty($questions)) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('selfeval', 'mod_stage'));
+
+if (!$editable) {
+    echo $OUTPUT->notification(get_string('entrynoteditable', 'mod_stage'), 'info');
+    $answers = stage_get_answers($entry->id);
+    if (!empty($questions)) {
+        echo stage_render_answers_readonly($questions, $answers);
+    } else if ($entry->studentselfeval) {
+        echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
+    }
+    echo $OUTPUT->footer();
+    exit;
+}
 
 if (!empty($questions)) {
     // Formulaire dynamique défini par la DEVE pour cette thématique.

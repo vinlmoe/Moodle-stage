@@ -65,6 +65,15 @@ $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit
 $string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
 $string['importerrorduplicate'] = 'Ligne {$a->line} : "{$a->email}" a déjà un stage sur la thématique "{$a->theme}" '
     . 'avec ces mêmes dates, ligne ignorée.';
+$string['importteacherscsv'] = 'Importer un fichier CSV';
+$string['importteacherscsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec "
+    . 'les colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '
+    . '<code>studentemail;teacher1email;teacher2email</code>. Le champ <em>studentemail</em> doit correspondre à un '
+    . "étudiant inscrit au cours, <em>teacher1email</em> à un enseignant référent potentiel inscrit au cours ; "
+    . '<em>teacher2email</em> est facultatif (second référent). Chaque ligne remplace l\'attribution existante de '
+    . "l'étudiant.";
+$string['importteachersresult'] = '{$a} étudiant(s) mis à jour avec succès.';
+$string['importerrorunknownteacher'] = 'Ligne {$a->line} : aucun enseignant référent potentiel avec l\'adresse "{$a->email}".';
 $string['errorduplicateentry'] = 'Cet étudiant a déjà un stage enregistré sur cette thématique avec ces mêmes dates.';
 $string['registerstage'] = 'Enregistrer un stage';
 $string['editstage'] = 'Modifier un stage';
@@ -103,6 +112,7 @@ $string['status_enregistre'] = 'Enregistré';
 $string['status_evaletudiant'] = 'Évalué par l\'étudiant';
 $string['status_evalenseignant'] = "Évalué par l'enseignant";
 $string['status_validedeve'] = 'Validé DEVE';
+$string['status_nonvalide'] = 'Non validé';
 $string['themedone'] = 'Complété';
 $string['themetodo'] = 'À compléter';
 
@@ -146,6 +156,17 @@ $string['allthemes'] = 'Toutes les thématiques';
 $string['allstatuses'] = 'Toutes les étapes';
 $string['resetfilters'] = 'Réinitialiser';
 $string['registeredon'] = "Date d'enregistrement";
+$string['markinvalid'] = 'Marquer non validé';
+$string['rejectcomment'] = 'Motif de non-validation';
+$string['entrynoteditable'] = "Cette saisie a déjà été évaluée et n'est plus modifiable. "
+    . "Seule la DEVE peut la réinitialiser pour permettre une nouvelle saisie.";
+$string['resetentry'] = 'Réinitialiser (autoriser une nouvelle saisie)';
+$string['entryreset'] = 'La saisie a été réinitialisée : une nouvelle auto-évaluation est possible.';
+$string['confirmresetentry'] = "Réinitialiser cette saisie ? L'étudiant et l'enseignant référent pourront à nouveau la modifier.";
+$string['onlyunassigned'] = 'Étudiants sans référent uniquement';
+$string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}';
+$string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
+    . "Vous pouvez consulter et évaluer cette saisie ici : {\$a->url}";
 
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';

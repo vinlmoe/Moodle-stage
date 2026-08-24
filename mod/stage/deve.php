@@ -30,6 +30,7 @@ $id = required_param('id', PARAM_INT);
 $entryid = optional_param('entryid', 0, PARAM_INT);
 $search = optional_param('search', '', PARAM_TEXT);
 $filterthemeid = optional_param('themeid', 0, PARAM_INT);
+$filterstatus = optional_param('status', '', PARAM_RAW);
 $tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
 $tdir = optional_param('tdir', 'ASC', PARAM_ALPHA);
 
@@ -47,14 +48,27 @@ $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('devevalidatio
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
+// Réinitialisation d'une saisie (DEVE uniquement) : redonne la main à l'étudiant et à
+// l'enseignant référent pour une nouvelle auto-évaluation / évaluation.
+if ($entryid && optional_param('resetentry', 0, PARAM_INT) && confirm_sesskey()) {
+    $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
+    stage_reset_entry($entry);
+    redirect($baseurl, get_string('entryreset', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Validation unitaire (formulaire dédié à une saisie).
 if ($entryid) {
     $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
 
     if (data_submitted() && confirm_sesskey()) {
-        $retained = optional_param('retainedduration', 0, PARAM_INT);
-        $comment = optional_param('devecomment', '', PARAM_RAW);
-        stage_apply_deve_validation($entry, $USER->id, $retained, $comment);
+        if (optional_param('rejectstage', '', PARAM_RAW) !== '') {
+            $comment = optional_param('devecomment', '', PARAM_RAW);
+            stage_reject_by_deve($entry, $USER->id, $comment);
+        } else {
+            $retained = optional_param('retainedduration', 0, PARAM_INT);
+            $comment = optional_param('devecomment', '', PARAM_RAW);
+            stage_apply_deve_validation($entry, $USER->id, $retained, $comment);
+        }
         redirect($baseurl, get_string('evalsaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
 
@@ -67,6 +81,8 @@ if ($entryid) {
 
     echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : ' . format_string($theme->name));
     echo html_writer::tag('p', get_string('declaredduration', 'mod_stage') . ' : ' . $entry->declaredduration);
+    echo html_writer::tag('p', get_string('status', 'mod_stage') . ' : '
+        . html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status)));
 
     // Les deux évaluations amont, telles qu'elles ont été saisies (questions ou commentaire libre).
     $answers = stage_get_answers($entry->id);
@@ -99,9 +115,23 @@ if ($entryid) {
     echo html_writer::tag('textarea', s($entry->devecomment),
         ['name' => 'devecomment', 'id' => 'devecomment', 'rows' => 4, 'class' => 'form-control']);
     echo html_writer::empty_tag('input', [
-        'type' => 'submit', 'value' => get_string('validate', 'mod_stage'), 'class' => 'btn btn-primary mt-2',
+        'type' => 'submit', 'name' => 'validatestage', 'value' => get_string('validate', 'mod_stage'),
+        'class' => 'btn btn-primary mt-2 mr-2',
+    ]);
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit', 'name' => 'rejectstage', 'value' => get_string('markinvalid', 'mod_stage'),
+        'class' => 'btn btn-danger mt-2',
     ]);
     echo html_writer::end_tag('form');
+
+    $reseturl = new moodle_url('/mod/stage/deve.php',
+        ['id' => $cm->id, 'entryid' => $entry->id, 'resetentry' => 1, 'sesskey' => sesskey()]);
+    echo html_writer::div(
+        html_writer::link($reseturl, get_string('resetentry', 'mod_stage'),
+            ['class' => 'btn btn-outline-secondary mt-3',
+                'onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');"]),
+    );
+
     echo $OUTPUT->footer();
     exit;
 }
@@ -127,12 +157,13 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 $themes = stage_get_themes($stage->id);
 
 $listurl = new moodle_url($baseurl, [
-    'search' => $search, 'themeid' => $filterthemeid, 'tsort' => $tsort, 'tdir' => $tdir,
+    'search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus, 'tsort' => $tsort, 'tdir' => $tdir,
 ]);
-echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, '', false);
+echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, $filterstatus);
 
 $entries = stage_get_filtered_entries($stage->id,
-    ['search' => $search, 'themeid' => $filterthemeid, 'statuslt' => STAGE_STATUS_VALIDE_DEVE], $tsort, $tdir);
+    ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus, 'statuslt' => STAGE_STATUS_VALIDE_DEVE],
+    $tsort, $tdir);
 
 if (empty($entries)) {
     echo $OUTPUT->notification(get_string('nopendingstages', 'mod_stage'), 'info');

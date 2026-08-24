@@ -69,6 +69,13 @@ if (empty($students)) {
     exit;
 }
 
+// Réinitialisation d'une saisie : redonne la main à l'étudiant et à l'enseignant référent.
+if ($mode === 'reset' && $entryid && confirm_sesskey()) {
+    $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
+    stage_reset_entry($entry);
+    redirect($baseurl, get_string('entryreset', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Liste de toutes les saisies existantes, avec accès à l'édition.
 if ($mode === 'list') {
     echo $OUTPUT->header();
@@ -115,12 +122,19 @@ if ($mode === 'list') {
         $themename = isset($allthemes[$entry->themeid]) ? format_string($allthemes[$entry->themeid]->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
+        $actions = html_writer::link($editurl, get_string('edit'));
+        if ((int) $entry->status !== STAGE_STATUS_ENREGISTRE) {
+            $reseturl = new moodle_url('/mod/stage/register.php',
+                ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]);
+            $actions .= ' | ' . html_writer::link($reseturl, get_string('resetentry', 'mod_stage'),
+                ['onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');"]);
+        }
         $table->data[] = [
             $student ? fullname($student) : '-',
             $themename,
             $entry->declaredduration,
             $badge,
-            html_writer::link($editurl, get_string('edit')),
+            $actions,
         ];
     }
     if (empty($table->data)) {

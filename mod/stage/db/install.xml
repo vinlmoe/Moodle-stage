@@ -51,7 +51,7 @@
         <FIELD NAME="dateend" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="declaredduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée déclarée par l'étudiant en jours"/>
         <FIELD NAME="retainedduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée retenue après validation, en jours"/>
-        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="0 enregistre 1 eval etudiant 2 eval enseignant 3 valide deve"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="-1 non valide, 0 enregistre 1 eval etudiant 2 eval enseignant 3 valide deve"/>
         <FIELD NAME="studentselfeval" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Enseignant ayant evalue"/>
         <FIELD NAME="teachereval" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
