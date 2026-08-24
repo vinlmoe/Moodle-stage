@@ -210,3 +210,33 @@ Pour les activer et les utiliser depuis un système externe :
 Ce point d'entrée permet d'automatiser l'enregistrement des stages depuis un
 outil externe (script, ENT, tableur converti côté client) sans passer par
 l'import CSV manuel.
+
+## 10. Générer un lot d'utilisateurs de test
+
+Pour explorer rapidement le module sans saisie manuelle, un script CLI crée
+un lot d'étudiants, d'enseignants référents et un utilisateur DEVE, les
+inscrit dans un cours existant et, si on lui indique l'activité, prépare un
+jeu de données de démonstration (thématiques par défaut si aucune n'existe,
+attribution des référents, stages répartis sur les quatre statuts).
+
+```bash
+# Comptes de test seuls, inscrits dans le cours id=2 :
+php mod/stage/cli/create_test_data.php --courseid=2
+
+# Comptes + jeu de données complet sur l'activité id=5 (cmid), avec 20
+# étudiants et 4 enseignants référents :
+php mod/stage/cli/create_test_data.php --courseid=2 --cmid=5 --students=20 --teachers=4
+
+# Aide et liste des options :
+php mod/stage/cli/create_test_data.php --help
+```
+
+Les comptes générés (`stagetest_etu01`, `stagetest_ens01`, `stagetest_deve`,
+etc., préfixe personnalisable avec `--prefix`) partagent le même mot de
+passe, affiché en fin d'exécution (option `--password` pour le personnaliser
+selon la politique de mots de passe du site). Relancer le script est sans
+risque : les comptes déjà existants sont réutilisés plutôt que dupliqués.
+
+**À réserver à un environnement de test** : ce script crée de vrais comptes
+avec un mot de passe commun et ne doit pas être exécuté sur une instance de
+production.
