@@ -62,7 +62,9 @@ if ($action === 'delete' && $questionid) {
 
 // Ajout / édition d'une question.
 if ($action === 'edit') {
-    $mform = new question_form($baseurl);
+    $formurl = new moodle_url('/mod/stage/questions.php',
+        ['id' => $cm->id, 'themeid' => $theme->id, 'action' => 'edit', 'questionid' => $questionid]);
+    $mform = new question_form($formurl);
     $question = null;
     if ($questionid) {
         $question = $DB->get_record('stage_question', ['id' => $questionid, 'themeid' => $theme->id], '*', MUST_EXIST);
