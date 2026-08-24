@@ -28,6 +28,11 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $entryid = optional_param('entryid', 0, PARAM_INT);
+$search = optional_param('search', '', PARAM_TEXT);
+$filterthemeid = optional_param('themeid', 0, PARAM_INT);
+$filterstatus = optional_param('status', '', PARAM_RAW);
+$tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
+$tdir = optional_param('tdir', 'DESC', PARAM_ALPHA);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -114,18 +119,22 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 if (empty($assignedids)) {
     echo $OUTPUT->notification(get_string('noassignedstudents', 'mod_stage'), 'info');
 } else {
-    list($insql, $params) = $DB->get_in_or_equal($assignedids);
-    $params[] = $stage->id;
-    $entries = $DB->get_records_select('stage_entry', "userid $insql AND stageid = ?", $params, 'timecreated DESC');
-
     $themes = stage_get_themes($stage->id);
+
+    $listurl = new moodle_url($baseurl, [
+        'search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus, 'tsort' => $tsort, 'tdir' => $tdir,
+    ]);
+    echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, $filterstatus);
+
+    $entries = stage_get_filtered_entries($stage->id,
+        ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus], $tsort, $tdir, $assignedids);
 
     $table = new html_table();
     $table->head = [
-        get_string('student', 'mod_stage'),
-        get_string('theme', 'mod_stage'),
-        get_string('declaredduration', 'mod_stage'),
-        get_string('status', 'mod_stage'),
+        stage_sort_header(get_string('student', 'mod_stage'), 'student', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('theme', 'mod_stage'), 'theme', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('declaredduration', 'mod_stage'), 'duration', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('status', 'mod_stage'), 'status', $listurl, $tsort, $tdir),
         get_string('actions', 'mod_stage'),
     ];
     $students = stage_get_entry_users($entries);

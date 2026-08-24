@@ -28,6 +28,10 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $entryid = optional_param('entryid', 0, PARAM_INT);
+$search = optional_param('search', '', PARAM_TEXT);
+$filterthemeid = optional_param('themeid', 0, PARAM_INT);
+$tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
+$tdir = optional_param('tdir', 'ASC', PARAM_ALPHA);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -120,9 +124,15 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('devevalidation', 'mod_stage'));
 echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
 
-$entries = $DB->get_records_select('stage_entry', 'stageid = ? AND status < ?',
-    [$stage->id, STAGE_STATUS_VALIDE_DEVE], 'timecreated ASC');
 $themes = stage_get_themes($stage->id);
+
+$listurl = new moodle_url($baseurl, [
+    'search' => $search, 'themeid' => $filterthemeid, 'tsort' => $tsort, 'tdir' => $tdir,
+]);
+echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, '', false);
+
+$entries = stage_get_filtered_entries($stage->id,
+    ['search' => $search, 'themeid' => $filterthemeid, 'statuslt' => STAGE_STATUS_VALIDE_DEVE], $tsort, $tdir);
 
 if (empty($entries)) {
     echo $OUTPUT->notification(get_string('nopendingstages', 'mod_stage'), 'info');
@@ -134,9 +144,9 @@ if (empty($entries)) {
     $table->head = [
         html_writer::checkbox('selectall', 1, false, get_string('selectall', 'mod_stage'),
             ['onclick' => 'this.form.querySelectorAll(".stageselect").forEach(c=>c.checked=this.checked)']),
-        get_string('student', 'mod_stage'),
-        get_string('theme', 'mod_stage'),
-        get_string('declaredduration', 'mod_stage'),
+        stage_sort_header(get_string('student', 'mod_stage'), 'student', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('theme', 'mod_stage'), 'theme', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('declaredduration', 'mod_stage'), 'duration', $listurl, $tsort, $tdir),
         get_string('status', 'mod_stage'),
         get_string('actions', 'mod_stage'),
     ];

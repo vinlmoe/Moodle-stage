@@ -134,6 +134,15 @@ $string['evaluate'] = 'Évaluer';
 $string['validate'] = 'Valider';
 $string['selectall'] = 'Tout sélectionner';
 $string['bulkvalidateselected'] = 'Valider la sélection';
+$string['pilotage'] = 'Tableau de pilotage';
+$string['viewdetails'] = 'Voir le détail';
+$string['pendingstages'] = 'Stages en attente';
+$string['totalretainedshort'] = 'Durée totale retenue';
+$string['searchstudent'] = "Rechercher un étudiant...";
+$string['allthemes'] = 'Toutes les thématiques';
+$string['allstatuses'] = 'Toutes les étapes';
+$string['resetfilters'] = 'Réinitialiser';
+$string['registeredon'] = "Date d'enregistrement";
 
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';

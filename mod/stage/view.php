@@ -70,6 +70,8 @@ if (has_capability('mod/stage:evaluateteacher', $context)) {
         get_string('teachervalidation', 'mod_stage'));
 }
 if (has_capability('mod/stage:viewall', $context)) {
+    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
+        get_string('pilotage', 'mod_stage'));
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
         get_string('exportexcel', 'mod_stage'));
 }
@@ -82,72 +84,7 @@ if (has_capability('mod/stage:submit', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
     echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');
 
-    $progress = stage_get_student_progress($stage->id, $USER->id);
-
-    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
-    $table = new html_table();
-    $table->head = [
-        get_string('theme', 'mod_stage'),
-        get_string('requiredduration', 'mod_stage'),
-        get_string('retainedduration', 'mod_stage'),
-        get_string('status', 'mod_stage'),
-    ];
-    foreach ($progress->themes as $t) {
-        if (!$t->theme->mandatory) {
-            continue;
-        }
-        $status = $t->done
-            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-        $table->data[] = [
-            format_string($t->theme->name),
-            $t->theme->requiredduration,
-            $t->retained,
-            $status,
-        ];
-    }
-    if (empty($table->data)) {
-        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
-    } else {
-        echo html_writer::table($table);
-    }
-
-    echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);
-    $themes = stage_get_themes($stage->id);
-    $entries = stage_get_student_entries($stage->id, $USER->id);
-
-    $table = new html_table();
-    $table->head = [
-        get_string('theme', 'mod_stage'),
-        get_string('structure', 'mod_stage'),
-        get_string('declaredduration', 'mod_stage'),
-        get_string('retainedduration', 'mod_stage'),
-        get_string('status', 'mod_stage'),
-        get_string('actions', 'mod_stage'),
-    ];
-    foreach ($entries as $entry) {
-        $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
-        $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
-        $actions = html_writer::link(
-            new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-            get_string('selfeval', 'mod_stage')
-        );
-        $table->data[] = [
-            $themename,
-            $entry->structure,
-            $entry->declaredduration,
-            $entry->retainedduration,
-            $badge,
-            $actions,
-        ];
-    }
-    if (empty($table->data)) {
-        echo $OUTPUT->notification(get_string('nostages', 'mod_stage'), 'info');
-    } else {
-        echo html_writer::table($table);
-    }
-
-    echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
+    stage_print_student_dashboard($stage, $USER->id, $cm);
 }
 
 echo $OUTPUT->footer();

@@ -693,3 +693,300 @@ function stage_entry_is_duplicate($stageid, $userid, $themeid, $datestart, $date
 
     return $DB->record_exists_select('stage_entry', $sql, $params);
 }
+
+/**
+ * Colonnes disponibles pour le tri des listes de saisies de stage (DEVE / enseignant).
+ *
+ * @return array clé de tri => libellé
+ */
+function stage_entry_sort_options() {
+    return [
+        'student' => get_string('student', 'mod_stage'),
+        'theme' => get_string('theme', 'mod_stage'),
+        'status' => get_string('status', 'mod_stage'),
+        'duration' => get_string('declaredduration', 'mod_stage'),
+        'timecreated' => get_string('registeredon', 'mod_stage'),
+    ];
+}
+
+/**
+ * Recherche/tri des saisies de stage, pour les listes de la DEVE et des enseignants référents.
+ *
+ * @param int $stageid
+ * @param array $filters ['search' => nom étudiant, 'themeid' => int, 'status' => int]
+ * @param string $sort Une des clés de stage_entry_sort_options().
+ * @param string $dir 'ASC' ou 'DESC'.
+ * @param array|null $restrictuserids Si fourni, limite aux saisies de ces étudiants (enseignant référent).
+ * @return array
+ */
+function stage_get_filtered_entries($stageid, array $filters = [], $sort = 'timecreated', $dir = 'DESC',
+        ?array $restrictuserids = null) {
+    global $DB;
+
+    if ($restrictuserids !== null && empty($restrictuserids)) {
+        return [];
+    }
+
+    $params = ['stageid' => $stageid];
+    $where = ['e.stageid = :stageid'];
+
+    if (!empty($filters['search'])) {
+        $fullname = $DB->sql_concat('u.firstname', "' '", 'u.lastname');
+        $where[] = $DB->sql_like($fullname, ':search', false, false);
+        $params['search'] = '%' . $DB->sql_like_escape($filters['search']) . '%';
+    }
+    if (!empty($filters['themeid'])) {
+        $where[] = 'e.themeid = :themeid';
+        $params['themeid'] = (int) $filters['themeid'];
+    }
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $where[] = 'e.status = :status';
+        $params['status'] = (int) $filters['status'];
+    }
+    if (isset($filters['statuslt']) && $filters['statuslt'] !== '') {
+        $where[] = 'e.status < :statuslt';
+        $params['statuslt'] = (int) $filters['statuslt'];
+    }
+    if ($restrictuserids !== null) {
+        [$insql, $inparams] = $DB->get_in_or_equal($restrictuserids, SQL_PARAMS_NAMED, 'ru');
+        $where[] = "e.userid $insql";
+        $params += $inparams;
+    }
+
+    $sortmap = [
+        'student' => 'u.lastname, u.firstname',
+        'theme' => 't.name',
+        'status' => 'e.status',
+        'duration' => 'e.declaredduration',
+        'timecreated' => 'e.timecreated',
+    ];
+    $sortcolumn = $sortmap[$sort] ?? $sortmap['timecreated'];
+    $dir = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+    $sql = "SELECT e.*
+              FROM {stage_entry} e
+              JOIN {user} u ON u.id = e.userid
+         LEFT JOIN {stage_theme} t ON t.id = e.themeid
+             WHERE " . implode(' AND ', $where) . "
+          ORDER BY $sortcolumn $dir, e.id $dir";
+
+    return $DB->get_records_sql($sql, $params);
+}
+
+/**
+ * Construit l'URL de tri (nouvelle colonne ou inversion du sens) pour un en-tête de tableau.
+ *
+ * @param moodle_url $baseurl
+ * @param string $key
+ * @param string $currentsort
+ * @param string $currentdir
+ * @return moodle_url
+ */
+function stage_sort_url(moodle_url $baseurl, $key, $currentsort, $currentdir) {
+    $newdir = ($currentsort === $key && strtoupper($currentdir) === 'ASC') ? 'DESC' : 'ASC';
+    $url = new moodle_url($baseurl);
+    $url->params(['tsort' => $key, 'tdir' => $newdir]);
+    return $url;
+}
+
+/**
+ * Rend un lien d'en-tête de colonne triable, avec indicateur de sens si c'est la colonne active.
+ *
+ * @param string $label
+ * @param string $key
+ * @param moodle_url $baseurl
+ * @param string $currentsort
+ * @param string $currentdir
+ * @return string
+ */
+function stage_sort_header($label, $key, moodle_url $baseurl, $currentsort, $currentdir) {
+    $indicator = '';
+    if ($currentsort === $key) {
+        $indicator = ' ' . (strtoupper($currentdir) === 'ASC' ? '▲' : '▼');
+    }
+    return html_writer::link(stage_sort_url($baseurl, $key, $currentsort, $currentdir), $label . $indicator);
+}
+
+/**
+ * Rend le formulaire de recherche/filtre (nom étudiant, thématique, étape de validation)
+ * au-dessus des listes de saisies de stage. Les autres paramètres présents dans $baseurl
+ * (id, mode...) sont préservés en champs cachés.
+ *
+ * @param moodle_url $baseurl URL courante de la page, avec les valeurs de filtre déjà appliquées.
+ * @param array $themes Thématiques proposées dans le filtre.
+ * @param string $search
+ * @param int $themeid
+ * @param string $status
+ * @param bool $showstatus Affiche ou non le filtre par étape de validation (inutile sur une
+ *                          liste déjà restreinte à un sous-ensemble de statuts, ex. saisies en attente DEVE).
+ * @return string
+ */
+function stage_render_list_filters(moodle_url $baseurl, array $themes, $search, $themeid, $status, $showstatus = true) {
+    $formurl = new moodle_url($baseurl);
+    $formurl->remove_params('search', 'themeid', 'status', 'tsort', 'tdir');
+
+    $out = html_writer::start_tag('form', ['method' => 'get', 'action' => $formurl, 'class' => 'form-inline stage-filters mb-3']);
+    foreach ($formurl->params() as $key => $value) {
+        $out .= html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $key, 'value' => $value]);
+    }
+    $out .= html_writer::empty_tag('input', [
+        'type' => 'text', 'name' => 'search', 'value' => s($search),
+        'placeholder' => get_string('searchstudent', 'mod_stage'), 'class' => 'form-control mr-2',
+    ]);
+
+    $themeoptions = [0 => get_string('allthemes', 'mod_stage')];
+    foreach ($themes as $theme) {
+        $themeoptions[$theme->id] = format_string($theme->name);
+    }
+    $out .= html_writer::select($themeoptions, 'themeid', $themeid, false, ['class' => 'form-control mr-2']);
+
+    if ($showstatus) {
+        $statusoptions = ['' => get_string('allstatuses', 'mod_stage')];
+        foreach ([STAGE_STATUS_ENREGISTRE, STAGE_STATUS_EVAL_ETUDIANT, STAGE_STATUS_EVAL_ENSEIGNANT, STAGE_STATUS_VALIDE_DEVE]
+                as $statuscode) {
+            $statusoptions[$statuscode] = stage_status_label($statuscode);
+        }
+        $out .= html_writer::select($statusoptions, 'status', $status, false, ['class' => 'form-control mr-2']);
+    }
+
+    $out .= html_writer::empty_tag('input', [
+        'type' => 'submit', 'value' => get_string('search'), 'class' => 'btn btn-secondary mr-2',
+    ]);
+    $out .= html_writer::link($formurl, get_string('resetfilters', 'mod_stage'), ['class' => 'btn btn-link']);
+    $out .= html_writer::end_tag('form');
+
+    return $out;
+}
+
+/**
+ * Vue de pilotage DEVE : pour chaque étudiant inscrit, l'avancement des thématiques
+ * obligatoires, la durée totale retenue et le nombre de saisies encore en attente.
+ *
+ * @param int $stageid
+ * @param context $context
+ * @return array Liste d'objets {user, progress, entrycount, pendingcount, mandatorytotal, mandatorydone, complete}
+ */
+function stage_get_pilotage_overview($stageid, context $context) {
+    $students = stage_get_enrolled_students($context);
+
+    $rows = [];
+    foreach ($students as $student) {
+        $progress = stage_get_student_progress($stageid, $student->id);
+        $entries = stage_get_student_entries($stageid, $student->id);
+
+        $pending = 0;
+        foreach ($entries as $entry) {
+            if ($entry->status < STAGE_STATUS_VALIDE_DEVE) {
+                $pending++;
+            }
+        }
+
+        $mandatorytotal = 0;
+        $mandatorydone = 0;
+        foreach ($progress->themes as $t) {
+            if ($t->theme->mandatory) {
+                $mandatorytotal++;
+                if ($t->done) {
+                    $mandatorydone++;
+                }
+            }
+        }
+
+        $rows[] = (object) [
+            'user' => $student,
+            'progress' => $progress,
+            'entrycount' => count($entries),
+            'pendingcount' => $pending,
+            'mandatorytotal' => $mandatorytotal,
+            'mandatorydone' => $mandatorydone,
+            'complete' => $mandatorytotal > 0 && $mandatorydone === $mandatorytotal,
+        ];
+    }
+
+    return $rows;
+}
+
+/**
+ * Affiche l'avancement d'un étudiant (thématiques obligatoires et liste de ses saisies).
+ * Utilisé par la page de l'étudiant lui-même (avec lien de saisie de l'auto-évaluation, si
+ * $cm est fourni) et par le tableau de pilotage de la DEVE (lecture seule).
+ *
+ * @param stdClass $stage
+ * @param int $userid
+ * @param stdClass|null $cm Course module, pour afficher le lien d'auto-évaluation de l'étudiant.
+ * @return void
+ */
+function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
+    global $OUTPUT;
+
+    $progress = stage_get_student_progress($stage->id, $userid);
+
+    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
+    $table = new html_table();
+    $table->head = [
+        get_string('theme', 'mod_stage'),
+        get_string('requiredduration', 'mod_stage'),
+        get_string('retainedduration', 'mod_stage'),
+        get_string('status', 'mod_stage'),
+    ];
+    foreach ($progress->themes as $t) {
+        if (!$t->theme->mandatory) {
+            continue;
+        }
+        $status = $t->done
+            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+        $table->data[] = [
+            format_string($t->theme->name),
+            $t->theme->requiredduration,
+            $t->retained,
+            $status,
+        ];
+    }
+    if (empty($table->data)) {
+        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
+    } else {
+        echo html_writer::table($table);
+    }
+
+    echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);
+    $themes = stage_get_themes($stage->id);
+    $entries = stage_get_student_entries($stage->id, $userid);
+
+    $table = new html_table();
+    $table->head = [
+        get_string('theme', 'mod_stage'),
+        get_string('structure', 'mod_stage'),
+        get_string('declaredduration', 'mod_stage'),
+        get_string('retainedduration', 'mod_stage'),
+        get_string('status', 'mod_stage'),
+    ];
+    if ($cm) {
+        $table->head[] = get_string('actions', 'mod_stage');
+    }
+    foreach ($entries as $entry) {
+        $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
+        $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
+        $row = [
+            $themename,
+            $entry->structure,
+            $entry->declaredduration,
+            $entry->retainedduration,
+            $badge,
+        ];
+        if ($cm) {
+            $row[] = html_writer::link(
+                new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                get_string('selfeval', 'mod_stage')
+            );
+        }
+        $table->data[] = $row;
+    }
+    if (empty($table->data)) {
+        echo $OUTPUT->notification(get_string('nostages', 'mod_stage'), 'info');
+    } else {
+        echo html_writer::table($table);
+    }
+
+    echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
+}

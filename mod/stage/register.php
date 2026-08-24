@@ -33,6 +33,11 @@ use mod_stage\form\deve_entry_form;
 $id = required_param('id', PARAM_INT);
 $entryid = optional_param('entryid', 0, PARAM_INT);
 $mode = optional_param('mode', 'list', PARAM_ALPHA);
+$search = optional_param('search', '', PARAM_TEXT);
+$filterthemeid = optional_param('themeid', 0, PARAM_INT);
+$filterstatus = optional_param('status', '', PARAM_RAW);
+$tsort = optional_param('tsort', 'timecreated', PARAM_ALPHA);
+$tdir = optional_param('tdir', 'DESC', PARAM_ALPHA);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -84,18 +89,25 @@ if ($mode === 'list') {
         'my-3'
     );
 
-    $entries = $DB->get_records('stage_entry', ['stageid' => $stage->id], 'timecreated DESC');
-    $students = stage_get_entry_users($entries);
     // Pour l'affichage, on résout aussi les thématiques masquées, sur lesquelles des
     // stages ont pu être enregistrés avant leur masquage.
     $allthemes = stage_get_themes($stage->id);
 
+    $listurl = new moodle_url($baseurl, [
+        'search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus, 'tsort' => $tsort, 'tdir' => $tdir,
+    ]);
+    echo stage_render_list_filters($listurl, $allthemes, $search, $filterthemeid, $filterstatus);
+
+    $entries = stage_get_filtered_entries($stage->id,
+        ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus], $tsort, $tdir);
+    $students = stage_get_entry_users($entries);
+
     $table = new html_table();
     $table->head = [
-        get_string('student', 'mod_stage'),
-        get_string('theme', 'mod_stage'),
-        get_string('declaredduration', 'mod_stage'),
-        get_string('status', 'mod_stage'),
+        stage_sort_header(get_string('student', 'mod_stage'), 'student', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('theme', 'mod_stage'), 'theme', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('declaredduration', 'mod_stage'), 'duration', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('status', 'mod_stage'), 'status', $listurl, $tsort, $tdir),
         get_string('actions', 'mod_stage'),
     ];
     foreach ($entries as $entry) {

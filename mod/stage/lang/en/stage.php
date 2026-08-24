@@ -134,6 +134,15 @@ $string['evaluate'] = 'Evaluate';
 $string['validate'] = 'Validate';
 $string['selectall'] = 'Select all';
 $string['bulkvalidateselected'] = 'Validate selection';
+$string['pilotage'] = 'Pilotage dashboard';
+$string['viewdetails'] = 'View details';
+$string['pendingstages'] = 'Pending stages';
+$string['totalretainedshort'] = 'Total retained duration';
+$string['searchstudent'] = 'Search a student...';
+$string['allthemes'] = 'All themes';
+$string['allstatuses'] = 'All steps';
+$string['resetfilters'] = 'Reset';
+$string['registeredon'] = 'Registered on';
 
 // Messages.
 $string['stagesaved'] = 'Internship saved.';
