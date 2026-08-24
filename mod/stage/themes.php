@@ -72,7 +72,8 @@ if ($action === 'togglemandatory' && $themeid) {
 
 // Formulaire d'ajout / édition d'une thématique.
 if ($action === 'edit') {
-    $mform = new theme_form($baseurl);
+    $formurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $themeid]);
+    $mform = new theme_form($formurl);
     $theme = null;
     if ($themeid) {
         $theme = $DB->get_record('stage_theme', ['id' => $themeid, 'stageid' => $stage->id], '*', MUST_EXIST);

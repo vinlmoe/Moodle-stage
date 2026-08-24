@@ -91,8 +91,8 @@ class get_my_stages extends \external_api {
                 'structure' => new \external_value(PARAM_TEXT, "Structure d'accueil"),
                 'datestart' => new \external_value(PARAM_INT, 'Date de début (timestamp)'),
                 'dateend' => new \external_value(PARAM_INT, 'Date de fin (timestamp)'),
-                'declaredduration' => new \external_value(PARAM_INT, 'Durée déclarée (heures)'),
-                'retainedduration' => new \external_value(PARAM_INT, 'Durée retenue (heures)'),
+                'declaredduration' => new \external_value(PARAM_INT, 'Durée déclarée (jours)'),
+                'retainedduration' => new \external_value(PARAM_INT, 'Durée retenue (jours)'),
                 'status' => new \external_value(PARAM_INT, 'Statut (0-3)'),
                 'statuslabel' => new \external_value(PARAM_TEXT, 'Libellé du statut'),
             ])

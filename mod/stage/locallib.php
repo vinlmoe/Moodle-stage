@@ -330,7 +330,7 @@ function stage_apply_teacher_eval(stdClass $entry, $teacherid, $comment = null) 
  *
  * @param stdClass $entry
  * @param int $deveuserid
- * @param int $retainedduration Durée retenue en heures (0 = reprendre la durée déclarée).
+ * @param int $retainedduration Durée retenue en jours (0 = reprendre la durée déclarée).
  * @param string $comment
  * @return void
  */

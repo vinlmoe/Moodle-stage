@@ -58,7 +58,7 @@ $string['importcsv_help'] = 'Import a CSV file (saved from Excel via "Save As > 
     . 'separated by semicolons or commas, with an optional header row: '
     . '<code>email;theme;structure;datestart;dateend;duration</code>. The <em>email</em> field must match a student '
     . 'enrolled in the course, <em>theme</em> the exact name of an existing theme, the dates in YYYY-MM-DD format '
-    . '(optional), and <em>duration</em> the declared duration in hours.';
+    . '(optional), and <em>duration</em> the declared duration in days.';
 $string['importresult'] = '{$a} internship(s) successfully imported.';
 $string['importerrorupload'] = 'The file could not be uploaded. Check its size and try again.';
 $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with email "{$a->email}".';
@@ -83,9 +83,9 @@ $string['theme'] = 'Theme';
 $string['structure'] = 'Host structure';
 $string['datestart'] = 'Start date';
 $string['dateend'] = 'End date';
-$string['declaredduration'] = 'Declared duration (hours)';
-$string['retainedduration'] = 'Retained duration (hours)';
-$string['requiredduration'] = 'Required duration (hours)';
+$string['declaredduration'] = 'Declared duration (days)';
+$string['retainedduration'] = 'Retained duration (days)';
+$string['requiredduration'] = 'Required duration (days)';
 $string['status'] = 'Status';
 $string['mandatory'] = 'Mandatory';
 $string['sortorder'] = 'Order';
@@ -148,7 +148,7 @@ $string['noteachers'] = 'No potential referent teacher enrolled in this course.'
 $string['noassignedstudents'] = 'No student assigned to you yet.';
 $string['nopendingstages'] = 'No internship pending validation.';
 $string['confirmdeletetheme'] = 'Delete this theme?';
-$string['totalretained'] = 'Total retained duration: {$a} hours';
+$string['totalretained'] = 'Total retained duration: {$a} days';
 $string['numstages'] = '{$a} internship(s) declared';
 
 // Headings.

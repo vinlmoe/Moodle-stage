@@ -58,7 +58,7 @@ $string['importcsv_help'] = "Importez un fichier CSV (enregistré depuis Excel v
     . 'colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '
     . '<code>email;theme;structure;datestart;dateend;duration</code>. Le champ <em>email</em> doit correspondre à un '
     . "étudiant inscrit au cours, <em>theme</em> au nom exact d'une thématique existante, les dates au format "
-    . 'AAAA-MM-JJ (facultatives), et <em>duration</em> à la durée déclarée en heures.';
+    . 'AAAA-MM-JJ (facultatives), et <em>duration</em> à la durée déclarée en jours.';
 $string['importresult'] = '{$a} stage(s) importé(s) avec succès.';
 $string['importerrorupload'] = "Le fichier n'a pas pu être téléversé. Vérifiez sa taille et réessayez.";
 $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit avec l\'adresse "{$a->email}".';
@@ -83,9 +83,9 @@ $string['theme'] = 'Thématique';
 $string['structure'] = "Structure d'accueil";
 $string['datestart'] = 'Date de début';
 $string['dateend'] = 'Date de fin';
-$string['declaredduration'] = 'Durée déclarée (heures)';
-$string['retainedduration'] = 'Durée retenue (heures)';
-$string['requiredduration'] = 'Durée requise (heures)';
+$string['declaredduration'] = 'Durée déclarée (jours)';
+$string['retainedduration'] = 'Durée retenue (jours)';
+$string['requiredduration'] = 'Durée requise (jours)';
 $string['status'] = 'Statut';
 $string['mandatory'] = 'Obligatoire';
 $string['sortorder'] = 'Ordre';
@@ -148,7 +148,7 @@ $string['noteachers'] = "Aucun enseignant référent potentiel n'est inscrit à 
 $string['noassignedstudents'] = "Aucun étudiant ne vous est attribué pour l'instant.";
 $string['nopendingstages'] = 'Aucun stage en attente de validation.';
 $string['confirmdeletetheme'] = 'Supprimer cette thématique ?';
-$string['totalretained'] = 'Durée totale retenue : {$a} heures';
+$string['totalretained'] = 'Durée totale retenue : {$a} jours';
 $string['numstages'] = '{$a} stage(s) déclaré(s)';
 
 // Headings.

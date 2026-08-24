@@ -22,7 +22,7 @@
  * - theme : nom exact d'une thématique existante
  * - structure : structure d'accueil (facultatif)
  * - datestart, dateend : format AAAA-MM-JJ (facultatif)
- * - duration : durée déclarée en heures
+ * - duration : durée déclarée en jours
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain

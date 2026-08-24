@@ -46,7 +46,7 @@ class register_entries extends \external_api {
                     'structure' => new \external_value(PARAM_TEXT, "Structure d'accueil", VALUE_DEFAULT, ''),
                     'datestart' => new \external_value(PARAM_INT, 'Date de début (timestamp)', VALUE_DEFAULT, 0),
                     'dateend' => new \external_value(PARAM_INT, 'Date de fin (timestamp)', VALUE_DEFAULT, 0),
-                    'declaredduration' => new \external_value(PARAM_INT, 'Durée déclarée en heures'),
+                    'declaredduration' => new \external_value(PARAM_INT, 'Durée déclarée en jours'),
                 ])
             ),
         ]);

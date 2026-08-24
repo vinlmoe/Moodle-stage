@@ -27,7 +27,7 @@
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="mandatory" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="requiredduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée requise en heures"/>
+        <FIELD NAME="requiredduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée requise en jours"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
@@ -48,8 +48,8 @@
         <FIELD NAME="structure" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Structure d'accueil"/>
         <FIELD NAME="datestart" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="dateend" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="declaredduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée déclarée par l'étudiant en heures"/>
-        <FIELD NAME="retainedduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée retenue après validation, en heures"/>
+        <FIELD NAME="declaredduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée déclarée par l'étudiant en jours"/>
+        <FIELD NAME="retainedduration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Durée retenue après validation, en jours"/>
         <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="0 enregistre 1 eval etudiant 2 eval enseignant 3 valide deve"/>
         <FIELD NAME="studentselfeval" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Enseignant ayant evalue"/>
