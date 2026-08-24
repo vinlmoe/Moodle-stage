@@ -69,7 +69,7 @@ function stage_status_badgeclass($status) {
 }
 
 /**
- * Liste les thématiques d'une activité stage.
+ * Liste les thématiques d'une activité stage, triées par année d'étude puis par ordre défini.
  *
  * @param int $stageid
  * @param bool $onlyvisible
@@ -83,7 +83,50 @@ function stage_get_themes($stageid, $onlyvisible = false) {
     if ($onlyvisible) {
         $where .= ' AND visible = 1';
     }
-    return $DB->get_records_select('stage_theme', $where, $params, 'sortorder ASC, name ASC');
+    return $DB->get_records_select('stage_theme', $where, $params, 'studyyear ASC, sortorder ASC, name ASC');
+}
+
+/**
+ * Options d'année d'étude proposées pour une thématique, afin d'organiser leur affichage pour
+ * les étudiants (0 = non spécifiée, commune à toutes les années).
+ *
+ * @return array int => libellé
+ */
+function stage_studyyear_options() {
+    $options = [0 => get_string('studyyear_unspecified', 'mod_stage')];
+    for ($year = 1; $year <= 6; $year++) {
+        $options[$year] = get_string('studyyear_n', 'mod_stage', $year);
+    }
+    return $options;
+}
+
+/**
+ * Libellé lisible d'une année d'étude de thématique.
+ *
+ * @param int $studyyear
+ * @return string
+ */
+function stage_studyyear_label($studyyear) {
+    $options = stage_studyyear_options();
+    return $options[(int) $studyyear] ?? $options[0];
+}
+
+/**
+ * Libellé d'une thématique pour une liste déroulante : nom, année d'étude (si précisée) et
+ * mention "obligatoire" le cas échéant, pour aider la DEVE et les enseignants à s'y retrouver.
+ *
+ * @param stdClass $theme
+ * @return string
+ */
+function stage_theme_option_label(stdClass $theme) {
+    $label = format_string($theme->name);
+    if (!empty($theme->studyyear)) {
+        $label .= ' - ' . stage_studyyear_label($theme->studyyear);
+    }
+    if (!empty($theme->mandatory)) {
+        $label .= ' (' . get_string('mandatory', 'mod_stage') . ')';
+    }
+    return $label;
 }
 
 /**
@@ -921,31 +964,42 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
 
     $progress = stage_get_student_progress($stage->id, $userid);
 
+    // Les thématiques obligatoires sont déjà triées par année d'étude (stage_get_themes) :
+    // on les regroupe sous un sous-titre par année pour organiser la vision de l'étudiant.
     echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
-    $table = new html_table();
-    $table->head = [
-        get_string('theme', 'mod_stage'),
-        get_string('requiredduration', 'mod_stage'),
-        get_string('retainedduration', 'mod_stage'),
-        get_string('status', 'mod_stage'),
-    ];
-    foreach ($progress->themes as $t) {
-        if (!$t->theme->mandatory) {
-            continue;
-        }
-        $status = $t->done
-            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-        $table->data[] = [
-            format_string($t->theme->name),
-            $t->theme->requiredduration,
-            $t->retained,
-            $status,
-        ];
-    }
-    if (empty($table->data)) {
+    $mandatorythemes = array_filter($progress->themes, function($t) {
+        return $t->theme->mandatory;
+    });
+    if (empty($mandatorythemes)) {
         echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
     } else {
+        $currentyear = null;
+        $table = null;
+        foreach ($mandatorythemes as $t) {
+            if ($currentyear === null || $t->theme->studyyear != $currentyear) {
+                if ($table !== null) {
+                    echo html_writer::table($table);
+                }
+                $currentyear = $t->theme->studyyear;
+                echo $OUTPUT->heading(stage_studyyear_label($currentyear), 5);
+                $table = new html_table();
+                $table->head = [
+                    get_string('theme', 'mod_stage'),
+                    get_string('requiredduration', 'mod_stage'),
+                    get_string('retainedduration', 'mod_stage'),
+                    get_string('status', 'mod_stage'),
+                ];
+            }
+            $status = $t->done
+                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+            $table->data[] = [
+                format_string($t->theme->name),
+                $t->theme->requiredduration,
+                $t->retained,
+                $status,
+            ];
+        }
         echo html_writer::table($table);
     }
 
@@ -956,6 +1010,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
     $table = new html_table();
     $table->head = [
         get_string('theme', 'mod_stage'),
+        get_string('studyyear', 'mod_stage'),
         get_string('structure', 'mod_stage'),
         get_string('declaredduration', 'mod_stage'),
         get_string('retainedduration', 'mod_stage'),
@@ -965,10 +1020,12 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
     foreach ($entries as $entry) {
-        $themename = isset($themes[$entry->themeid]) ? format_string($themes[$entry->themeid]->name) : '-';
+        $theme = $themes[$entry->themeid] ?? null;
+        $themename = $theme ? format_string($theme->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $row = [
             $themename,
+            $theme ? stage_studyyear_label($theme->studyyear) : '-',
             $entry->structure,
             $entry->declaredduration,
             $entry->retainedduration,

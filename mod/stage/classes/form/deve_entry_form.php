@@ -19,6 +19,7 @@ namespace mod_stage\form;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/formslib.php');
+require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
  * Formulaire d'enregistrement / édition unitaire d'un stage par la DEVE, pour un étudiant donné.
@@ -51,8 +52,7 @@ class deve_entry_form extends \moodleform {
 
         $themeoptions = [];
         foreach ($themes as $theme) {
-            $themeoptions[$theme->id] = format_string($theme->name)
-                . ($theme->mandatory ? ' (' . get_string('mandatory', 'mod_stage') . ')' : '');
+            $themeoptions[$theme->id] = stage_theme_option_label($theme);
         }
         $mform->addElement('select', 'themeid', get_string('theme', 'mod_stage'), $themeoptions);
         $mform->addRule('themeid', null, 'required', null, 'client');

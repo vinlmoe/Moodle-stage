@@ -240,8 +240,7 @@ if ($mode === 'bulk') {
 
     $themeoptions = [];
     foreach ($themes as $theme) {
-        $themeoptions[$theme->id] = format_string($theme->name) . ($theme->mandatory
-            ? ' (' . get_string('mandatory', 'mod_stage') . ')' : '');
+        $themeoptions[$theme->id] = stage_theme_option_label($theme);
     }
     echo html_writer::tag('label', get_string('theme', 'mod_stage'), ['for' => 'themeid']);
     echo html_writer::select($themeoptions, 'themeid', '', false, ['id' => 'themeid', 'required' => 'required']);

@@ -19,6 +19,7 @@ namespace mod_stage\form;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/formslib.php');
+require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
  * Formulaire de création / édition d'une thématique de stage (DEVE).
@@ -52,6 +53,9 @@ class theme_form extends \moodleform {
         $mform->addElement('text', 'requiredduration', get_string('requiredduration', 'mod_stage'));
         $mform->setType('requiredduration', PARAM_INT);
         $mform->setDefault('requiredduration', 0);
+
+        $mform->addElement('select', 'studyyear', get_string('studyyear', 'mod_stage'), stage_studyyear_options());
+        $mform->setDefault('studyyear', 0);
 
         $mform->addElement('text', 'sortorder', get_string('sortorder', 'mod_stage'));
         $mform->setType('sortorder', PARAM_INT);

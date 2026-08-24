@@ -93,6 +93,7 @@ if ($action === 'edit') {
         $record->description = $data->description;
         $record->mandatory = !empty($data->mandatory) ? 1 : 0;
         $record->requiredduration = $data->requiredduration;
+        $record->studyyear = $data->studyyear;
         $record->sortorder = $data->sortorder;
         $record->visible = !empty($data->visible) ? 1 : 0;
         $record->timemodified = time();
@@ -120,8 +121,10 @@ if ($action === 'bulksave' && data_submitted() && confirm_sesskey()) {
     foreach ($themes as $theme) {
         $mandatory = optional_param('mandatory_' . $theme->id, 0, PARAM_INT);
         $duration = optional_param('duration_' . $theme->id, 0, PARAM_INT);
+        $studyyear = optional_param('studyyear_' . $theme->id, 0, PARAM_INT);
         $theme->mandatory = $mandatory ? 1 : 0;
         $theme->requiredduration = $duration;
+        $theme->studyyear = $studyyear;
         $theme->timemodified = time();
         $DB->update_record('stage_theme', $theme);
     }
@@ -149,6 +152,7 @@ if (empty($themes)) {
     $table = new html_table();
     $table->head = [
         get_string('theme', 'mod_stage'),
+        get_string('studyyear', 'mod_stage'),
         get_string('mandatory', 'mod_stage'),
         get_string('requiredduration', 'mod_stage'),
         get_string('visible'),
@@ -164,6 +168,8 @@ if (empty($themes)) {
             'class' => 'form-control',
             'style' => 'width:6em',
         ]);
+        $studyyearselect = html_writer::select(stage_studyyear_options(), 'studyyear_' . $theme->id, $theme->studyyear,
+            false, ['class' => 'form-control']);
         $visible = $theme->visible ? get_string('yes') : get_string('no');
 
         $editurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $theme->id]);
@@ -179,7 +185,7 @@ if (empty($themes)) {
             . html_writer::link($deleteurl, get_string('delete'),
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
 
-        $table->data[] = [format_string($theme->name), $mandatorycb, $durationinput, $visible, $actions];
+        $table->data[] = [format_string($theme->name), $studyyearselect, $mandatorycb, $durationinput, $visible, $actions];
     }
     echo html_writer::table($table);
 

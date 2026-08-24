@@ -74,7 +74,7 @@ if ($action === 'attach' && $questionid) {
 if ($action === 'edit') {
     $themeoptions = [];
     foreach (stage_get_themes($stage->id) as $stagetheme) {
-        $themeoptions[$stagetheme->id] = format_string($stagetheme->name);
+        $themeoptions[$stagetheme->id] = stage_theme_option_label($stagetheme);
     }
 
     $formurl = new moodle_url('/mod/stage/questions.php',

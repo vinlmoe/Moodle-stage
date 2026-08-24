@@ -105,5 +105,15 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082311, 'stage');
     }
 
+    if ($oldversion < 2026082401) {
+        $table = new xmldb_table('stage_theme');
+        $field = new xmldb_field('studyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'requiredduration');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082401, 'stage');
+    }
+
     return true;
 }

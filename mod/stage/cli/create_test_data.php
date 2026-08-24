@@ -188,10 +188,10 @@ $themes = stage_get_themes($stage->id);
 if (empty($themes)) {
     cli_writeln('  Aucune thématique existante : création de thématiques de démonstration.');
     $defaultthemes = [
-        ['name' => 'Médecine générale', 'mandatory' => 1, 'requiredduration' => 70],
-        ['name' => 'Chirurgie', 'mandatory' => 1, 'requiredduration' => 70],
-        ['name' => 'Élevage', 'mandatory' => 0, 'requiredduration' => 0],
-        ['name' => 'Recherche', 'mandatory' => 0, 'requiredduration' => 0],
+        ['name' => 'Médecine générale', 'mandatory' => 1, 'requiredduration' => 70, 'studyyear' => 3],
+        ['name' => 'Chirurgie', 'mandatory' => 1, 'requiredduration' => 70, 'studyyear' => 4],
+        ['name' => 'Élevage', 'mandatory' => 0, 'requiredduration' => 0, 'studyyear' => 2],
+        ['name' => 'Recherche', 'mandatory' => 0, 'requiredduration' => 0, 'studyyear' => 0],
     ];
     foreach ($defaultthemes as $sortorder => $data) {
         $DB->insert_record('stage_theme', (object) [
@@ -200,6 +200,7 @@ if (empty($themes)) {
             'description' => '',
             'mandatory' => $data['mandatory'],
             'requiredduration' => $data['requiredduration'],
+            'studyyear' => $data['studyyear'],
             'sortorder' => $sortorder,
             'visible' => 1,
             'timecreated' => time(),
