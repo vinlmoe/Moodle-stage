@@ -52,6 +52,7 @@ $string['teachervalidation'] = 'Validation enseignant';
 $string['mystages'] = 'Mes stages';
 $string['registerstages'] = 'Enregistrer des stages';
 $string['importcsv'] = 'Importer un fichier CSV';
+$string['exportexcel'] = 'Exporter en Excel';
 $string['import'] = 'Importer';
 $string['importcsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec les "
     . 'colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '

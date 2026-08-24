@@ -69,6 +69,10 @@ if (has_capability('mod/stage:evaluateteacher', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
         get_string('teachervalidation', 'mod_stage'));
 }
+if (has_capability('mod/stage:viewall', $context)) {
+    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
+        get_string('exportexcel', 'mod_stage'));
+}
 if (!empty($navlinks)) {
     echo $OUTPUT->box(implode(' | ', $navlinks), 'generalbox stage-navlinks');
 }

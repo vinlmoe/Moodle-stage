@@ -152,7 +152,17 @@ fichier préparé dans Excel :
    la sauvegarde remplace entièrement les référents précédemment attribués
    à chaque étudiant modifié.
 
-## 7. Utilisation courante
+## 7. Export Excel de tous les stages (DEVE)
+
+Le lien **Exporter en Excel**, visible depuis la page de l'activité et
+depuis la page « Enregistrer des stages », télécharge un fichier `.xlsx`
+listant tous les stages de l'activité, tous étudiants confondus : nom et
+e-mail de l'étudiant, thématique (et si elle est obligatoire), structure
+d'accueil, dates, durée déclarée et durée retenue, statut, enseignant(s)
+référent(s), commentaire enseignant et commentaire DEVE. Il s'ouvre
+directement dans Excel, sans étape intermédiaire.
+
+## 8. Utilisation courante
 
 - **Étudiant** : sur la page de l'activité, suivi de l'avancement des
   thématiques obligatoires et de la liste de ses propres stages
@@ -166,7 +176,7 @@ fichier préparé dans Excel :
   + bouton « Valider la sélection ») — que le stage ait été ou non évalué
   au préalable par un enseignant référent.
 
-## 8. API web services
+## 9. API web services
 
 Le module expose deux fonctions de service web Moodle (`db/services.php`),
 regroupées dans le service prédéfini **« Gestion des stages (mod_stage) »** :

@@ -52,6 +52,7 @@ $string['teachervalidation'] = 'Teacher validation';
 $string['mystages'] = 'My internships';
 $string['registerstages'] = 'Register internships';
 $string['importcsv'] = 'Import a CSV file';
+$string['exportexcel'] = 'Export to Excel';
 $string['import'] = 'Import';
 $string['importcsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following columns, '
     . 'separated by semicolons or commas, with an optional header row: '
