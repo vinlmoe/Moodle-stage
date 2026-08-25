@@ -124,7 +124,9 @@ if ($mode === 'list') {
         $themename = isset($allthemes[$entry->themeid]) ? format_string($allthemes[$entry->themeid]->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
-        $actions = html_writer::link($editurl, get_string('edit'));
+        $conventionurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+        $actions = html_writer::link($editurl, get_string('edit'))
+            . ' | ' . html_writer::link($conventionurl, get_string('generateconvention', 'mod_stage'));
         if ((int) $entry->status !== STAGE_STATUS_ENREGISTRE) {
             $reseturl = new moodle_url('/mod/stage/register.php',
                 ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]);

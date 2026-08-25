@@ -167,6 +167,19 @@ $string['onlyunassigned'] = 'Étudiants sans référent uniquement';
 $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}';
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
     . "Vous pouvez consulter et évaluer cette saisie ici : {\$a->url}";
+$string['generateconvention'] = 'Générer la convention';
+$string['conventiontitle'] = 'Convention de stage';
+$string['conventionestablishment'] = "Établissement d'enseignement";
+$string['conventionhoststructure'] = "Structure d'accueil";
+$string['conventionstudent'] = 'Le/la stagiaire';
+$string['conventionthemeduration'] = 'Thématique et durée';
+$string['conventionsupervision'] = 'Encadrement';
+$string['conventiontutor'] = "Tuteur en structure d'accueil";
+$string['conventiontemplatemissing'] = "Le gabarit des articles de la convention "
+    . '(mod/stage/templates/convention_articles.pdf) est introuvable sur ce site. '
+    . 'Contactez un administrateur pour le déployer avant de générer une convention.';
+$string['conventionfpdimissing'] = "La librairie FPDI nécessaire à la génération des conventions "
+    . '(mod/stage/thirdparty/vendor) est introuvable sur ce site. Contactez un administrateur.';
 
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';

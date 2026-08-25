@@ -166,6 +166,19 @@ $string['onlyunassigned'] = 'Students without a referent only';
 $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review - {$a}';
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
     . 'You can view and evaluate this entry here: {$a->url}';
+$string['generateconvention'] = 'Generate the convention';
+$string['conventiontitle'] = 'Internship agreement';
+$string['conventionestablishment'] = 'Educational establishment';
+$string['conventionhoststructure'] = 'Host organisation';
+$string['conventionstudent'] = 'The intern';
+$string['conventionthemeduration'] = 'Theme and duration';
+$string['conventionsupervision'] = 'Supervision';
+$string['conventiontutor'] = 'Host organisation supervisor';
+$string['conventiontemplatemissing'] = 'The convention articles template '
+    . '(mod/stage/templates/convention_articles.pdf) could not be found on this site. '
+    . 'Contact an administrator to deploy it before generating a convention.';
+$string['conventionfpdimissing'] = 'The FPDI library required to generate conventions '
+    . '(mod/stage/thirdparty/vendor) could not be found on this site. Contact an administrator.';
 
 // Messages.
 $string['stagesaved'] = 'Internship saved.';
