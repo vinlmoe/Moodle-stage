@@ -99,7 +99,6 @@ $string['importstagevetcsv_help'] = "Importez directement le fichier CSV export�
     . "dans l'export sont tout de même enregistrées à titre de référence, sans déclencher de génération de PDF.";
 $string['importstagevetnoheader'] = "Le fichier ne semble pas avoir de ligne d'en-tête reconnaissable. Vérifiez qu'il "
     . "s'agit bien d'un export StageVet non modifié.";
-$string['importstageveterrorunknownstudent'] = 'Ligne {$a->line} : aucun étudiant inscrit correspondant à "{$a->name}".';
 $string['importstageveterrornotheme'] = 'Ligne {$a} : aucune thématique renseignée.';
 $string['importstagevetunknownstudentsreport'] = '{$a} étudiant(s) introuvable(s) parmi les inscrits au cours';
 $string['importstagevetunknownthemesreport'] = '{$a} thématique(s) introuvable(s)';
@@ -243,9 +242,9 @@ $string['conventionstudent'] = 'Le/la stagiaire';
 $string['conventionthemeduration'] = 'Thématique et durée';
 $string['conventionsupervision'] = 'Encadrement';
 $string['conventiontutor'] = "Tuteur en structure d'accueil";
-$string['conventiontemplatemissing'] = "Le gabarit des articles de la convention "
-    . '(mod/stage/templates/convention_articles.pdf) est introuvable sur ce site. '
-    . 'Contactez un administrateur pour le déployer avant de générer une convention.';
+$string['conventiontemplatemissing'] = "Le fichier PDF du gabarit de convention sélectionné est "
+    . 'introuvable. Téléversez-le à nouveau depuis la page des gabarits de convention avant de '
+    . 'générer cette convention.';
 $string['conventionfpdimissing'] = "La librairie FPDI nécessaire à la génération des conventions "
     . '(mod/stage/thirdparty/vendor) est introuvable sur ce site. Contactez un administrateur.';
 
@@ -267,8 +266,6 @@ $string['conventionstatus_edited'] = 'Éditée';
 $string['conventionstatus_signed'] = 'Signée';
 $string['conventionstatus_signvet'] = 'Signée (StageVet)';
 $string['conventionstatus_rejected'] = 'Refusée';
-$string['conventionmarkedited'] = 'Marquer éditée';
-$string['conventionmarkededited'] = "La convention a été marquée comme éditée.";
 $string['conventionmarksigned'] = 'Marquer signée';
 $string['conventionmarkedsigned'] = "La convention a été marquée comme signée : l'étudiant et l'enseignant "
     . 'référent peuvent maintenant procéder aux évaluations. Si un PDF signé a été fourni, il est '

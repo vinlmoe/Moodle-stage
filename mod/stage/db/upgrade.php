@@ -89,7 +89,7 @@ function xmldb_stage_upgrade($oldversion) {
         }
 
         // Fait migrer l'affectation thématique existante (une seule) de chaque question vers la
-        // table d'association, qui permet désormais d'en réutiliser une pour plusieurs thématiques.
+        // table d'association, qui permet d'en réutiliser une pour plusieurs thématiques.
         $existing = $DB->get_records('stage_question', null, '', 'id, themeid, timecreated');
         foreach ($existing as $question) {
             if (!$DB->record_exists('stage_question_theme',

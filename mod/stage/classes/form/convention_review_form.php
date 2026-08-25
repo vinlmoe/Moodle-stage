@@ -22,15 +22,13 @@ require_once($CFG->libdir . '/formslib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
- * Formulaire de revue par la DEVE d'une demande de convention soumise par l'étudiant : les mêmes
- * informations que convention_request_form, éditables par la DEVE avant validation, avec deux
- * actions possibles : valider (génère la convention, passage au statut "éditée") ou refuser avec
- * un commentaire obligatoire (envoyé à l'étudiant pour correction et nouvelle soumission).
+ * Formulaire de revue d'une demande de convention soumise par l'étudiant, utilisé par la DEVE
+ * (convention_review.php) et par l'enseignant référent (convention_teacher_validate.php) : reprend
+ * les champs de convention_request_form, éditables, et propose deux actions : valider ou refuser
+ * avec un commentaire obligatoire renvoyé à l'étudiant.
  *
- * Les règles "required" ne portent que sur le bouton "Valider" (vérifié côté serveur dans
- * validation(), car formslib ne permet pas de règles client conditionnelles à quel bouton a été
- * cliqué) : un refus doit toujours pouvoir être enregistré même si certains champs sont
- * incomplets.
+ * Les champs obligatoires ne le sont qu'en cas de validation. Le contrôle est fait dans
+ * validation(), formslib ne permettant pas de conditionner une règle client au bouton cliqué.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -148,9 +146,8 @@ class convention_review_form extends \moodleform {
     }
 
     /**
-     * Server-side validation : les champs de la convention ne sont obligatoires qu'en cas de
-     * validation ; un refus reste toujours possible même avec une saisie incomplète. Un refus
-     * exige en revanche un commentaire expliquant le motif à l'étudiant.
+     * Validation serveur : les champs de la convention ne sont exigés qu'à la validation, un
+     * refus restant possible sur une saisie incomplète. Le refus exige en revanche un motif.
      *
      * @param array $data
      * @param array $files

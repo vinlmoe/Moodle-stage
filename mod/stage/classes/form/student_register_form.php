@@ -22,12 +22,11 @@ require_once($CFG->libdir . '/formslib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
- * Formulaire combiné permettant à l'étudiant d'enregistrer lui-même un stage et de demander sa
- * convention en une seule saisie, plutôt qu'en deux étapes séparées (enregistrement par la DEVE,
- * puis demande de convention). Réunit les champs d'enregistrement d'un stage (thématique,
- * structure, dates, durée) et ceux de convention_request_form (langue, gabarit, enseignant.e
- * référent.e, coordonnées de l'étudiant, organisme d'accueil, tuteur, modalités particulières,
- * gratification, congés).
+ * Formulaire combiné permettant à l'étudiant d'enregistrer lui-même un stage et d'en demander la
+ * convention en une seule saisie. Réunit les champs d'enregistrement d'un stage (thématique,
+ * structure, dates, durée) et ceux de convention_request_form (langue, gabarit, enseignant
+ * référent, coordonnées de l'étudiant, organisme d'accueil, tuteur, modalités, gratification,
+ * congés).
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -83,10 +82,9 @@ class student_register_form extends \moodleform {
             $templateoptions);
         $mform->addRule('conventiontemplateid', null, 'required', null, 'client');
 
-        // Enseignant.e référent.e : un seul choisi pour la convention (courriel chargé
-        // automatiquement depuis son compte à la génération, jamais saisi à la main), parmi
-        // ceux attribués à l'étudiant par la DEVE. Pas de champ téléphone pour ce rôle : la
-        // convention n'en demande pas pour l'encadrement côté établissement d'enseignement.
+        // Un seul enseignant référent par convention, choisi parmi ceux que la DEVE a attribués
+        // à l'étudiant. Son courriel est lu sur son compte à la génération et la convention ne
+        // demande pas de téléphone pour ce rôle : aucun des deux n'est saisi ici.
         $referentoptions = [];
         foreach ($referentteachers as $teacher) {
             $referentoptions[$teacher->id] = fullname($teacher);
@@ -190,9 +188,8 @@ class student_register_form extends \moodleform {
     }
 
     /**
-     * Server-side validation : empêche la création d'un doublon (même thématique, mêmes dates
-     * pour l'étudiant connecté), et vérifie que le gabarit choisi correspond bien à la langue
-     * choisie (comparable à convention_request_form).
+     * Validation serveur : refuse un doublon (même thématique et mêmes dates pour l'étudiant
+     * connecté) et vérifie que le gabarit sélectionné est dans la langue choisie.
      *
      * @param array $data
      * @param array $files

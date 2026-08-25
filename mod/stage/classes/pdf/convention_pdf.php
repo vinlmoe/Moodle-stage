@@ -21,20 +21,13 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/pdflib.php');
 
 /**
- * Génère la page 1 (informations spécifiques à un stage) de la convention de stage.
+ * Génère la page 1 de la convention de stage (informations propres au stage), structurée en
+ * sections à bandeau coloré à partir des données de la base.
  *
- * Cette classe étend la classe \pdf de Moodle (elle-même une sous-classe de TCPDF) : elle ne
- * gère volontairement QUE la page 1, recréée dynamiquement à partir des données de la base
- * (structurée en sections avec bandeau coloré), plutôt qu'un remplissage pixel-perfect du PDF
- * original, trop fragile à maintenir.
- *
- * Les pages 2 à 4 (articles juridiques, texte fixe) ne sont PAS générées ici : elles sont
- * réimportées depuis un PDF gabarit par convention.php, via FPDI (voir
- * mod/stage/thirdparty/vendor/setasign/fpdi). On évite ainsi de faire hériter cette classe à la
- * fois de \pdf (pour dessiner) et de la classe d'import FPDI (pour réimporter des pages
- * existantes) : les deux étendent TCPDF par des chemins différents et ne se combinent pas
- * proprement dans une seule classe. convention.php génère donc cette page 1 séparément, puis la
- * réimporte elle-même comme un PDF source parmi d'autres via FPDI.
+ * Les pages suivantes (articles juridiques, texte fixe) sont réimportées d'un PDF gabarit par
+ * stage_build_convention_pdf(), via FPDI. \pdf et la classe d'import FPDI étendent toutes deux
+ * TCPDF par des chemins distincts et ne peuvent pas être combinées dans une seule classe : la
+ * page 1 est donc produite ici isolément, puis assemblée avec le gabarit par l'appelant.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -200,10 +193,8 @@ class convention_pdf extends \pdf {
      * Ligne à case à cocher : dessine une case (cochée ou non) suivie d'un libellé, pour les
      * options activables de la convention (modalités particulières, congés...).
      *
-     * La case et son libellé sont traités comme un bloc atomique (voir ensure_space()) pour ne
-     * jamais laisser un saut de page couper la case et son texte sur deux pages différentes ; le
-     * libellé passe sur plusieurs lignes (MultiCell) si nécessaire plutôt que de déborder ou de
-     * chevaucher la colonne suivante.
+     * Le libellé passe sur plusieurs lignes si nécessaire, et la ligne entière est réservée
+     * d'avance (ensure_space()) pour qu'un saut de page ne sépare pas la case de son texte.
      *
      * @param string $label
      * @param bool $checked
@@ -254,10 +245,9 @@ class convention_pdf extends \pdf {
     /**
      * Ligne libellé / valeur sous une section.
      *
-     * Le libellé comme la valeur passent sur plusieurs lignes (MultiCell) si le texte est trop
-     * long pour tenir sur une seule ligne dans leur colonne, plutôt que de se chevaucher (bug
-     * initial : Cell() tronque sans revenir à la ligne). La ligne entière est traitée comme un
-     * bloc atomique (voir ensure_space()) pour ne jamais être coupée par un saut de page.
+     * Libellé et valeur passent sur plusieurs lignes si le texte dépasse la largeur de sa
+     * colonne, et la ligne entière est réservée d'avance (ensure_space()) pour ne pas être
+     * coupée par un saut de page.
      *
      * @param string $label
      * @param string $value
@@ -287,11 +277,10 @@ class convention_pdf extends \pdf {
     }
 
     /**
-     * S'assure qu'il reste au moins $height mm avant le bas de la page (marge de saut de page
-     * incluse) ; provoque un saut de page manuel sinon. Utilisé pour dessiner les lignes
-     * (field_row, checkbox_row) comme des blocs atomiques : avec le seul saut de page automatique
-     * de TCPDF, un élément dessiné en plusieurs étapes (ex. une case suivie de son libellé) peut
-     * être coupé au milieu, la fin se retrouvant seule en haut de la page suivante.
+     * S'assure qu'il reste au moins $height mm avant le bas de la page (marge de saut incluse),
+     * et provoque un saut de page manuel sinon. Le saut automatique de TCPDF interviendrait au
+     * milieu d'une ligne dessinée en plusieurs appels, séparant par exemple une case de son
+     * libellé.
      *
      * @param float $height
      * @return void

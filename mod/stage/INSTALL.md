@@ -1,541 +1,257 @@
-# Installation et mise en place du module « Gestion des stages » (mod_stage)
+# Gestion des stages (mod_stage)
 
-## 1. Installation du plugin
+Module d'activité Moodle pour le suivi des stages étudiants : enregistrement
+des stages, génération et suivi des conventions, auto-évaluation par
+l'étudiant, évaluation par l'enseignant référent et validation finale par la
+scolarité (DEVE).
 
-1. Copier le dossier `mod/stage` de ce dépôt à la racine de votre Moodle, dans `<moodle>/mod/stage`.
-2. Se connecter en tant qu'administrateur et aller sur **Administration du site**
-   (ou visiter directement `admin/index.php`) : Moodle détecte le nouveau plugin
-   et propose de l'installer — cliquer sur **Mettre à jour la base de données maintenant**.
-3. Vérifier dans **Administration du site > Plugins > Activités** que
-   « Gestion des stages » apparaît et est activé.
+- **Prérequis** : Moodle 4.0 ou supérieur, PHP 7.4+.
+- **Dépendance incluse** : FPDI 2.6 (MIT), dans `thirdparty/vendor`, utilisée
+  pour l'assemblage des conventions PDF.
 
-En ligne de commande, l'équivalent est :
+## 1. Installation
+
+Copier le dossier `mod/stage` dans `<moodle>/mod/stage`, puis lancer la mise à
+jour de la base :
 
 ```bash
 php admin/cli/upgrade.php
 ```
 
-## 2. Rôles à utiliser
+Ou, depuis l'interface, se connecter en administrateur : Moodle détecte le
+plugin et propose de l'installer. Vérifier ensuite sa présence dans
+**Administration du site > Plugins > Activités**.
 
-Le module s'appuie sur les capacités Moodle standard, déjà associées aux
-archétypes de rôles suivants (voir `db/access.php`) :
+Si vous reconstruisez le dossier `thirdparty` vous-même :
 
-| Rôle Moodle à attribuer                | Capacités obtenues dans l'activité |
-|-----------------------------------------|-------------------------------------|
-| **Étudiant** (archétype `student`)      | Voir + auto-évaluer les stages que la DEVE lui a enregistrés |
-| **Enseignant non-éditeur** (`teacher`)  | Voir + évaluer les stages des étudiants qui lui sont attribués (rôle **référent**) |
-| **Enseignant éditeur** (`editingteacher`) ou **Manager** | Voir + gérer les thématiques + attribuer les référents + validation finale DEVE + voir tous les stages (**rôle DEVE**) |
+```bash
+cd mod/stage/thirdparty && composer require setasign/fpdi:^2.6
+```
 
-Recommandation :
-- Donnez le rôle **Étudiant** aux apprenants (inscription normale au cours).
-- Donnez le rôle **Enseignant non-éditeur** aux enseignants référents
-  (ils ne doivent voir/gérer que les étudiants qu'on leur attribue).
-- Donnez le rôle **Enseignant** (éditeur) ou **Manager** aux personnels de la
-  DEVE. Ils héritent alors aussi de la capacité d'évaluation « enseignant »,
-  ce qui leur permet de valider un stage à la place d'un enseignant référent
-  si besoin.
+Sans cette librairie, toutes les autres fonctions restent utilisables : seule
+la génération des conventions affiche un message d'erreur explicite.
 
-Si vous voulez distinguer visuellement la DEVE des enseignants éditeurs de
-contenu de cours, vous pouvez dupliquer le rôle « Enseignant » dans
-**Administration du site > Utilisateurs > Permissions > Définir les rôles**,
-le renommer « DEVE », et ne cocher que les capacités `mod/stage:*`
-nécessaires (managethemes, validatedeve, manageteachers, viewall,
-evaluateteacher, view) en laissant les capacités de gestion de cours
-décochées.
+## 2. Rôles et capacités
+
+Le module s'appuie sur les archétypes de rôles Moodle standard
+(voir `db/access.php`) :
+
+| Rôle Moodle | Rôle fonctionnel | Droits dans l'activité |
+|---|---|---|
+| Étudiant (`student`) | Étudiant | Consulter ses stages, demander une convention, s'auto-évaluer |
+| Enseignant non-éditeur (`teacher`) | Enseignant référent | Évaluer les stages des étudiants qui lui sont attribués |
+| Enseignant éditeur (`editingteacher`) ou Manager | DEVE | Tout le reste : thématiques, conventions, référents, validation finale |
+
+Pour distinguer la DEVE des enseignants éditeurs de contenu, dupliquer le rôle
+« Enseignant » (**Administration du site > Utilisateurs > Permissions >
+Définir les rôles**), le renommer « DEVE » et n'y cocher que les capacités
+`mod/stage:*` (`managethemes`, `validatedeve`, `manageteachers`, `viewall`,
+`evaluateteacher`, `view`).
 
 ### Navigation
 
-Quand la DEVE ou un enseignant référent ouvre l'activité, il/elle est
-redirigé.e directement vers le **tableau de pilotage** (dashboard.php),
-qui devient sa page d'atterrissage habituelle ; la page « Mes stages »
-(tableau de bord de l'étudiant) ne leur est jamais montrée. Une barre de
-liens commune (Enregistrer des stages, Conventions, Validation DEVE,
-Validation enseignant, Pilotage, Export Excel selon les capacités) est
-affichée en haut de cette page. Les pages utilisées ponctuellement
-(gestion des thématiques, gabarits de convention, attribution des
-enseignants référents, import depuis un autre cours) sont regroupées sous
-un seul lien **Administration**, en fin de cette barre.
+La DEVE et les enseignants référents arrivent directement sur le **tableau de
+pilotage** ; la page « Mes stages » est réservée aux étudiants. Une barre de
+liens commune donne accès, selon les capacités, à : Enregistrer des stages,
+Conventions, Validation DEVE, Validation enseignant, Pilotage, Export Excel et
+**Administration** (thématiques, gabarits de convention, référents, import
+depuis un autre cours).
 
-### Importer depuis un autre cours
+## 3. Mise en place d'un cours
 
-Pour éviter de ressaisir thématiques, gabarits de convention, logos et
-informations d'établissement à chaque nouveau cours (ex. nouvelle année),
-la page **Administration > Importer depuis un autre cours** permet de les
-copier depuis une autre instance de l'activité « Gestion des stages »
-(généralement dans un autre cours). Seules les instances sur lesquelles
-l'utilisateur a lui-même le droit de gérer les thématiques sont proposées
-comme source. Quatre catégories sont cochables indépendamment (au moins
-une requise) :
+1. Créer un cours dédié (par exemple « Stages – 5<sup>e</sup> année »).
+2. Y inscrire les étudiants, les enseignants référents et les personnels DEVE
+   avec les rôles du tableau ci-dessus.
+3. Ajouter une activité **Gestion des stages**.
 
-- **Thématiques** : copiées telles quelles (nouvelles thématiques,
-  s'ajoutent à celles déjà existantes, aucune fusion ni détection de
-  doublon — les questions d'évaluation personnalisées associées ne sont
-  pas copiées) ;
-- **Gabarits de convention** : nom, langue et fichier PDF copiés ;
-- **Logos** : remplacent ceux déjà présents sur cette instance, s'il y en
-  a ;
-- **Informations de l'établissement d'enseignement** : remplacent celles
-  déjà renseignées sur cette instance, s'il y en a.
+Pour un nouveau cours reprenant une configuration existante, utiliser
+**Administration > Importer depuis un autre cours** : copie les thématiques,
+les gabarits de convention (avec leur PDF), les logos et les informations
+d'établissement d'une autre instance du module. Seules les instances où vous
+pouvez gérer les thématiques sont proposées comme source. Thématiques et
+gabarits s'ajoutent à l'existant ; logos et informations d'établissement le
+remplacent.
 
-## 3. Création du cours « Stages »
+## 4. Thématiques
 
-1. **Administration du site > Cours > Gérer les cours et catégories** :
-   créer une catégorie (ex. « Stages ») puis un nouveau cours (ex. « Stages
-   2026-2027 »).
-2. Dans le cours, activer le mode édition et cliquer sur
-   **Ajouter une activité ou une ressource > Gestion des stages**.
-3. Renseigner le nom de l'activité (ex. « Suivi des stages ») et
-   éventuellement une description, puis **Enregistrer et afficher**.
-4. **Inscrire les utilisateurs** (Participants > Inscrire des utilisateurs) :
-   - les étudiants avec le rôle Étudiant ;
-   - les enseignants référents avec le rôle Enseignant non-éditeur ;
-   - les personnels DEVE avec le rôle Enseignant (éditeur) ou Manager
-     (le rôle Manager peut aussi être assigné au niveau de la catégorie ou
-     du cours via **Utilisateurs assignés en tant que...**, sans passer par
-     l'inscription classique).
+Depuis **Administration > Gérer les thématiques** :
 
-## 4. Paramétrage des thématiques (DEVE)
+- **Ajouter une thématique** pour chaque type de stage possible, avec son
+  année d'étude, son caractère obligatoire et sa durée requise.
+- Le tableau permet de modifier en masse le caractère obligatoire, la durée et
+  l'année d'étude de toutes les lignes en une seule soumission.
+- La colonne **Visible** est un interrupteur : une thématique désactivée n'est
+  plus proposée à l'enregistrement d'un stage, mais reste visible ici et sur
+  les stages déjà enregistrés dessus.
+- **Questions d'évaluation** (lien par thématique) : définir des questions
+  (choix multiples ou commentaire libre) qui remplacent le commentaire libre
+  générique dans le formulaire d'auto-évaluation de l'étudiant et/ou celui de
+  l'enseignant. Une question peut être réutilisée sur plusieurs thématiques.
 
-1. Ouvrir l'activité, puis le lien **Gérer les thématiques**.
-2. **Ajouter une thématique** pour chaque thématique de stage possible.
-3. Deux façons de définir les thématiques obligatoires et leur durée requise :
-   - **Un par un** : sur chaque ligne, lien « Basculer obligatoire » et
-     édition (icône Modifier) pour ajuster nom/description/durée requise.
-   - **En masse** : sur la page liste, cocher/décocher la colonne
-     « Obligatoire » et saisir la durée requise pour plusieurs thématiques
-     simultanément, puis **Enregistrer les modifications** (un seul
-     formulaire pour toutes les lignes du tableau).
-4. **Activer/désactiver une thématique pour ce cours** : cliquer sur
-   Oui/Non dans la colonne « Visible » (bascule immédiate, sans passer par
-   le formulaire d'édition). Une thématique désactivée n'est plus proposée
-   à l'enregistrement d'un stage (ni par la DEVE, ni par l'étudiant), mais
-   reste visible ici et sur les stages déjà enregistrés dessus.
+## 5. Enregistrement des stages
 
-## 5. Enregistrement des stages (DEVE, ou par l'étudiant)
+Quatre voies, toutes accessibles depuis **Enregistrer des stages** :
 
-Le plus souvent, c'est la DEVE qui crée les stages des étudiants. Un
-étudiant peut aussi enregistrer lui-même un stage (voir « Auto-enregistrement
-par l'étudiant » ci-dessous) ; dans tous les cas, il ne peut ensuite
-qu'auto-évaluer ses stages une fois enregistrés.
+| Méthode | Statut de convention initial |
+|---|---|
+| Unitaire (un étudiant, un stage) | Non demandée |
+| En masse (une thématique, plusieurs étudiants) | Signée (StageVet) |
+| Import CSV générique | Non demandée |
+| Import d'un export StageVet | Signée (StageVet) |
 
-1. Ouvrir l'activité, puis le lien **Enregistrer des stages** : la liste de
-   tous les stages déjà enregistrés s'affiche, avec un lien « Modifier »
-   sur chaque ligne.
-2. **Enregistrement unitaire** : bouton « Enregistrer un stage » →
-   choisir l'étudiant, la thématique, la structure d'accueil, les dates et
-   la durée déclarée, puis Enregistrer. Si cet étudiant a déjà un stage sur
-   cette thématique avec ces mêmes dates, le formulaire refuse
-   l'enregistrement et affiche une erreur sur le champ thématique. Le statut
-   de convention reste **Non demandée** : c'est ensuite à l'étudiant de
-   demander sa convention (voir § 7).
-3. **Enregistrement en masse** : bouton « Enregistrer des stages en masse » →
-   choisir une thématique, une structure/dates/durée communes, cocher tous
-   les étudiants concernés, puis « Enregistrer pour les étudiants cochés » :
-   un stage identique est créé pour chacun des étudiants sélectionnés. Si un
-   étudiant coché a déjà un stage enregistré sur cette même thématique avec
-   les mêmes dates de début/fin, la ligne le concernant est ignorée (pas de
-   doublon créé) et son nom est listé dans un avertissement à l'écran, avec
-   le nombre de stages effectivement créés. **Ces stages sont considérés
-   comme déjà signés sur SignVet** (statut de convention **Signée
-   (SignVet)** attribué automatiquement) : ils n'apparaissent pas dans le
-   circuit de gestion de convention de ce plugin (page « Conventions »,
-   génération de PDF...), et l'auto-évaluation de l'étudiant est
-   immédiatement ouverte.
-4. **Modifier un stage déjà enregistré** : depuis la liste, lien « Modifier »
-   sur la ligne concernée (thématique, structure, dates, durée déclarée
-   restent modifiables par la DEVE à tout moment, y compris après
-   auto-évaluation ou évaluation enseignant).
+Un étudiant déjà titulaire d'un stage sur la même thématique avec les mêmes
+dates est écarté et signalé, sans créer de doublon.
 
-### Auto-enregistrement par l'étudiant
+Le statut **Signée (StageVet)** marque les stages déjà conventionnés hors du
+module : ils n'apparaissent pas dans le circuit de gestion des conventions et
+l'auto-évaluation est ouverte immédiatement.
 
-Les stages effectués chez des vétérinaires français sont enregistrés et
-leur convention générée automatiquement par StageVet (hors de ce plugin).
-Pour tout autre type de stage, l'étudiant dispose sur son tableau de bord
-(page d'activité) d'un bouton **Faire une demande de convention (hors
-StageVet)**, qui combine en un seul formulaire l'enregistrement du stage
-(thématique, structure, dates, durée) et toutes les informations de
-demande de convention (voir § 7 pour le détail des champs). Il doit avoir
-au moins un enseignant référent attribué et au moins un gabarit de
-convention disponible pour y accéder, sinon un message l'invite à
-contacter la DEVE. À la validation, le stage est créé (statut
-**Enregistré**) et la demande de convention envoyée à la DEVE (statut
-**Demandée**), exactement comme s'il avait utilisé successivement les
-deux formulaires séparés. Un message rappelle qu'une demande de
-convention doit être faite au moins 2 semaines avant le stage (4 semaines
-pour un stage à l'étranger).
+### Import CSV générique
 
-### Questions d'évaluation personnalisées par thématique
+Colonnes attendues, séparées par des points-virgules ou des virgules, ligne
+d'en-tête facultative :
 
-Pour chaque thématique, la DEVE peut définir des questions qui remplacent le
-commentaire libre générique dans le formulaire d'auto-évaluation de
-l'étudiant et/ou dans le formulaire d'évaluation de l'enseignant référent :
+```
+email;theme;structure;datestart;dateend;duration
+```
 
-1. Sur la page **Gérer les thématiques**, cliquer sur **Questions
-   d'évaluation** en face de la thématique concernée.
-2. **Ajouter une question** : choisir à quel formulaire elle s'applique
-   (auto-évaluation étudiant ou évaluation enseignant), son type (« Choix
-   multiples » avec une liste d'options, une par ligne, ou « Commentaire
-   libre »), son intitulé, si elle est obligatoire, et son ordre
-   d'affichage.
-3. Tant qu'aucune question n'est définie pour un formulaire donné sur une
-   thématique, un simple champ de commentaire libre reste proposé par
-   défaut ; dès qu'au moins une question existe, le formulaire dynamique
-   (QCM et/ou commentaires libres définis) remplace ce champ générique.
-
-### Import depuis Excel
-
-Un bouton **Importer un fichier CSV** est disponible sur la page « Enregistrer
-des stages ». Il permet d'enregistrer en masse des stages à partir d'un
-fichier préparé dans Excel :
-
-1. Dans Excel, préparer un tableau avec les colonnes (avec ou sans ligne
-   d'en-tête) : `email ; theme ; structure ; datestart ; dateend ; duration`
-   - `email` : adresse de l'étudiant, telle qu'inscrite au cours ;
-   - `theme` : nom exact d'une thématique déjà créée dans l'activité ;
-   - `structure` : structure d'accueil (facultatif) ;
-   - `datestart` / `dateend` : dates au format AAAA-MM-JJ (facultatif) ;
-   - `duration` : durée déclarée, en jours.
-2. **Fichier > Enregistrer sous > CSV (séparateur point-virgule) (.csv)**.
-3. Sur la page **Importer un fichier CSV** du module, sélectionner ce
-   fichier et cliquer sur **Importer**.
-4. Un stage « Enregistré » est créé pour chaque ligne valide ; les lignes
-   dont l'e-mail ou la thématique ne correspond à rien sont signalées sans
-   bloquer l'import des autres lignes. Une ligne concernant un étudiant qui
-   a déjà un stage sur la même thématique et les mêmes dates (déjà en base,
-   ou déjà rencontré plus haut dans le même fichier) est elle aussi ignorée
-   et signalée, plutôt que de créer un doublon.
+`email` doit correspondre à un étudiant inscrit au cours, `theme` au nom exact
+d'une thématique existante, les dates sont au format `AAAA-MM-JJ` (facultatives)
+et `duration` est la durée déclarée en jours.
 
 ### Import d'un export StageVet
 
-Un second bouton **Importer un export StageVet (CSV)** est disponible sur
-la même page, pour importer directement le fichier CSV exporté depuis
-StageVet, sans le retravailler dans Excel au préalable.
+Importe le fichier CSV exporté par StageVet sans retraitement préalable. Les
+colonnes sont reconnues par leur en-tête, donc leur ordre est indifférent.
+L'étudiant est identifié par courriel si la colonne est renseignée, sinon par
+nom et prénom (comparaison insensible aux accents et à la casse).
 
-1. Dans StageVet, exporter les stages/conventions au format CSV.
-2. Dans l'activité, créer si besoin les thématiques dont le nom correspond
-   **exactement** aux intitulés utilisés dans StageVet (ex. « THEME LIBRE /
-   A2, A3, A4, A5 », « A6 / AC »...) — StageVet n'utilise pas les mêmes
-   noms de thématique que ceux définis par la DEVE.
-3. Sur la page **Importer un export StageVet (CSV)**, sélectionner le
-   fichier tel quel et cliquer sur **Importer**.
-4. Les colonnes sont reconnues par leur en-tête (nom/prénom étudiant,
-   thème, dates de convention, coordonnées de l'organisme d'accueil et du
-   tuteur, modalités, gratification...) : l'ordre des colonnes n'a pas
-   besoin de correspondre au fichier d'exemple, seul l'intitulé compte.
-   L'étudiant est identifié par courriel si la colonne correspondante est
-   renseignée (souvent vide dans les exports StageVet), sinon par
-   nom/prénom (comparaison insensible aux accents et à la casse) parmi les
-   étudiants inscrits au cours.
-5. Chaque stage importé est enregistré directement au statut de convention
-   **Signée (SignVet)** (comme un enregistrement en masse, voir § 5) :
-   l'auto-évaluation de l'étudiant est immédiatement ouverte, sans passer
-   par le circuit de gestion de convention de ce plugin. Les coordonnées de
-   convention disponibles dans l'export (organisme, tuteur, modalités,
-   gratification...) sont malgré tout enregistrées à titre de référence.
-6. Comme pour l'import CSV générique, les lignes sans étudiant ou
-   thématique correspondante, ou en doublon, sont signalées sans bloquer
-   l'import des autres lignes.
+Les noms de thématiques doivent correspondre exactement aux intitulés StageVet
+(par exemple `THEME LIBRE / A2, A3, A4, A5`) : créez-les au préalable. Le
+rapport d'import liste, groupés par valeur et avec leurs numéros de ligne, les
+étudiants et les thématiques introuvables.
 
-## 6. Attribution des enseignants référents (DEVE)
+### Auto-enregistrement par l'étudiant
 
-Conçue pour un grand nombre d'étudiants et d'enseignants (recherche, filtre,
-pagination) : afficher une case à cocher par enseignant pour chaque étudiant
-sur une seule page ne serait pas praticable à l'échelle d'une promotion.
+Les stages chez les vétérinaires français sont conventionnés par StageVet.
+Pour les autres, l'étudiant dispose sur son tableau de bord d'un bouton
+**Faire une demande de convention (hors StageVet)** qui enregistre le stage et
+soumet la demande de convention en un seul formulaire. Il doit avoir au moins
+un enseignant référent attribué et un gabarit de convention disponible.
 
-1. Ouvrir l'activité, puis le lien **Attribuer les enseignants référents**.
-2. Un tableau paginé (40 étudiants par page) liste les étudiants inscrits,
-   avec sur chaque ligne une liste déroulante à sélection multiple listant
-   les enseignants référents potentiels (inscrits avec la capacité
-   d'évaluation) : maintenir Ctrl (ou Cmd sur Mac) pour sélectionner
-   plusieurs enseignants.
-3. Une barre de recherche par nom d'étudiant et une case « Étudiants sans
-   référent uniquement » permettent de filtrer la liste, pour retrouver
-   rapidement les étudiants encore à traiter.
-4. Sélectionner un ou plusieurs enseignants par étudiant (plusieurs
-   référents possibles), puis **Enregistrer** : seuls les étudiants
-   affichés sur la page courante sont pris en compte par cet enregistrement.
-5. **Pour modifier une attribution** : revenir sur cette même page à tout
-   moment, ajuster la sélection et enregistrer à nouveau — la sauvegarde
-   remplace entièrement les référents précédemment attribués à chaque
-   étudiant modifié sur la page soumise.
+## 6. Enseignants référents
 
-### Import en masse depuis Excel/CSV
+**Administration > Attribuer les enseignants référents** : une ligne par
+étudiant, jusqu'à deux référents chacun, avec recherche par nom, filtre sur les
+étudiants sans référent et enregistrement en masse.
 
-Pour attribuer les référents à un grand nombre d'étudiants d'un coup plutôt
-qu'un par un, un bouton **Importer un fichier CSV** est disponible sur cette
-même page :
+L'import CSV de cette page attend :
 
-1. Préparer un tableau avec les colonnes (avec ou sans ligne d'en-tête) :
-   `studentemail ; teacher1email ; teacher2email`
-   - `studentemail` : adresse de l'étudiant, telle qu'inscrite au cours ;
-   - `teacher1email` : adresse d'un enseignant référent potentiel inscrit
-     au cours ;
-   - `teacher2email` : adresse d'un second référent (facultatif).
-2. Enregistrer ce tableau en CSV (séparateur point-virgule ou virgule).
-3. Sur la page **Importer un fichier CSV** (attribution), sélectionner ce
-   fichier et cliquer sur **Importer**.
-4. Chaque ligne **remplace entièrement** l'attribution existante de
-   l'étudiant concerné (comme l'enregistrement manuel). Les lignes dont un
-   e-mail ne correspond à aucun étudiant/enseignant inscrit sont signalées
-   sans bloquer l'import des autres lignes.
-
-## 7. Conventions de stage (PDF)
-
-Le module génère un PDF de convention de stage par saisie : une page 1
-recréée dynamiquement à partir des données du stage (établissement,
-structure d'accueil, stagiaire, thématique/durée, encadrement), suivie des
-pages 2 à 4 (articles juridiques, texte fixe) d'un gabarit PDF choisi par
-l'étudiant. **L'auto-évaluation de l'étudiant n'est ouverte qu'une fois la
-convention signée.**
-
-### Dépendance technique : FPDI
-
-La génération du PDF nécessite la librairie tierce **FPDI**
-(`setasign/fpdi`, licence MIT), qui doit être présente dans
-`mod/stage/thirdparty/vendor/`. Si vous avez cloné ce dépôt tel quel, elle y
-est déjà incluse. Si vous reconstruisez le dossier `thirdparty` vous-même :
-
-```bash
-cd mod/stage/thirdparty
-composer require setasign/fpdi:^2.6
+```
+studentemail;teacher1email;teacher2email
 ```
 
-Tant que cette librairie n'est pas présente, la page **Générer la
-convention** affiche un message d'erreur explicite plutôt qu'une erreur
-fatale.
+Chaque ligne remplace l'attribution existante de l'étudiant ; le second
+référent est facultatif.
 
-### Étape 1 : gabarits, établissement et logos (DEVE)
+## 7. Conventions de stage
 
-1. Ouvrir l'activité, puis le lien **Gabarits de convention** (visible avec
-   la même capacité que « Gérer les thématiques »).
-2. **Ajouter un gabarit** : donner un nom, choisir sa **langue** (Français
-   standard ou Anglais), et téléverser le PDF des pages 2 à 4 (articles
-   juridiques) correspondant. Un même stage peut proposer plusieurs
-   gabarits, dans une ou les deux langues — l'étudiant choisira parmi eux
-   au moment de sa demande.
-3. **Établissement d'enseignement** (bas de la même page) : renseigner le
-   nom (VetAgro Sup par défaut), l'adresse, le représentant et sa qualité,
-   le téléphone et le courriel affichés dans la section « Établissement
-   d'enseignement » de la page 1 de **toutes** les conventions de ce
-   stage. Tous les champs sont facultatifs (laisser vide si non
-   applicable) ; seul le nom a une valeur par défaut ("VetAgro Sup").
-4. **Logos** (bas de la même page) : téléverser les deux logos affichés en
-   haut de la page 1 de **toutes** les conventions de ce stage (haut
-   gauche / haut droit), au format PNG. Facultatif : la page 1 s'affiche
-   sans logo si aucun n'est fourni.
-5. **Paramètres généraux** (haut de la même page) : case à cocher « Exiger
-   la validation de l'enseignant.e référent.e avant transmission à la
-   DEVE ». Si activée, toute nouvelle demande de convention doit d'abord
-   être validée par un enseignant référent de l'étudiant (voir « Validation
-   par l'enseignant référent » ci-dessous) avant d'apparaître dans la liste
-   des demandes à traiter par la DEVE.
-6. Un gabarit déjà utilisé par une demande de convention ne peut plus être
-   supprimé (le lien Supprimer renvoie une erreur) tant que cette demande
-   existe.
+Circuit complet, de la demande étudiante au document signé. **L'auto-évaluation
+n'est ouverte qu'une fois la convention signée.**
 
-### Étape 2 : demande par l'étudiant
+### Configuration (Administration > Gabarits de convention)
 
-Sur sa page d'activité, pour chaque stage sans convention en cours (ou dont
-la précédente demande a été **refusée** par la DEVE, voir étape 3),
-l'étudiant a un lien **Demander la convention**. Le formulaire y rassemble
-toutes les informations de la page 1 de la convention que la DEVE ne
-connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
-à l'enregistrement du stage). **Tous les champs sont obligatoires, sauf le
-lieu du stage** (facultatif, à renseigner uniquement s'il diffère de
-l'adresse de l'organisme) :
+- **Paramètres généraux** : option « Exiger la validation de l'enseignant
+  référent avant transmission à la DEVE ».
+- **Gabarits** : nom, langue (français ou anglais) et PDF des articles
+  juridiques. Plusieurs gabarits peuvent coexister ; l'étudiant en choisit un.
+  Un gabarit utilisé par une demande ne peut plus être supprimé.
+- **Établissement d'enseignement** : nom, adresse, représentant et sa qualité,
+  téléphone et courriel, affichés en tête de toutes les conventions.
+- **Logos** : deux images PNG placées en haut de la première page.
 
-- langue de la convention (Français standard ou Anglais) et gabarit choisi
-  parmi ceux proposés dans cette langue ;
-- enseignant.e référent.e : à choisir parmi ceux/celles qui lui ont été
-  attribué.e.s par la DEVE (combobox, un seul choix) ; le statut affiché
-  sur la convention est fixe (« Enseignant ») et le courriel est toujours
-  chargé automatiquement depuis le compte de l'enseignant.e choisi.e,
-  jamais saisi à la main (pas de numéro de téléphone pour ce rôle) ;
-- situation de l'étudiant (année normale, redoublant.e, dette d'UE) et type
-  de stage (obligatoire ou complémentaire/EP) ;
-- coordonnées de l'étudiant : date de naissance, adresse, téléphone ;
-- organisme d'accueil : adresse, représenté par, qualité du représentant,
-  service, téléphone, courriel, lieu du stage si différent de l'adresse ;
-- tuteur / tutrice de stage : nom, fonction, téléphone, courriel ;
-- modalités particulières (présence de nuit / dimanche / jours fériés,
-  stage au domicile, autre — ces cases à cocher restent optionnelles) et
-  montant de la gratification mensuelle ;
-- congés et autorisations d'absence (case à cocher optionnelle ; si cochée,
-  le nombre de jours et les modalités deviennent visibles).
+### Demande par l'étudiant
 
-Si l'étudiant n'a pas encore d'enseignant référent attribué, le formulaire
-n'est pas accessible : un message l'invite à contacter la DEVE.
+Formulaire couvrant les informations que la DEVE ne connaît pas déjà :
+langue et gabarit, enseignant référent (choisi parmi ceux qui lui sont
+attribués — son courriel est repris automatiquement de son compte), situation
+et type de stage, coordonnées de l'étudiant, organisme d'accueil, tuteur,
+modalités particulières, gratification et congés.
 
-Une fois validé, le stage passe au statut de convention **Demandée** (ou
-**En attente de l'enseignant référent** si l'option de validation
-enseignant est activée, voir ci-dessous).
+Tous les champs sont obligatoires à l'exception du lieu du stage, à renseigner
+uniquement s'il diffère de l'adresse de l'organisme. Un rappel indique que la
+demande doit être déposée au moins deux semaines avant le stage, quatre pour un
+stage à l'étranger.
 
 ### Validation par l'enseignant référent (optionnelle)
 
-Si l'option « Exiger la validation de l'enseignant.e référent.e avant
-transmission à la DEVE » est activée (voir étape 1), toute nouvelle demande
-de convention passe d'abord au statut **En attente de l'enseignant
-référent** : elle n'apparaît pas encore dans la liste de la DEVE. Chacun
-des enseignants référents de l'étudiant reçoit un courriel et retrouve la
-demande dans une section dédiée en haut de sa page **Validation des
-stages**, avec un lien **Valider la demande**. Cette page affiche les
-le même formulaire complet, entièrement éditable, que celui utilisé par
-la DEVE à l'étape 3 : l'enseignant.e peut corriger n'importe quel champ
-saisi par l'étudiant avant de se prononcer, avec deux actions :
+Si l'option est activée, la demande passe d'abord au statut **En attente de
+l'enseignant référent** et n'est pas encore visible par la DEVE. Les référents
+de l'étudiant reçoivent un courriel et retrouvent la demande en tête de leur
+page de validation. Ils disposent du formulaire complet, éditable, et peuvent
+la valider (transmission à la DEVE) ou la refuser avec un motif renvoyé à
+l'étudiant.
 
-- **Valider la demande** : enregistre les éventuelles corrections et
-  transmet la demande à la DEVE (statut **Demandée**), qui la traite
-  ensuite normalement (voir étape 3) ;
-- **Refuser** (commentaire obligatoire) : fait passer la convention au
-  statut **Refusée** et envoie le commentaire par courriel à l'étudiant,
-  exactement comme un refus par la DEVE.
+### Traitement par la DEVE
 
-Si l'option est désactivée (par défaut), les demandes passent directement
-au statut **Demandée** et sont immédiatement visibles par la DEVE.
+La page **Conventions** liste les demandes en cours, avec recherche par nom,
+tri par colonne et affichage des plus récentes en premier.
 
-### Étape 3 : revue et validation (DEVE)
+1. **Générer la convention** ouvre la demande, entièrement éditable.
+   - *Valider* enregistre les corrections, passe la convention au statut
+     **Éditée** et télécharge immédiatement le PDF.
+   - *Refuser* (motif obligatoire) la renvoie à l'étudiant pour correction.
+2. **Marquer signée**, une fois le document signé retourné. Le PDF signé peut
+   être joint à cette étape — facultatif, mais s'il est fourni il devient
+   téléchargeable par l'étudiant, son enseignant référent et la DEVE. Cette
+   étape ouvre l'auto-évaluation et l'évaluation.
 
-1. Ouvrir l'activité, puis le lien **Conventions** : la liste de toutes les
-   demandes en cours s'affiche (celles en attente de validation enseignant
-   n'y apparaissent pas encore), avec le gabarit choisi, le statut et la
-   date de la demande — recherchable par nom d'étudiant et triable par
-   colonne (les demandes les plus récentes sont affichées en premier par
-   défaut).
-2. Pour une demande au statut **Demandée**, cliquer sur **Générer la
-   convention** (depuis la page Conventions, ou depuis « Enregistrer des
-   stages ») ouvre une page de revue affichant le formulaire rempli par
-   l'étudiant, entièrement éditable par la DEVE. Deux actions possibles :
-   - **Valider** : enregistre les éventuelles corrections, fait passer
-     la convention au statut **Éditée** et télécharge immédiatement le
-     PDF généré (retélécharger à tout moment depuis **Générer la
-     convention**) ;
-   - **Refuser** (commentaire obligatoire) : fait passer la convention au
-     statut **Refusée** et envoie le commentaire par courriel à
-     l'étudiant, qui peut alors corriger sa demande et la soumettre à
-     nouveau depuis son tableau de bord.
-3. **Marquer signée** (une fois la convention au statut Éditée) : ouvre une
-   page dédiée où la DEVE peut, facultativement, téléverser le PDF de la
-   convention effectivement signée (scan du document papier retourné) —
-   valider le formulaire fait passer le stage au statut Signée que ce PDF
-   soit fourni ou non. **Cette étape ouvre le droit à l'auto-évaluation de
-   l'étudiant et à l'évaluation de l'enseignant référent** — avant cela, la
-   page d'auto-évaluation de l'étudiant affiche un message l'invitant à
-   attendre la signature. Si un PDF a été téléversé, il devient
-   téléchargeable (lien **Télécharger la convention signée**) par
-   l'étudiant depuis son tableau de bord, par l'enseignant référent depuis
-   sa page d'évaluation, et par la DEVE depuis les pages « Conventions » et
-   « Enregistrer des stages ».
+Le PDF produit reprend la première page générée à partir des données du stage,
+suivie des pages du gabarit choisi.
 
-Le lien **Générer la convention** (téléchargement direct du PDF) n'est
-proposé qu'une fois la convention au statut Éditée ou Signée ; tant
-qu'elle est au statut Demandée, ce même lien mène à la page de revue
-décrite ci-dessus.
+### Annulation
 
-### Annulation d'un stage (DEVE)
+Depuis **Enregistrer des stages**, la DEVE peut annuler un stage à tout moment,
+avec un motif obligatoire. La saisie est conservée en l'état ; seul le statut
+passe définitivement à **Annulé**.
 
-Depuis la page **Enregistrer des stages**, la DEVE peut à tout moment et
-quel que soit le statut actuel du stage cliquer sur **Annuler ce stage**.
-Un commentaire expliquant le motif est obligatoire. La saisie est
-conservée telle quelle (aucune donnée supprimée) : seul le statut passe
-définitivement à **Annulé**.
+## 8. Suivi et validation
 
-## 8. Export Excel de tous les stages (DEVE)
+- **Étudiant** : avancement des thématiques obligatoires par année d'étude et
+  liste de ses stages, avec le statut de convention et l'accès à
+  l'auto-évaluation. Une auto-évaluation soumise n'est plus modifiable, sauf
+  réinitialisation par la DEVE.
+- **Enseignant référent** : liste restreinte à ses étudiants (recherche, filtres,
+  tri, pagination). Il valide l'évaluation ou la marque non validée avec un
+  motif.
+- **DEVE** : validation unitaire (durée retenue et commentaire) ou en masse,
+  possibilité de marquer non validé, et **Réinitialiser** pour rouvrir une
+  saisie déjà évaluée. Le tableau de pilotage donne la vue d'ensemble de tous
+  les étudiants avec accès au détail de chacun.
 
-Le lien **Exporter en Excel**, visible depuis la page de l'activité et
-depuis la page « Enregistrer des stages », télécharge un fichier `.xlsx`
-listant tous les stages de l'activité, tous étudiants confondus : nom et
-e-mail de l'étudiant, thématique (et si elle est obligatoire), structure
-d'accueil, dates, durée déclarée et durée retenue, statut, enseignant(s)
-référent(s), commentaire enseignant et commentaire DEVE. Il s'ouvre
-directement dans Excel, sans étape intermédiaire.
+## 9. Exports et API
 
-## 9. Utilisation courante
+**Exporter en Excel** produit un `.xlsx` de tous les stages de l'activité :
+étudiant, thématique, structure d'accueil, dates, durées déclarée et retenue,
+statut, référents et commentaires.
 
-- **Étudiant** : sur la page de l'activité, suivi de l'avancement des
-  thématiques obligatoires (regroupées par année d'étude) et de la liste
-  de ses propres stages (enregistrés par la DEVE) uniquement, avec pour
-  chacun : un lien « Demander la convention » tant qu'aucune n'est en
-  cours, le statut de sa convention, puis un lien « Auto-évaluer mon
-  stage » une fois celle-ci signée (voir § 7). Une fois l'auto-évaluation
-  soumise, elle n'est plus modifiable, sauf réinitialisation par la DEVE.
-- **Enseignant référent** : lien « Validation enseignant », qui liste
-  uniquement les stages des étudiants qui lui ont été attribués (recherche
-  par nom, filtre par thématique/statut, tri des colonnes, pagination), et
-  un lien « Tableau de pilotage » restreint à ses propres étudiants. Sur
-  chaque stage, il peut valider l'évaluation ou la **marquer non validée**
-  (avec un motif) plutôt que la valider — dans les deux cas, elle n'est
-  ensuite plus modifiable sans réinitialisation par la DEVE.
-- **DEVE** : lien « Validation DEVE » pour valider un stage un par un
-  (durée retenue + commentaire) ou en masse (sélection de plusieurs lignes
-  + bouton « Valider la sélection »), avec la même possibilité de
-  **marquer non validé** plutôt que de valider ; lien « Réinitialiser »
-  (depuis la liste des stages ou l'écran de validation) pour redonner la
-  main à l'étudiant et à l'enseignant référent sur une saisie déjà évaluée
-  ou rejetée ; lien **Tableau de pilotage** donnant une vue d'ensemble de
-  tous les étudiants (avancement sur les thématiques obligatoires, stages
-  en attente, durée totale retenue) avec accès au détail de chacun.
+Deux fonctions de service web sont regroupées dans le service prédéfini
+« Gestion des stages (mod_stage) » :
 
-## 10. API web services
-
-Le module expose deux fonctions de service web Moodle (`db/services.php`),
-regroupées dans le service prédéfini **« Gestion des stages (mod_stage) »** :
-
-| Fonction | Capacité requise | Rôle |
+| Fonction | Capacité | Description |
 |---|---|---|
-| `mod_stage_register_entries` | `mod/stage:registerstages` | Enregistre un ou plusieurs stages pour des étudiants (équivalent API de l'enregistrement unitaire/en masse/import). Prend un tableau `entries[]` (`userid`, `themeid`, `structure`, `datestart`, `dateend`, `declaredduration`). |
-| `mod_stage_get_my_stages` | `mod/stage:submit` | Renvoie les stages de l'utilisateur authentifié pour l'activité donnée. |
+| `mod_stage_register_entries` | `mod/stage:registerstages` | Enregistre un ou plusieurs stages. Paramètres : `cmid` et `entries[]` (`userid`, `themeid`, `structure`, `datestart`, `dateend`, `declaredduration`). |
+| `mod_stage_get_my_stages` | `mod/stage:submit` | Renvoie les stages de l'utilisateur authentifié pour l'activité. |
 
-Pour les activer et les utiliser depuis un système externe :
+Pour les utiliser : activer les web services et le protocole REST
+(**Administration du site > Serveur web**), activer le service « Gestion des
+stages (mod_stage) », y ajouter un compte de service et générer un jeton.
 
-1. **Administration du site > Serveur web > Vue d'ensemble des services web** :
-   activer les web services (protocole REST par exemple).
-2. **Administration du site > Serveur web > Services externes** : le service
-   « Gestion des stages (mod_stage) » apparaît, désactivé par défaut —
-   l'activer, puis y ajouter les utilisateurs autorisés (typiquement un
-   compte de service dédié à la DEVE) et générer un jeton (**Gérer les
-   jetons**).
-3. Appeler la fonction via l'endpoint REST, par exemple :
-
-   ```
-   POST https://votre-moodle/webservice/rest/server.php
-        ?wstoken=VOTRE_JETON
-        &wsfunction=mod_stage_register_entries
-        &moodlewsrestformat=json
-   ```
-   avec en paramètres `cmid` (id du module) et
-   `entries[0][userid]`, `entries[0][themeid]`,
-   `entries[0][declaredduration]`, etc.
-
-Ce point d'entrée permet d'automatiser l'enregistrement des stages depuis un
-outil externe (script, ENT, tableur converti côté client) sans passer par
-l'import CSV manuel.
-
-## 11. Générer un lot d'utilisateurs de test
-
-Pour explorer rapidement le module sans saisie manuelle, un script CLI crée
-un lot d'étudiants, d'enseignants référents et un utilisateur DEVE, les
-inscrit dans un cours existant et, si on lui indique l'activité, prépare un
-jeu de données de démonstration (thématiques par défaut si aucune n'existe,
-attribution des référents, stages répartis sur les quatre statuts).
-
-```bash
-# Comptes de test seuls, inscrits dans le cours id=2 :
-php mod/stage/cli/create_test_data.php --courseid=2
-
-# Comptes + jeu de données complet sur l'activité id=5 (cmid), avec 20
-# étudiants et 4 enseignants référents :
-php mod/stage/cli/create_test_data.php --courseid=2 --cmid=5 --students=20 --teachers=4
-
-# Aide et liste des options :
-php mod/stage/cli/create_test_data.php --help
+```
+POST https://votre-moodle/webservice/rest/server.php
+     ?wstoken=JETON&wsfunction=mod_stage_register_entries&moodlewsrestformat=json
 ```
 
-Les comptes générés (`stagetest_etu01`, `stagetest_ens01`, `stagetest_deve`,
-etc., préfixe personnalisable avec `--prefix`) partagent le même mot de
-passe, affiché en fin d'exécution (option `--password` pour le personnaliser
-selon la politique de mots de passe du site). Relancer le script est sans
-risque : les comptes déjà existants sont réutilisés plutôt que dupliqués.
+## Licence
 
-**À réserver à un environnement de test** : ce script crée de vrais comptes
-avec un mot de passe commun et ne doit pas être exécuté sur une instance de
-production.
+GNU GPL v3 ou ultérieure, comme Moodle.

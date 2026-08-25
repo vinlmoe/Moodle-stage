@@ -62,10 +62,8 @@ class convention_template_form extends \moodleform {
     }
 
     /**
-     * Server-side validation : un PDF est obligatoire à la création d'un gabarit. Une règle
-     * "required" côté client ne fonctionne pas de façon fiable sur un élément filemanager
-     * (comparable au piège déjà rencontré avec des champs gelés : mieux vaut vérifier ici que
-     * de bloquer silencieusement la soumission).
+     * Validation serveur : un PDF est obligatoire à la création d'un gabarit. La vérification
+     * est faite ici car une règle "required" côté client n'est pas fiable sur un filemanager.
      *
      * @param array $data
      * @param array $files

@@ -48,12 +48,9 @@ class entry_form extends \moodleform {
                 . ($theme->mandatory ? ' (' . get_string('mandatory', 'mod_stage') . ')' : '');
         }
 
-        // Ces informations sont fixées par la DEVE : l'étudiant ne peut que consulter leur
-        // valeur (élément "static") pendant sa saisie, jamais les modifier. Geler ("freeze")
-        // ces champs plutôt que de les rendre en lecture seule casserait leur validation
-        // "required" côté client (le champ gelé disparaît du formulaire sans que Moodle ne
-        // retire la règle, ce qui bloquait la soumission en demandant malgré tout une valeur) ;
-        // un champ caché (jamais soumis à une règle "required") évite ce piège.
+        // Informations fixées par la DEVE : l'étudiant les consulte sans pouvoir les modifier.
+        // Affichage statique doublé d'un champ caché, et non freeze() : un élément gelé est
+        // retiré du formulaire sans que sa règle "required" le soit, ce qui bloque la soumission.
         if ($locked) {
             $mform->addElement('static', 'themeidstatic', get_string('theme', 'mod_stage'),
                 $this->_customdata['themename'] ?? '');

@@ -68,8 +68,8 @@ if ($mform->is_cancelled()) {
     $sourcestage = $DB->get_record('stage', ['id' => $data->sourcestageid], '*', MUST_EXIST);
     $sourcecm = get_coursemodule_from_instance('stage', $sourcestage->id, 0, false, MUST_EXIST);
     $sourcecontext = context_module::instance($sourcecm->id);
-    // Revérifie la capacité côté serveur (le formulaire ne propose que des sources autorisées,
-    // mais elle a pu changer entre l'affichage et la soumission).
+    // La capacité est revérifiée sur la source : elle a pu changer depuis l'affichage du
+    // formulaire.
     require_capability('mod/stage:managethemes', $sourcecontext);
 
     $result = stage_import_from_stage($sourcestage, $sourcecontext, $stage, $context, [

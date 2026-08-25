@@ -238,8 +238,8 @@ if ($mode === 'bulk') {
         $start = $datestartraw ? strtotime($datestartraw) : null;
         $end = $dateendraw ? strtotime($dateendraw) : null;
 
-        // Un même étudiant a déjà un stage sur cette thématique et ces mêmes dates : on
-        // l'écarte plutôt que de créer un doublon silencieux.
+        // Un étudiant ayant déjà un stage sur cette thématique et ces mêmes dates est écarté
+        // et signalé, pour ne pas créer de doublon silencieux.
         $existing = stage_get_existing_theme_pairs($stage->id);
         $studentsbyid = [];
         foreach ($students as $student) {

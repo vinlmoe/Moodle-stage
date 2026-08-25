@@ -48,10 +48,9 @@ class deve_entry_form extends \moodleform {
             $studentoptions[$student->id] = fullname($student);
         }
 
-        // Édition d'une saisie existante : l'étudiant concerné n'est plus modifiable. Un champ
-        // caché (plutôt qu'un select gelé avec une règle "required") évite le piège où le champ
-        // gelé disparaît du formulaire sans que Moodle ne retire sa règle, ce qui bloquait la
-        // soumission en demandant malgré tout de choisir un étudiant.
+        // Édition d'une saisie existante : l'étudiant n'est plus modifiable. Affichage statique
+        // doublé d'un champ caché, et non d'un select gelé : freeze() retire l'élément du
+        // formulaire sans lever sa règle "required", ce qui bloque la soumission.
         if (!empty($this->_customdata['lockstudent'])) {
             $mform->addElement('static', 'useridstatic', get_string('student', 'mod_stage'),
                 $this->_customdata['studentname'] ?? '');

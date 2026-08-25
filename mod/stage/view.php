@@ -59,9 +59,8 @@ if ($stage->intro) {
 
 echo stage_render_navlinks($cm, $context);
 
-// Section "Mes stages" : réservée aux étudiants (la DEVE n'a pas besoin de la voir ; elle est de
-// toute façon redirigée vers le tableau de pilotage ci-dessus si elle a la capacité viewall, mais
-// on l'exclut aussi explicitement ici par défense en profondeur si son rôle diffère).
+// Section "Mes stages" : réservée aux étudiants. La DEVE est normalement déjà redirigée
+// ci-dessus, la condition la couvre aussi pour un rôle sans la capacité viewall.
 if (has_capability('mod/stage:submit', $context) && !has_capability('mod/stage:registerstages', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
     echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');

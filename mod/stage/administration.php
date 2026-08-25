@@ -16,9 +16,8 @@
 
 /**
  * Page d'administration de l'activité (DEVE) : regroupe les pages de paramétrage utilisées
- * ponctuellement (thématiques, gabarits de convention, attribution des enseignants référents,
- * import depuis une autre instance), plutôt que de les afficher individuellement dans la barre
- * de navigation principale.
+ * ponctuellement — thématiques, gabarits de convention, attribution des enseignants référents et
+ * import depuis une autre instance.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain

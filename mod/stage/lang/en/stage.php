@@ -96,7 +96,6 @@ $string['importstagevetcsv_help'] = 'Import the CSV file exported directly from 
     . 'saved for reference, without triggering any PDF generation.';
 $string['importstagevetnoheader'] = 'The file does not seem to have a recognisable header row. Check that it is '
     . 'an unmodified StageVet export.';
-$string['importstageveterrorunknownstudent'] = 'Line {$a->line}: no enrolled student matching "{$a->name}".';
 $string['importstageveterrornotheme'] = 'Line {$a}: no theme provided.';
 $string['importstagevetunknownstudentsreport'] = '{$a} student(s) not found among those enrolled on the course';
 $string['importstagevetunknownthemesreport'] = '{$a} theme(s) not found';
@@ -237,9 +236,8 @@ $string['conventionstudent'] = 'The intern';
 $string['conventionthemeduration'] = 'Theme and duration';
 $string['conventionsupervision'] = 'Supervision';
 $string['conventiontutor'] = 'Host organisation supervisor';
-$string['conventiontemplatemissing'] = 'The convention articles template '
-    . '(mod/stage/templates/convention_articles.pdf) could not be found on this site. '
-    . 'Contact an administrator to deploy it before generating a convention.';
+$string['conventiontemplatemissing'] = 'The PDF file of the selected agreement template is missing. '
+    . 'Upload it again from the agreement templates page before generating this agreement.';
 $string['conventionfpdimissing'] = 'The FPDI library required to generate conventions '
     . '(mod/stage/thirdparty/vendor) could not be found on this site. Contact an administrator.';
 
@@ -261,8 +259,6 @@ $string['conventionstatus_edited'] = 'Edited';
 $string['conventionstatus_signed'] = 'Signed';
 $string['conventionstatus_signvet'] = 'Signed (StageVet)';
 $string['conventionstatus_rejected'] = 'Rejected';
-$string['conventionmarkedited'] = 'Mark as edited';
-$string['conventionmarkededited'] = 'The agreement has been marked as edited.';
 $string['conventionmarksigned'] = 'Mark as signed';
 $string['conventionmarkedsigned'] = 'The agreement has been marked as signed: the student and the referent '
     . 'teacher can now proceed with the evaluations. If a signed PDF was provided, it can be downloaded by the '

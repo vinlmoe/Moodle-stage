@@ -56,18 +56,15 @@ class convention_request_form extends \moodleform {
             $templateoptions[$template->id] = format_string($template->name)
                 . ' (' . stage_convention_lang_label($template->lang) . ')';
         }
-        // Un seul sélecteur de gabarit (tous, toutes langues confondues) : la validation
-        // ci-dessous vérifie que le gabarit choisi correspond bien à la langue choisie, plutôt
-        // que de reposer sur un filtrage JS par langue peu fiable avec un élément "select" de
-        // formslib (comparable aux pièges déjà rencontrés avec des éléments non standards).
+        // Sélecteur unique, toutes langues confondues : la cohérence entre le gabarit et la
+        // langue choisie est vérifiée par validation() plutôt que par un filtrage JS.
         $mform->addElement('select', 'conventiontemplateid', get_string('conventiontemplatename', 'mod_stage'),
             $templateoptions);
         $mform->addRule('conventiontemplateid', null, 'required', null, 'client');
 
-        // Enseignant.e référent.e : un seul choisi pour la convention (courriel chargé
-        // automatiquement depuis son compte à la génération, jamais saisi à la main), parmi
-        // ceux attribués à l'étudiant par la DEVE. Pas de champ téléphone pour ce rôle : la
-        // convention n'en demande pas pour l'encadrement côté établissement d'enseignement.
+        // Un seul enseignant référent par convention, choisi parmi ceux que la DEVE a attribués
+        // à l'étudiant. Son courriel est lu sur son compte à la génération et la convention ne
+        // demande pas de téléphone pour ce rôle : aucun des deux n'est saisi ici.
         $referentoptions = [];
         foreach ($referentteachers as $teacher) {
             $referentoptions[$teacher->id] = fullname($teacher);
@@ -171,9 +168,7 @@ class convention_request_form extends \moodleform {
     }
 
     /**
-     * Server-side validation : la langue choisie et le gabarit sélectionné doivent
-     * correspondre (le filtrage du sélecteur de gabarit par langue n'est qu'un confort côté
-     * client, il ne faut pas s'y fier seul).
+     * Validation serveur : le gabarit sélectionné doit être dans la langue choisie.
      *
      * @param array $data
      * @param array $files

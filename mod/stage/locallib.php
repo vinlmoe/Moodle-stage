@@ -724,7 +724,7 @@ function stage_unlink_question_theme($questionid, $themeid) {
 
 /**
  * Liste les questions d'un stage déjà définies pour d'autres thématiques que celle donnée, afin
- * de permettre à la DEVE de réutiliser une question existante plutôt que de la recréer.
+ * de permettre à la DEVE de réutiliser une question existante sans la recréer.
  *
  * @param int $stageid
  * @param int $themeid Thématique courante, exclue des associations déjà en place.
@@ -1861,8 +1861,8 @@ function stage_request_convention(stdClass $entry, $templateid, $requireteacherv
 }
 
 /**
- * Fait passer une demande de convention en attente de validation enseignant au statut
- * "demandée" (désormais visible par la DEVE), une fois validée par l'enseignant.e référent.e.
+ * Fait passer une demande de convention validée par l'enseignant référent au statut "demandée",
+ * la rendant visible par la DEVE.
  *
  * @param stdClass $entry
  * @param int $byuserid
@@ -2045,14 +2045,12 @@ function stage_stored_file_to_temp(\stored_file $file) {
 }
 
 /**
- * Construit le PDF complet de la convention de stage d'une saisie donnée : une page 1 recréée
- * dynamiquement à partir des données de la base (avec les deux logos et les informations
- * d'établissement configurés par la DEVE), suivie des pages 2 à 4 (articles juridiques, texte
- * fixe) du gabarit choisi par l'étudiant, réimportées via FPDI.
+ * Construit le PDF complet de la convention d'une saisie : une page 1 générée à partir des
+ * données de la base (logos et informations d'établissement configurés par la DEVE), suivie des
+ * pages du gabarit choisi par l'étudiant, réimportées via FPDI.
  *
- * Logique partagée entre convention.php (téléchargement à la demande) et convention_review.php
- * (téléchargement immédiat après validation par la DEVE), pour ne pas dupliquer cet assemblage
- * PDF à deux endroits.
+ * Appelée par convention.php (téléchargement à la demande) et convention_review.php
+ * (téléchargement immédiat après validation).
  *
  * @param stdClass $stage
  * @param stdClass $entry
@@ -2082,16 +2080,12 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
     require_once($fpdiautoload);
     require_once($CFG->dirroot . '/mod/stage/classes/pdf/convention_pdf.php');
 
-    // Rassemble les données affichées sur la page 1, en réutilisant les fonctions déjà
-    // existantes de locallib.php plutôt que de dupliquer une logique déjà écrite ailleurs
-    // (register.php, export.php).
+    // Rassemble les données affichées sur la page 1.
     $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
     $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
     $detail = stage_get_convention_detail($entry->id);
     if (!$detail) {
-        // Ne devrait pas arriver (convention_request.php enregistre toujours ces informations en
-        // même temps que la demande), mais évite un fatal error si une demande a été créée avant
-        // l'ajout de ce détail ou directement en base.
+        // Valeurs neutres pour une demande créée directement en base, sans détail associé.
         $detail = (object) array_fill_keys([
             'yearsituation', 'stagetype', 'studentbirthdate', 'studentaddress', 'studentphone',
             'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
@@ -2103,10 +2097,8 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
         $detail->stagetype = 'obligatoire';
     }
 
-    // Enseignant.e référent.e choisi.e par l'étudiant lors de la demande : le courriel est
-    // toujours chargé depuis son compte, jamais saisi à la main. Si la demande a été créée avant
-    // l'ajout de ce champ (aucun choisi), on retombe sur le premier enseignant attribué à
-    // l'étudiant.
+    // Enseignant référent choisi lors de la demande ; son courriel est toujours lu sur son
+    // compte. À défaut de choix enregistré, on retient le premier enseignant attribué.
     $referentteacher = null;
     if (!empty($detail->referentteacherid)) {
         $referentteacher = $DB->get_record('user', ['id' => $detail->referentteacherid]);
@@ -2212,10 +2204,8 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
     $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
     $page1pdf = $page1->Output('', 'S');
 
-    // Assemblage final avec FPDI : la page 1 générée ci-dessus, suivie des pages 2 à 4 (articles
-    // juridiques, texte fixe) du gabarit choisi par l'étudiant. FPDI gère seule cette
-    // réimportation de pages existantes ; on ne cherche pas à faire hériter une seule classe à la
-    // fois de \pdf et de la classe d'import FPDI (voir la note dans convention_pdf.php).
+    // Assemblage final : la page 1 générée ci-dessus, suivie des pages du gabarit choisi par
+    // l'étudiant, toutes deux réimportées par FPDI comme sources PDF.
     $merger = new \setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
     $merger->setPrintHeader(false);
     $merger->setPrintFooter(false);
