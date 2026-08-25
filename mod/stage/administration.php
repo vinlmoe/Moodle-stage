@@ -16,8 +16,9 @@
 
 /**
  * Page d'administration de l'activité (DEVE) : regroupe les pages de paramétrage utilisées
- * ponctuellement (thématiques, gabarits de convention, attribution des enseignants référents),
- * plutôt que de les afficher individuellement dans la barre de navigation principale.
+ * ponctuellement (thématiques, gabarits de convention, attribution des enseignants référents,
+ * import depuis une autre instance), plutôt que de les afficher individuellement dans la barre
+ * de navigation principale.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -61,6 +62,9 @@ if ($canmanagethemes) {
 }
 if ($canmanageteachers) {
     $links[] = [get_string('manageteachers', 'mod_stage'), new moodle_url('/mod/stage/teachers.php', ['id' => $cm->id])];
+}
+if ($canmanagethemes) {
+    $links[] = [get_string('import', 'mod_stage'), new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id])];
 }
 
 echo html_writer::start_tag('ul', ['class' => 'list-unstyled']);

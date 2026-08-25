@@ -1458,6 +1458,184 @@ function stage_get_convention_templates($stageid, $lang = null) {
 }
 
 /**
+ * Liste les autres instances de mod_stage (généralement dans d'autres cours) depuis lesquelles
+ * l'utilisateur courant peut importer thématiques, gabarits de convention, logos et informations
+ * d'établissement (voir stage_import_from_stage()) : celles où il/elle a la capacité de gérer les
+ * thématiques.
+ *
+ * @param int $excludestageid Instance courante, à exclure de la liste.
+ * @return array int (stageid) => string (libellé "Cours - Activité")
+ */
+function stage_get_importable_stage_instances($excludestageid) {
+    global $DB;
+
+    $options = [];
+    $stages = $DB->get_records_select('stage', 'id != :id', ['id' => $excludestageid], 'id ASC');
+    foreach ($stages as $otherstage) {
+        $cm = get_coursemodule_from_instance('stage', $otherstage->id, 0, false, IGNORE_MISSING);
+        if (!$cm) {
+            continue;
+        }
+        $context = context_module::instance($cm->id);
+        if (!has_capability('mod/stage:managethemes', $context)) {
+            continue;
+        }
+        $course = get_course($cm->course);
+        $options[$otherstage->id] = format_string($course->fullname) . ' - ' . format_string($otherstage->name);
+    }
+    return $options;
+}
+
+/**
+ * Copie les thématiques d'une instance source vers une instance cible (nouvelles thématiques,
+ * les originales ne sont pas modifiées). N'importe pas les questions d'évaluation personnalisées
+ * associées.
+ *
+ * @param int $sourcestageid
+ * @param int $targetstageid
+ * @return int Nombre de thématiques copiées.
+ */
+function stage_import_themes($sourcestageid, $targetstageid) {
+    global $DB;
+
+    $themes = stage_get_themes($sourcestageid);
+    foreach ($themes as $theme) {
+        $DB->insert_record('stage_theme', (object) [
+            'stageid' => $targetstageid,
+            'name' => $theme->name,
+            'description' => $theme->description,
+            'mandatory' => $theme->mandatory,
+            'requiredduration' => $theme->requiredduration,
+            'studyyear' => $theme->studyyear,
+            'sortorder' => $theme->sortorder,
+            'visible' => $theme->visible,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+    }
+    return count($themes);
+}
+
+/**
+ * Copie les gabarits de convention (nom, langue, et le fichier PDF associé) d'une instance
+ * source vers une instance cible.
+ *
+ * @param context $sourcecontext Contexte du module source.
+ * @param int $sourcestageid
+ * @param context $targetcontext Contexte du module cible.
+ * @param int $targetstageid
+ * @return int Nombre de gabarits copiés.
+ */
+function stage_import_convention_templates(context $sourcecontext, $sourcestageid, context $targetcontext,
+        $targetstageid) {
+    global $DB;
+
+    $fs = get_file_storage();
+    $templates = stage_get_convention_templates($sourcestageid);
+    foreach ($templates as $template) {
+        $newtemplateid = $DB->insert_record('stage_convention_template', (object) [
+            'stageid' => $targetstageid,
+            'name' => $template->name,
+            'lang' => $template->lang,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+        $sourcefile = stage_get_convention_template_file($sourcecontext, $template->id);
+        if ($sourcefile) {
+            $fs->create_file_from_storedfile([
+                'contextid' => $targetcontext->id,
+                'itemid' => $newtemplateid,
+            ], $sourcefile);
+        }
+    }
+    return count($templates);
+}
+
+/**
+ * Copie les deux logos (fichiers PNG) d'une instance source vers une instance cible, en
+ * remplaçant ceux déjà présents sur l'instance cible s'il y en a.
+ *
+ * @param context $sourcecontext Contexte du module source.
+ * @param context $targetcontext Contexte du module cible.
+ * @return int Nombre de logos copiés (0 à 2).
+ */
+function stage_import_convention_logos(context $sourcecontext, context $targetcontext) {
+    $fs = get_file_storage();
+    $copied = 0;
+    foreach (['left', 'right'] as $side) {
+        $sourcefile = stage_get_convention_logo_file($sourcecontext, $side);
+        if (!$sourcefile) {
+            continue;
+        }
+        $filearea = $side === 'right' ? 'conventionlogoright' : 'conventionlogoleft';
+        $fs->delete_area_files($targetcontext->id, 'mod_stage', $filearea, 0);
+        $fs->create_file_from_storedfile([
+            'contextid' => $targetcontext->id,
+        ], $sourcefile);
+        $copied++;
+    }
+    return $copied;
+}
+
+/**
+ * Copie les informations de l'établissement d'enseignement d'une instance source vers une
+ * instance cible (écrase celles déjà renseignées sur l'instance cible).
+ *
+ * @param int $sourcestageid
+ * @param int $targetstageid
+ * @return void
+ */
+function stage_import_establishment_info($sourcestageid, $targetstageid) {
+    global $DB;
+
+    $sourcestage = $DB->get_record('stage', ['id' => $sourcestageid], '*', MUST_EXIST);
+    $info = stage_get_establishment_info($sourcestage);
+    stage_save_establishment_info($targetstageid, (object) [
+        'establishmentname' => $info->name,
+        'establishmentaddress' => $info->address,
+        'establishmentrepresentative' => $info->representative,
+        'establishmentrepresentativetitle' => $info->representativetitle,
+        'establishmentphone' => $info->phone,
+        'establishmentemail' => $info->email,
+    ]);
+}
+
+/**
+ * Importe, selon les options choisies, les thématiques, gabarits de convention, logos et/ou
+ * informations d'établissement d'une autre instance de mod_stage vers l'instance courante (voir
+ * administration_import.php). L'appelant est responsable de vérifier au préalable que
+ * l'utilisateur a la capacité de gérer les thématiques sur les deux instances.
+ *
+ * @param stdClass $sourcestage
+ * @param context $sourcecontext
+ * @param stdClass $targetstage
+ * @param context $targetcontext
+ * @param array $options ['themes' => bool, 'templates' => bool, 'logos' => bool, 'establishment' => bool]
+ * @return stdClass Résumé : {themes: int, templates: int, logos: int, establishment: bool}
+ */
+function stage_import_from_stage(stdClass $sourcestage, context $sourcecontext, stdClass $targetstage,
+        context $targetcontext, array $options) {
+    $result = (object) ['themes' => 0, 'templates' => 0, 'logos' => 0, 'establishment' => false];
+
+    if (!empty($options['themes'])) {
+        $result->themes = stage_import_themes($sourcestage->id, $targetstage->id);
+    }
+    if (!empty($options['templates'])) {
+        $result->templates = stage_import_convention_templates($sourcecontext, $sourcestage->id, $targetcontext,
+            $targetstage->id);
+    }
+    if (!empty($options['logos'])) {
+        $result->logos = stage_import_convention_logos($sourcecontext, $targetcontext);
+    }
+    if (!empty($options['establishment'])) {
+        stage_import_establishment_info($sourcestage->id, $targetstage->id);
+        $result->establishment = true;
+    }
+
+    return $result;
+}
+
+/**
  * Liste les saisies suivies dans le circuit de gestion de convention de ce plugin, visibles par
  * la DEVE (exclut les stages sans convention, signées sur SignVet, et en attente de validation
  * par l'enseignant référent, hors de ce circuit ou pas encore transmises à la DEVE), avec

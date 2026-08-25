@@ -47,6 +47,25 @@ $string['stage:manageteachers'] = 'Attribuer les enseignants référents';
 // Navigation / actions.
 $string['managethemes'] = 'Gérer les thématiques';
 $string['administration'] = 'Administration';
+$string['import'] = 'Importer depuis un autre cours';
+$string['import_help'] = "Copiez les thématiques, gabarits de convention, logos et/ou informations "
+    . "d'établissement d'une autre instance de l'activité (généralement dans un autre cours) vers celle-ci, "
+    . "pour éviter de tout ressaisir à chaque nouveau cours. Seules les instances sur lesquelles vous avez "
+    . "vous-même le droit de gérer les thématiques sont proposées comme source. Les éléments importés "
+    . "s'ajoutent à ceux déjà présents ici (les thématiques et gabarits ne sont pas fusionnés avec les "
+    . "existants ; les logos et informations d'établissement déjà renseignés sont remplacés).";
+$string['importsource'] = 'Instance source';
+$string['importthemes'] = 'Thématiques';
+$string['importtemplates'] = 'Gabarits de convention';
+$string['importlogos'] = 'Logos';
+$string['importestablishment'] = "Informations de l'établissement d'enseignement";
+$string['importnothingselected'] = 'Sélectionnez au moins un élément à importer.';
+$string['noimportsources'] = "Aucune autre instance de l'activité sur laquelle vous pouvez gérer les "
+    . 'thématiques n\'a été trouvée.';
+$string['importdone'] = 'Import terminé : {$a->themes} thématique(s), {$a->templates} gabarit(s) de convention, '
+    . '{$a->logos} logo(s), établissement {$a->establishmenttext}.';
+$string['importdoneestablishmentyes'] = 'importé';
+$string['importdoneestablishmentno'] = 'non importé';
 $string['manageteachers'] = 'Attribuer les enseignants référents';
 $string['devevalidation'] = 'Validation DEVE';
 $string['teachervalidation'] = 'Validation enseignant';

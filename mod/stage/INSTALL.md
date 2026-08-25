@@ -53,8 +53,29 @@ liens commune (Enregistrer des stages, Conventions, Validation DEVE,
 Validation enseignant, Pilotage, Export Excel selon les capacités) est
 affichée en haut de cette page. Les pages utilisées ponctuellement
 (gestion des thématiques, gabarits de convention, attribution des
-enseignants référents) sont regroupées sous un seul lien
-**Administration**, en fin de cette barre.
+enseignants référents, import depuis un autre cours) sont regroupées sous
+un seul lien **Administration**, en fin de cette barre.
+
+### Importer depuis un autre cours
+
+Pour éviter de ressaisir thématiques, gabarits de convention, logos et
+informations d'établissement à chaque nouveau cours (ex. nouvelle année),
+la page **Administration > Importer depuis un autre cours** permet de les
+copier depuis une autre instance de l'activité « Gestion des stages »
+(généralement dans un autre cours). Seules les instances sur lesquelles
+l'utilisateur a lui-même le droit de gérer les thématiques sont proposées
+comme source. Quatre catégories sont cochables indépendamment (au moins
+une requise) :
+
+- **Thématiques** : copiées telles quelles (nouvelles thématiques,
+  s'ajoutent à celles déjà existantes, aucune fusion ni détection de
+  doublon — les questions d'évaluation personnalisées associées ne sont
+  pas copiées) ;
+- **Gabarits de convention** : nom, langue et fichier PDF copiés ;
+- **Logos** : remplacent ceux déjà présents sur cette instance, s'il y en
+  a ;
+- **Informations de l'établissement d'enseignement** : remplacent celles
+  déjà renseignées sur cette instance, s'il y en a.
 
 ## 3. Création du cours « Stages »
 

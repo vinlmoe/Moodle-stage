@@ -47,6 +47,23 @@ $string['stage:manageteachers'] = 'Assign referent teachers';
 // Navigation / actions.
 $string['managethemes'] = 'Manage themes';
 $string['administration'] = 'Administration';
+$string['import'] = 'Import from another course';
+$string['import_help'] = 'Copy the themes, agreement templates, logos and/or establishment information from '
+    . "another instance of the activity (usually in another course) into this one, so you don't have to redo "
+    . "everything for each new course. Only instances where you yourself can manage themes are offered as a "
+    . 'source. Imported items are added to what is already here (themes and templates are not merged with '
+    . 'existing ones; logos and establishment information already set here are replaced).';
+$string['importsource'] = 'Source instance';
+$string['importthemes'] = 'Themes';
+$string['importtemplates'] = 'Agreement templates';
+$string['importlogos'] = 'Logos';
+$string['importestablishment'] = 'Educational establishment information';
+$string['importnothingselected'] = 'Select at least one item to import.';
+$string['noimportsources'] = 'No other instance of the activity where you can manage themes was found.';
+$string['importdone'] = 'Import complete: {$a->themes} theme(s), {$a->templates} agreement template(s), '
+    . '{$a->logos} logo(s), establishment {$a->establishmenttext}.';
+$string['importdoneestablishmentyes'] = 'imported';
+$string['importdoneestablishmentno'] = 'not imported';
 $string['manageteachers'] = 'Assign referent teachers';
 $string['devevalidation'] = 'Academic office validation';
 $string['teachervalidation'] = 'Teacher validation';
