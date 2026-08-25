@@ -31,7 +31,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * validation(), formslib ne permettant pas de conditionner une règle client au bouton cliqué.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class convention_review_form extends \moodleform {

@@ -24,7 +24,7 @@ require_once($CFG->libdir . '/formslib.php');
  * Formulaire de saisie / auto-évaluation d'un stage par l'étudiant.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class entry_form extends \moodleform {

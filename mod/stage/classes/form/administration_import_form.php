@@ -25,7 +25,7 @@ require_once($CFG->libdir . '/formslib.php');
  * d'établissement depuis une autre instance de mod_stage (généralement dans un autre cours).
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class administration_import_form extends \moodleform {

@@ -26,7 +26,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * par exemple depuis un script externe (ex. lecture d'un fichier Excel/CSV côté client).
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class register_entries extends \external_api {

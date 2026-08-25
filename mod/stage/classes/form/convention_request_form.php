@@ -28,7 +28,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * gratification, congés).
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class convention_request_form extends \moodleform {

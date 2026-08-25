@@ -30,7 +30,7 @@ require_once($CFG->libdir . '/pdflib.php');
  * page 1 est donc produite ici isolément, puis assemblée avec le gabarit par l'appelant.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class convention_pdf extends \pdf {

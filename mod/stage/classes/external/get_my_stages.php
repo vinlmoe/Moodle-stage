@@ -25,7 +25,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * Service web renvoyant les stages de l'utilisateur courant pour une activité donnée.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_my_stages extends \external_api {

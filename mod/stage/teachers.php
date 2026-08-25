@@ -23,7 +23,7 @@
  * masse, voir aussi teachers_import.php (import CSV/Excel).
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

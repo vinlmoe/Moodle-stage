@@ -18,14 +18,14 @@
  * Version details for mod_stage.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_stage';
-$plugin->version   = 2026082413;
+$plugin->version   = 2026082414;
 $plugin->requires  = 2022041900; // Moodle 4.0+.
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+$plugin->maturity  = MATURITY_BETA;
+$plugin->release   = '0.2.1';

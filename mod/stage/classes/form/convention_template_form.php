@@ -26,7 +26,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * PDF des pages 2 à 4 (articles juridiques) associé.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class convention_template_form extends \moodleform {

@@ -19,7 +19,7 @@
  * étudiants à la fois sur une même thématique), et édition des saisies existantes.
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

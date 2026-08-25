@@ -26,7 +26,7 @@ require_once($CFG->libdir . '/formslib.php');
  * pour l'ensemble du stage, comme les logos (voir convention_logos_form.php).
  *
  * @package   mod_stage
- * @copyright 2026 Vetbrain
+ * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class convention_establishment_form extends \moodleform {
