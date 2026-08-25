@@ -109,8 +109,8 @@ if ($mform->is_cancelled()) {
 
     if (!empty($data->validateconvention)) {
         stage_convention_mark_edited($entry, $USER->id);
-        redirect(new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entryid]),
-            get_string('conventionvalidatedgenerating', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+        redirect($backurl, get_string('conventionvalidatedgenerating', 'mod_stage'), null,
+            \core\output\notification::NOTIFY_SUCCESS);
     } else if (!empty($data->rejectconvention)) {
         stage_reject_convention($entry, $USER->id, $data->rejectcomment);
         stage_notify_student_convention_rejected($stage, $cm, $entry, $data->rejectcomment);
