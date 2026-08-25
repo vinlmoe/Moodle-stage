@@ -303,6 +303,24 @@ function stage_get_enrolled_students(context $context) {
 }
 
 /**
+ * Normalise un nom pour un rapprochement tolérant aux accents/casse/espaces multiples (ex.
+ * import StageVet, voir import_stagevet.php, qui ne fournit pas toujours d'adresse e-mail
+ * exploitable pour identifier l'étudiant).
+ *
+ * @param string $name
+ * @return string
+ */
+function stage_normalize_name($name) {
+    $name = core_text::strtolower(trim($name));
+    $transliterated = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+    if ($transliterated !== false) {
+        $name = $transliterated;
+    }
+    $name = preg_replace('/[^a-z]+/', ' ', $name);
+    return trim(preg_replace('/\s+/', ' ', $name));
+}
+
+/**
  * Retourne les enseignants pouvant être référents (capacité evaluateteacher).
  *
  * @param context $context

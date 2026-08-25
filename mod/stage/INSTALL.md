@@ -205,6 +205,37 @@ fichier préparé dans Excel :
    ou déjà rencontré plus haut dans le même fichier) est elle aussi ignorée
    et signalée, plutôt que de créer un doublon.
 
+### Import d'un export StageVet
+
+Un second bouton **Importer un export StageVet (CSV)** est disponible sur
+la même page, pour importer directement le fichier CSV exporté depuis
+StageVet, sans le retravailler dans Excel au préalable.
+
+1. Dans StageVet, exporter les stages/conventions au format CSV.
+2. Dans l'activité, créer si besoin les thématiques dont le nom correspond
+   **exactement** aux intitulés utilisés dans StageVet (ex. « THEME LIBRE /
+   A2, A3, A4, A5 », « A6 / AC »...) — StageVet n'utilise pas les mêmes
+   noms de thématique que ceux définis par la DEVE.
+3. Sur la page **Importer un export StageVet (CSV)**, sélectionner le
+   fichier tel quel et cliquer sur **Importer**.
+4. Les colonnes sont reconnues par leur en-tête (nom/prénom étudiant,
+   thème, dates de convention, coordonnées de l'organisme d'accueil et du
+   tuteur, modalités, gratification...) : l'ordre des colonnes n'a pas
+   besoin de correspondre au fichier d'exemple, seul l'intitulé compte.
+   L'étudiant est identifié par courriel si la colonne correspondante est
+   renseignée (souvent vide dans les exports StageVet), sinon par
+   nom/prénom (comparaison insensible aux accents et à la casse) parmi les
+   étudiants inscrits au cours.
+5. Chaque stage importé est enregistré directement au statut de convention
+   **Signée (SignVet)** (comme un enregistrement en masse, voir § 5) :
+   l'auto-évaluation de l'étudiant est immédiatement ouverte, sans passer
+   par le circuit de gestion de convention de ce plugin. Les coordonnées de
+   convention disponibles dans l'export (organisme, tuteur, modalités,
+   gratification...) sont malgré tout enregistrées à titre de référence.
+6. Comme pour l'import CSV générique, les lignes sans étudiant ou
+   thématique correspondante, ou en doublon, sont signalées sans bloquer
+   l'import des autres lignes.
+
 ## 6. Attribution des enseignants référents (DEVE)
 
 Conçue pour un grand nombre d'étudiants et d'enseignants (recherche, filtre,

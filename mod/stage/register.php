@@ -90,6 +90,8 @@ if ($mode === 'list') {
             get_string('bulkregisterstages', 'mod_stage'), ['class' => 'btn btn-secondary mr-2'])
         . html_writer::link(new moodle_url('/mod/stage/import.php', ['id' => $cm->id]),
             get_string('importcsv', 'mod_stage'), ['class' => 'btn btn-secondary mr-2'])
+        . html_writer::link(new moodle_url('/mod/stage/import_stagevet.php', ['id' => $cm->id]),
+            get_string('importstagevetcsv', 'mod_stage'), ['class' => 'btn btn-secondary mr-2'])
         . (has_capability('mod/stage:viewall', $context)
             ? html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
                 get_string('exportexcel', 'mod_stage'), ['class' => 'btn btn-secondary'])

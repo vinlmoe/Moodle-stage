@@ -85,6 +85,22 @@ $string['importerrorunknownemail'] = 'Ligne {$a->line} : aucun étudiant inscrit
 $string['importerrorunknowntheme'] = 'Ligne {$a->line} : thématique "{$a->theme}" introuvable.';
 $string['importerrorduplicate'] = 'Ligne {$a->line} : "{$a->email}" a déjà un stage sur la thématique "{$a->theme}" '
     . 'avec ces mêmes dates, ligne ignorée.';
+$string['importstagevetcsv'] = 'Importer un export StageVet (CSV)';
+$string['importstagevetcsv_help'] = "Importez directement le fichier CSV exporté depuis StageVet (menu export de "
+    . "StageVet, sans modification). Les colonnes sont reconnues par leur en-tête (« Nom étudiant », "
+    . "« Prénom étudiant », « Thème », « Début (convention)/Fin (convention) », coordonnées de l'organisme et du "
+    . "tuteur, modalités, gratification...), dans l'ordre où StageVet les fournit habituellement. L'étudiant est "
+    . "identifié par courriel si la colonne « Email étudiant » est renseignée, sinon par nom/prénom (comparaison "
+    . "insensible aux accents et à la casse) parmi les étudiants inscrits au cours. Le nom de thématique doit "
+    . "correspondre exactement à une thématique déjà créée dans cette activité : StageVet n'utilisant pas les "
+    . "mêmes intitulés par défaut, créez au préalable des thématiques portant les mêmes noms que ceux utilisés "
+    . "dans StageVet (ex. « THEME LIBRE / A2, A3, A4, A5 »). Chaque stage importé est enregistré avec le statut de "
+    . 'convention "Signée (SignVet)" (déjà signée hors de ce plugin) : les coordonnées de convention disponibles '
+    . "dans l'export sont tout de même enregistrées à titre de référence, sans déclencher de génération de PDF.";
+$string['importstagevetnoheader'] = "Le fichier ne semble pas avoir de ligne d'en-tête reconnaissable. Vérifiez qu'il "
+    . "s'agit bien d'un export StageVet non modifié.";
+$string['importstageveterrorunknownstudent'] = 'Ligne {$a->line} : aucun étudiant inscrit correspondant à "{$a->name}".';
+$string['importstageveterrornotheme'] = 'Ligne {$a} : aucune thématique renseignée.';
 $string['importteacherscsv'] = 'Importer un fichier CSV';
 $string['importteacherscsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec "
     . 'les colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '

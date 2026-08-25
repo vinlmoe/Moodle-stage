@@ -83,6 +83,21 @@ $string['importerrorunknownemail'] = 'Line {$a->line}: no enrolled student with 
 $string['importerrorunknowntheme'] = 'Line {$a->line}: theme "{$a->theme}" not found.';
 $string['importerrorduplicate'] = 'Line {$a->line}: "{$a->email}" already has an internship on theme "{$a->theme}" '
     . 'with these same dates, line skipped.';
+$string['importstagevetcsv'] = 'Import a StageVet export (CSV)';
+$string['importstagevetcsv_help'] = 'Import the CSV file exported directly from StageVet (StageVet\'s export '
+    . 'menu, unmodified). Columns are recognised by their header ("Nom étudiant", "Prénom étudiant", "Thème", '
+    . '"Début (convention)"/"Fin (convention)", host organisation and tutor details, terms, gratuity...), in the '
+    . 'order StageVet usually provides them. The student is matched by email if the "Email étudiant" column is '
+    . 'filled in, otherwise by first/last name (accent- and case-insensitive) among students enrolled on the '
+    . "course. The theme name must exactly match a theme already created in this activity: since StageVet does "
+    . 'not use the same names by default, first create themes with the same names used in StageVet (e.g. '
+    . '"THEME LIBRE / A2, A3, A4, A5"). Each imported internship is registered with agreement status "Signed '
+    . '(SignVet)" (already signed outside this plugin): the agreement details available in the export are still '
+    . 'saved for reference, without triggering any PDF generation.';
+$string['importstagevetnoheader'] = 'The file does not seem to have a recognisable header row. Check that it is '
+    . 'an unmodified StageVet export.';
+$string['importstageveterrorunknownstudent'] = 'Line {$a->line}: no enrolled student matching "{$a->name}".';
+$string['importstageveterrornotheme'] = 'Line {$a}: no theme provided.';
 $string['importteacherscsv'] = 'Import a CSV file';
 $string['importteacherscsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following '
     . 'columns, separated by semicolons or commas, with an optional header row: '
