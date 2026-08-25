@@ -269,5 +269,41 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082409, 'stage');
     }
 
+    if ($oldversion < 2026082411) {
+        $stagetable = new xmldb_table('stage');
+
+        $field = new xmldb_field('establishmentname', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'introformat');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('establishmentaddress', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+            'establishmentname');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('establishmentrepresentative', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+            'establishmentaddress');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('establishmentrepresentativetitle', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+            'establishmentrepresentative');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('establishmentphone', XMLDB_TYPE_CHAR, '64', null, null, null, null,
+            'establishmentrepresentativetitle');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('establishmentemail', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+            'establishmentphone');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082411, 'stage');
+    }
+
     return true;
 }

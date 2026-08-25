@@ -16,8 +16,9 @@
 
 /**
  * Gestion par la DEVE des gabarits de convention de stage (PDF des articles juridiques,
- * proposés au choix de l'étudiant lors de sa demande de convention) et des deux logos affichés
- * sur la page 1 de toutes les conventions du stage.
+ * proposés au choix de l'étudiant lors de sa demande de convention), des informations de
+ * l'établissement d'enseignement (VetAgro Sup) et des deux logos affichés sur la page 1 de
+ * toutes les conventions du stage.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -29,9 +30,11 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 require_once($CFG->dirroot . '/mod/stage/classes/form/convention_template_form.php');
 require_once($CFG->dirroot . '/mod/stage/classes/form/convention_logos_form.php');
+require_once($CFG->dirroot . '/mod/stage/classes/form/convention_establishment_form.php');
 
 use mod_stage\form\convention_template_form;
 use mod_stage\form\convention_logos_form;
+use mod_stage\form\convention_establishment_form;
 
 $id = required_param('id', PARAM_INT);
 $templateid = optional_param('templateid', 0, PARAM_INT);
@@ -126,6 +129,26 @@ if ($action === 'edit') {
     exit;
 }
 
+// Informations de l'établissement d'enseignement (VetAgro Sup), affichées sur la page 1 de
+// toutes les conventions de ce stage (formulaire séparé, affiché sous la liste des gabarits).
+$establishmentform = new convention_establishment_form($baseurl);
+$establishmentinfo = stage_get_establishment_info($stage);
+$establishmentform->set_data((object) [
+    'id' => $cm->id,
+    'establishmentname' => $establishmentinfo->name,
+    'establishmentaddress' => $establishmentinfo->address,
+    'establishmentrepresentative' => $establishmentinfo->representative,
+    'establishmentrepresentativetitle' => $establishmentinfo->representativetitle,
+    'establishmentphone' => $establishmentinfo->phone,
+    'establishmentemail' => $establishmentinfo->email,
+]);
+
+if ($establishmentdata = $establishmentform->get_data()) {
+    stage_save_establishment_info($stage->id, $establishmentdata);
+    redirect($baseurl, get_string('conventionestablishmentsaved', 'mod_stage'), null,
+        \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Enregistrement des deux logos (formulaire séparé, affiché sous la liste des gabarits).
 $logosform = new convention_logos_form($baseurl);
 $logodraftleft = file_get_submitted_draft_itemid('logoleft');
@@ -173,6 +196,10 @@ if (empty($templates)) {
     }
     echo html_writer::table($table);
 }
+
+echo $OUTPUT->heading(get_string('conventionestablishment', 'mod_stage'), 4);
+echo $OUTPUT->box(get_string('conventionestablishment_help', 'mod_stage'), 'generalbox mb-3');
+$establishmentform->display();
 
 echo $OUTPUT->heading(get_string('conventionlogos', 'mod_stage'), 4);
 echo $OUTPUT->box(get_string('conventionlogos_help', 'mod_stage'), 'generalbox mb-3');

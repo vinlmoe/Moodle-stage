@@ -184,7 +184,17 @@ $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their inter
 $string['generateconvention'] = 'Generate the convention';
 $string['conventiontitle'] = 'Internship agreement';
 $string['conventionestablishment'] = 'Educational establishment';
+$string['conventionestablishmentname'] = 'Name';
+$string['conventionestablishmentaddress'] = 'Address';
+$string['conventionestablishmentrepresentative'] = 'Represented by';
+$string['conventionestablishmentrepresentativetitle'] = "Representative's title";
+$string['conventionestablishmentphone'] = 'Phone';
+$string['conventionestablishmentemail'] = 'Email';
+$string['conventionestablishment_help'] = 'This information is displayed on page 1 of every agreement for this '
+    . 'internship. Leave a field empty if not applicable; the name defaults to "VetAgro Sup" until set here.';
+$string['conventionestablishmentsaved'] = 'The establishment information has been saved.';
 $string['conventionhoststructure'] = 'Host organisation';
+$string['conventionhoststructurename'] = 'Organisation';
 $string['conventionstudent'] = 'The intern';
 $string['conventionthemeduration'] = 'Theme and duration';
 $string['conventionsupervision'] = 'Supervision';

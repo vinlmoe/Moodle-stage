@@ -118,8 +118,16 @@ if (!$referentteacher) {
 // pas dans celle de la session de qui génère le PDF (généralement la DEVE) : voir
 // convention_pdf.php::str().
 $dateformat = get_string('strftimedate', 'langconfig', null, $conventionlang);
+$establishmentinfo = stage_get_establishment_info($stage);
 $stagedata = [
-    'establishment' => 'VetAgro Sup',
+    'establishment' => [
+        'name' => $establishmentinfo->name,
+        'address' => $establishmentinfo->address,
+        'representative' => $establishmentinfo->representative,
+        'representativetitle' => $establishmentinfo->representativetitle,
+        'phone' => $establishmentinfo->phone,
+        'email' => $establishmentinfo->email,
+    ],
     'hoststructure' => (string) $entry->structure,
     'yearlabel' => $theme ? stage_convention_year_label($theme->studyyear, $detail->yearsituation, $conventionlang) : '-',
     'stagetypelabel' => stage_convention_stagetype_options($conventionlang)[$detail->stagetype] ?? $detail->stagetype,

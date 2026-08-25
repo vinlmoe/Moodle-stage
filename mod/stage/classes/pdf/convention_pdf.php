@@ -68,7 +68,10 @@ class convention_pdf extends \pdf {
      * Génère la page 1 de la convention à partir des données préparées par convention.php.
      *
      * @param array $stagedata Voir convention.php pour la structure exacte attendue :
-     *                         establishment, hoststructure, yearlabel, stagetypelabel,
+     *                         establishment{name, address, representative, representativetitle,
+     *                         phone, email} (informations de l'établissement d'enseignement,
+     *                         éditables par la DEVE, voir stage_get_establishment_info()),
+     *                         hoststructure, yearlabel, stagetypelabel,
      *                         host{address, representative, representativetitle, service,
      *                         phone, email, location}, student{fullname, email, birthdate,
      *                         address, phone}, theme{name}, dates{start, end},
@@ -86,7 +89,7 @@ class convention_pdf extends \pdf {
         $this->lang = $lang;
 
         $this->SetCreator('Moodle mod_stage');
-        $this->SetAuthor($stagedata['establishment'] ?? 'VetAgro Sup');
+        $this->SetAuthor($stagedata['establishment']['name'] ?? 'VetAgro Sup');
         $this->SetTitle($this->str('conventiontitle'));
         $this->setPrintHeader(false);
         $this->setPrintFooter(false);
@@ -119,8 +122,18 @@ class convention_pdf extends \pdf {
         $this->Ln(2);
 
         $this->section_heading($this->str('conventionestablishment'));
-        $this->field_row($this->str('conventionestablishment'), $stagedata['establishment']);
-        $this->field_row($this->str('conventionhoststructure'), $stagedata['hoststructure']);
+        $this->field_row($this->str('conventionestablishmentname'), $stagedata['establishment']['name']);
+        $this->field_row($this->str('conventionestablishmentaddress'), $stagedata['establishment']['address']);
+        $this->field_row($this->str('conventionestablishmentrepresentative'),
+            $stagedata['establishment']['representative']);
+        $this->field_row($this->str('conventionestablishmentrepresentativetitle'),
+            $stagedata['establishment']['representativetitle']);
+        $this->field_row($this->str('conventionestablishmentphone'), $stagedata['establishment']['phone']);
+        $this->field_row($this->str('conventionestablishmentemail'), $stagedata['establishment']['email']);
+        $this->Ln(3);
+
+        $this->section_heading($this->str('conventionhoststructure'));
+        $this->field_row($this->str('conventionhoststructurename'), $stagedata['hoststructure']);
         $this->field_row($this->str('conventionhostaddress'), $stagedata['host']['address']);
         $this->field_row($this->str('conventionhostrepresentative'), $stagedata['host']['representative']);
         $this->field_row($this->str('conventionhostrepresentativetitle'), $stagedata['host']['representativetitle']);

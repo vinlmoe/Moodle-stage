@@ -185,7 +185,18 @@ $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son
 $string['generateconvention'] = 'Générer la convention';
 $string['conventiontitle'] = 'Convention de stage';
 $string['conventionestablishment'] = "Établissement d'enseignement";
+$string['conventionestablishmentname'] = 'Nom';
+$string['conventionestablishmentaddress'] = 'Adresse';
+$string['conventionestablishmentrepresentative'] = 'Représenté par';
+$string['conventionestablishmentrepresentativetitle'] = 'Qualité du représentant / de la représentante';
+$string['conventionestablishmentphone'] = 'Téléphone';
+$string['conventionestablishmentemail'] = 'Courriel';
+$string['conventionestablishment_help'] = "Ces informations sont affichées sur la page 1 de toutes les "
+    . 'conventions de ce stage. Laissez un champ vide si non applicable ; le nom est "VetAgro Sup" par défaut '
+    . 'tant que rien n\'est renseigné ici.';
+$string['conventionestablishmentsaved'] = "Les informations de l'établissement ont été enregistrées.";
 $string['conventionhoststructure'] = "Structure d'accueil";
+$string['conventionhoststructurename'] = 'Structure';
 $string['conventionstudent'] = 'Le/la stagiaire';
 $string['conventionthemeduration'] = 'Thématique et durée';
 $string['conventionsupervision'] = 'Encadrement';

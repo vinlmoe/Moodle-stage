@@ -229,7 +229,7 @@ Tant que cette librairie n'est pas présente, la page **Générer la
 convention** affiche un message d'erreur explicite plutôt qu'une erreur
 fatale.
 
-### Étape 1 : gabarits et logos (DEVE)
+### Étape 1 : gabarits, établissement et logos (DEVE)
 
 1. Ouvrir l'activité, puis le lien **Gabarits de convention** (visible avec
    la même capacité que « Gérer les thématiques »).
@@ -238,11 +238,17 @@ fatale.
    juridiques) correspondant. Un même stage peut proposer plusieurs
    gabarits, dans une ou les deux langues — l'étudiant choisira parmi eux
    au moment de sa demande.
-3. **Logos** (bas de la même page) : téléverser les deux logos affichés en
+3. **Établissement d'enseignement** (bas de la même page) : renseigner le
+   nom (VetAgro Sup par défaut), l'adresse, le représentant et sa qualité,
+   le téléphone et le courriel affichés dans la section « Établissement
+   d'enseignement » de la page 1 de **toutes** les conventions de ce
+   stage. Tous les champs sont facultatifs (laisser vide si non
+   applicable) ; seul le nom a une valeur par défaut ("VetAgro Sup").
+4. **Logos** (bas de la même page) : téléverser les deux logos affichés en
    haut de la page 1 de **toutes** les conventions de ce stage (haut
    gauche / haut droit), au format PNG. Facultatif : la page 1 s'affiche
    sans logo si aucun n'est fourni.
-4. Un gabarit déjà utilisé par une demande de convention ne peut plus être
+5. Un gabarit déjà utilisé par une demande de convention ne peut plus être
    supprimé (le lien Supprimer renvoie une erreur) tant que cette demande
    existe.
 

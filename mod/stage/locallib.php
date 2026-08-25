@@ -1316,6 +1316,49 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
 }
 
 /**
+ * Retourne les informations de l'établissement d'enseignement (VetAgro Sup) affichées sur la
+ * page 1 de la convention, éditables par la DEVE (voir convention_templates.php). Une valeur par
+ * défaut ("VetAgro Sup", pas d'autre coordonnée) est utilisée tant que la DEVE n'a rien renseigné.
+ *
+ * @param stdClass $stage
+ * @return stdClass {name, address, representative, representativetitle, phone, email}
+ */
+function stage_get_establishment_info(stdClass $stage) {
+    return (object) [
+        'name' => $stage->establishmentname ?: 'VetAgro Sup',
+        'address' => $stage->establishmentaddress ?? '',
+        'representative' => $stage->establishmentrepresentative ?? '',
+        'representativetitle' => $stage->establishmentrepresentativetitle ?? '',
+        'phone' => $stage->establishmentphone ?? '',
+        'email' => $stage->establishmentemail ?? '',
+    ];
+}
+
+/**
+ * Enregistre les informations de l'établissement d'enseignement (VetAgro Sup) affichées sur la
+ * page 1 de la convention.
+ *
+ * @param int $stageid
+ * @param stdClass $data {establishmentname, establishmentaddress, establishmentrepresentative,
+ *                        establishmentrepresentativetitle, establishmentphone, establishmentemail}
+ * @return void
+ */
+function stage_save_establishment_info($stageid, stdClass $data) {
+    global $DB;
+
+    $DB->update_record('stage', (object) [
+        'id' => $stageid,
+        'establishmentname' => $data->establishmentname,
+        'establishmentaddress' => $data->establishmentaddress,
+        'establishmentrepresentative' => $data->establishmentrepresentative,
+        'establishmentrepresentativetitle' => $data->establishmentrepresentativetitle,
+        'establishmentphone' => $data->establishmentphone,
+        'establishmentemail' => $data->establishmentemail,
+        'timemodified' => time(),
+    ]);
+}
+
+/**
  * Liste les gabarits de convention disponibles pour un stage.
  *
  * @param int $stageid
