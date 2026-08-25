@@ -95,7 +95,7 @@ $string['importstagevetcsv_help'] = "Importez directement le fichier CSV export�
     . "correspondre exactement à une thématique déjà créée dans cette activité : StageVet n'utilisant pas les "
     . "mêmes intitulés par défaut, créez au préalable des thématiques portant les mêmes noms que ceux utilisés "
     . "dans StageVet (ex. « THEME LIBRE / A2, A3, A4, A5 »). Chaque stage importé est enregistré avec le statut de "
-    . 'convention "Signée (SignVet)" (déjà signée hors de ce plugin) : les coordonnées de convention disponibles '
+    . 'convention "Signée (StageVet)" (déjà signée hors de ce plugin) : les coordonnées de convention disponibles '
     . "dans l'export sont tout de même enregistrées à titre de référence, sans déclencher de génération de PDF.";
 $string['importstagevetnoheader'] = "Le fichier ne semble pas avoir de ligne d'en-tête reconnaissable. Vérifiez qu'il "
     . "s'agit bien d'un export StageVet non modifié.";
@@ -124,7 +124,7 @@ $string['stageandconventionregistered'] = 'Le stage a été enregistré et la de
 $string['bulkregisterstages'] = 'Enregistrer des stages en masse';
 $string['bulkregisterselected'] = 'Enregistrer pour les étudiants cochés';
 $string['bulkregistersignvethelp'] = "Les stages enregistrés en masse sont considérés comme déjà signés sur "
-    . 'SignVet : leur statut de convention passe automatiquement à "Signée (SignVet)", sans passer par le '
+    . 'StageVet : leur statut de convention passe automatiquement à "Signée (StageVet)", sans passer par le '
     . "circuit de gestion de convention de ce plugin (pas de gabarit ni de PDF à générer ou téléverser). "
     . "L'auto-évaluation de l'étudiant est immédiatement ouverte.";
 $string['selectstudents'] = 'Sélectionner les étudiants concernés';
@@ -265,7 +265,7 @@ $string['conventionstatus_none'] = 'Non demandée';
 $string['conventionstatus_requested'] = 'Demandée';
 $string['conventionstatus_edited'] = 'Éditée';
 $string['conventionstatus_signed'] = 'Signée';
-$string['conventionstatus_signvet'] = 'Signée (SignVet)';
+$string['conventionstatus_signvet'] = 'Signée (StageVet)';
 $string['conventionstatus_rejected'] = 'Refusée';
 $string['conventionmarkedited'] = 'Marquer éditée';
 $string['conventionmarkededited'] = "La convention a été marquée comme éditée.";

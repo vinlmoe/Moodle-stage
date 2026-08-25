@@ -92,7 +92,7 @@ $string['importstagevetcsv_help'] = 'Import the CSV file exported directly from 
     . "course. The theme name must exactly match a theme already created in this activity: since StageVet does "
     . 'not use the same names by default, first create themes with the same names used in StageVet (e.g. '
     . '"THEME LIBRE / A2, A3, A4, A5"). Each imported internship is registered with agreement status "Signed '
-    . '(SignVet)" (already signed outside this plugin): the agreement details available in the export are still '
+    . '(StageVet)" (already signed outside this plugin): the agreement details available in the export are still '
     . 'saved for reference, without triggering any PDF generation.';
 $string['importstagevetnoheader'] = 'The file does not seem to have a recognisable header row. Check that it is '
     . 'an unmodified StageVet export.';
@@ -119,8 +119,8 @@ $string['registerstageandconvention_help'] = 'For an internship not handled by S
 $string['stageandconventionregistered'] = 'The internship has been registered and the agreement request sent to the DEVE.';
 $string['bulkregisterstages'] = 'Register internships in bulk';
 $string['bulkregisterselected'] = 'Register for checked students';
-$string['bulkregistersignvethelp'] = 'Internships registered in bulk are considered already signed on SignVet: '
-    . 'their agreement status automatically switches to "Signed (SignVet)", without going through this '
+$string['bulkregistersignvethelp'] = 'Internships registered in bulk are considered already signed on StageVet: '
+    . 'their agreement status automatically switches to "Signed (StageVet)", without going through this '
     . "plugin's agreement management workflow (no template or PDF to generate or upload). The student's "
     . 'self-assessment is immediately open.';
 $string['selectstudents'] = 'Select the students concerned';
@@ -259,7 +259,7 @@ $string['conventionstatus_none'] = 'Not requested';
 $string['conventionstatus_requested'] = 'Requested';
 $string['conventionstatus_edited'] = 'Edited';
 $string['conventionstatus_signed'] = 'Signed';
-$string['conventionstatus_signvet'] = 'Signed (SignVet)';
+$string['conventionstatus_signvet'] = 'Signed (StageVet)';
 $string['conventionstatus_rejected'] = 'Rejected';
 $string['conventionmarkedited'] = 'Mark as edited';
 $string['conventionmarkededited'] = 'The agreement has been marked as edited.';
