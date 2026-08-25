@@ -187,14 +187,26 @@ class convention_pdf extends \pdf {
      * Ligne à case à cocher : dessine une case (cochée ou non) suivie d'un libellé, pour les
      * options activables de la convention (modalités particulières, congés...).
      *
+     * La case et son libellé sont traités comme un bloc atomique (voir ensure_space()) pour ne
+     * jamais laisser un saut de page couper la case et son texte sur deux pages différentes ; le
+     * libellé passe sur plusieurs lignes (MultiCell) si nécessaire plutôt que de déborder ou de
+     * chevaucher la colonne suivante.
+     *
      * @param string $label
      * @param bool $checked
      * @return void
      */
     protected function checkbox_row($label, $checked) {
+        $size = 4;
+        $textx = $this->GetX() + $size + 2;
+        $textwidth = $this->getPageWidth() - $this->getMargins()['right'] - $textx;
+
+        $this->SetFont('freesans', '', 10);
+        $height = max($this->getStringHeight($textwidth, $label), $size + 2);
+        $this->ensure_space($height);
+
         $x = $this->GetX();
         $y = $this->GetY();
-        $size = 4;
 
         $this->Rect($x, $y + 1, $size, $size, $checked ? 'DF' : 'D', [], $checked ? self::BAND_COLOR : [0, 0, 0]);
         if ($checked) {
@@ -204,9 +216,8 @@ class convention_pdf extends \pdf {
             $this->SetDrawColor(0, 0, 0);
         }
 
-        $this->SetXY($x + $size + 2, $y);
         $this->SetFont('freesans', '', 10);
-        $this->Cell(0, 6, $label, 0, 1, 'L');
+        $this->MultiCell($textwidth, $height, $label, 0, 'L', false, 1, $textx, $y);
     }
 
     /**
@@ -216,6 +227,9 @@ class convention_pdf extends \pdf {
      * @return void
      */
     protected function section_heading($label) {
+        // Évite qu'un bandeau de section se retrouve seul en bas de page, sans aucune des lignes
+        // qui le suivent.
+        $this->ensure_space(8 + 6);
         $this->SetFillColor(...self::BAND_COLOR);
         $this->SetTextColor(...self::BAND_TEXT_COLOR);
         $this->SetFont('freesans', 'B', 12);
@@ -227,14 +241,52 @@ class convention_pdf extends \pdf {
     /**
      * Ligne libellé / valeur sous une section.
      *
+     * Le libellé comme la valeur passent sur plusieurs lignes (MultiCell) si le texte est trop
+     * long pour tenir sur une seule ligne dans leur colonne, plutôt que de se chevaucher (bug
+     * initial : Cell() tronque sans revenir à la ligne). La ligne entière est traitée comme un
+     * bloc atomique (voir ensure_space()) pour ne jamais être coupée par un saut de page.
+     *
      * @param string $label
      * @param string $value
      * @return void
      */
     protected function field_row($label, $value) {
+        $value = (string) $value;
+        $labelwidth = 55;
+        $pagewidth = $this->getPageWidth() - $this->getMargins()['left'] - $this->getMargins()['right'];
+        $valuewidth = $pagewidth - $labelwidth;
+
         $this->SetFont('freesans', 'B', 10);
-        $this->Cell(55, 6, $label, 0, 0, 'L');
+        $labelheight = $this->getStringHeight($labelwidth, $label);
         $this->SetFont('freesans', '', 10);
-        $this->Cell(0, 6, (string) $value, 0, 1, 'L');
+        $valueheight = $this->getStringHeight($valuewidth, $value);
+        $rowheight = max($labelheight, $valueheight, 6);
+
+        $this->ensure_space($rowheight);
+
+        $x = $this->GetX();
+        $y = $this->GetY();
+
+        $this->SetFont('freesans', 'B', 10);
+        $this->MultiCell($labelwidth, $rowheight, $label, 0, 'L', false, 0, $x, $y);
+        $this->SetFont('freesans', '', 10);
+        $this->MultiCell($valuewidth, $rowheight, $value, 0, 'L', false, 1, $x + $labelwidth, $y);
+    }
+
+    /**
+     * S'assure qu'il reste au moins $height mm avant le bas de la page (marge de saut de page
+     * incluse) ; provoque un saut de page manuel sinon. Utilisé pour dessiner les lignes
+     * (field_row, checkbox_row) comme des blocs atomiques : avec le seul saut de page automatique
+     * de TCPDF, un élément dessiné en plusieurs étapes (ex. une case suivie de son libellé) peut
+     * être coupé au milieu, la fin se retrouvant seule en haut de la page suivante.
+     *
+     * @param float $height
+     * @return void
+     */
+    protected function ensure_space($height) {
+        $bottom = $this->getPageHeight() - $this->getBreakMargin();
+        if ($this->GetY() + $height > $bottom) {
+            $this->AddPage();
+        }
     }
 }
