@@ -91,6 +91,7 @@ if ($action === 'edit') {
     $toform->templatefile = $draftitemid;
     if ($template) {
         $toform->name = $template->name;
+        $toform->lang = $template->lang;
     }
     $mform->set_data($toform);
 
@@ -99,6 +100,7 @@ if ($action === 'edit') {
     } else if ($data = $mform->get_data()) {
         if ($template) {
             $template->name = $data->name;
+            $template->lang = $data->lang;
             $template->timemodified = time();
             $DB->update_record('stage_convention_template', $template);
             $savedtemplateid = $template->id;
@@ -106,6 +108,7 @@ if ($action === 'edit') {
             $savedtemplateid = $DB->insert_record('stage_convention_template', (object) [
                 'stageid' => $stage->id,
                 'name' => $data->name,
+                'lang' => $data->lang,
                 'timecreated' => time(),
                 'timemodified' => time(),
             ]);
@@ -153,7 +156,11 @@ if (empty($templates)) {
     echo $OUTPUT->notification(get_string('noconventiontemplatesyet', 'mod_stage'), 'info');
 } else {
     $table = new html_table();
-    $table->head = [get_string('conventiontemplatename', 'mod_stage'), get_string('actions', 'mod_stage')];
+    $table->head = [
+        get_string('conventiontemplatename', 'mod_stage'),
+        get_string('conventionlang', 'mod_stage'),
+        get_string('actions', 'mod_stage'),
+    ];
     foreach ($templates as $template) {
         $editurl = new moodle_url('/mod/stage/convention_templates.php',
             ['id' => $cm->id, 'action' => 'edit', 'templateid' => $template->id]);
@@ -162,7 +169,7 @@ if (empty($templates)) {
         $actions = html_writer::link($editurl, get_string('edit')) . ' | '
             . html_writer::link($deleteurl, get_string('delete'),
                 ['onclick' => "return confirm('" . get_string('confirmdeleteconventiontemplate', 'mod_stage') . "');"]);
-        $table->data[] = [format_string($template->name), $actions];
+        $table->data[] = [format_string($template->name), stage_convention_lang_label($template->lang), $actions];
     }
     echo html_writer::table($table);
 }

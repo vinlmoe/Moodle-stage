@@ -219,6 +219,9 @@ $string['conventionlogos_help'] = "Ces deux logos (PNG) sont affichés en haut d
 $string['conventionlogoleft'] = 'Logo en haut à gauche';
 $string['conventionlogoright'] = 'Logo en haut à droite';
 $string['conventionlogossaved'] = 'Les logos ont été enregistrés.';
+$string['conventionlang'] = 'Langue de la convention';
+$string['conventionlang_fr'] = 'Français (standard)';
+$string['conventionlang_en'] = 'Anglais';
 
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';

@@ -128,7 +128,7 @@ fichier préparé dans Excel :
    - `theme` : nom exact d'une thématique déjà créée dans l'activité ;
    - `structure` : structure d'accueil (facultatif) ;
    - `datestart` / `dateend` : dates au format AAAA-MM-JJ (facultatif) ;
-   - `duration` : durée déclarée, en heures.
+   - `duration` : durée déclarée, en jours.
 2. **Fichier > Enregistrer sous > CSV (séparateur point-virgule) (.csv)**.
 3. Sur la page **Importer un fichier CSV** du module, sélectionner ce
    fichier et cliquer sur **Importer**.
@@ -141,18 +141,114 @@ fichier préparé dans Excel :
 
 ## 6. Attribution des enseignants référents (DEVE)
 
-1. Ouvrir l'activité, puis le lien **Attribuer les enseignants référents**.
-2. Un tableau liste chaque étudiant inscrit avec, sur la même ligne, une
-   case à cocher par enseignant référent potentiel (inscrits avec la
-   capacité d'évaluation).
-3. Cocher un ou plusieurs enseignants par étudiant (plusieurs référents
-   possibles par étudiant), puis **Enregistrer**.
-4. **Pour modifier une attribution** : revenir sur cette même page à tout
-   moment, décocher/cocher les cases souhaitées et enregistrer à nouveau —
-   la sauvegarde remplace entièrement les référents précédemment attribués
-   à chaque étudiant modifié.
+Conçue pour un grand nombre d'étudiants et d'enseignants (recherche, filtre,
+pagination) : afficher une case à cocher par enseignant pour chaque étudiant
+sur une seule page ne serait pas praticable à l'échelle d'une promotion.
 
-## 7. Export Excel de tous les stages (DEVE)
+1. Ouvrir l'activité, puis le lien **Attribuer les enseignants référents**.
+2. Un tableau paginé (40 étudiants par page) liste les étudiants inscrits,
+   avec sur chaque ligne une liste déroulante à sélection multiple listant
+   les enseignants référents potentiels (inscrits avec la capacité
+   d'évaluation) : maintenir Ctrl (ou Cmd sur Mac) pour sélectionner
+   plusieurs enseignants.
+3. Une barre de recherche par nom d'étudiant et une case « Étudiants sans
+   référent uniquement » permettent de filtrer la liste, pour retrouver
+   rapidement les étudiants encore à traiter.
+4. Sélectionner un ou plusieurs enseignants par étudiant (plusieurs
+   référents possibles), puis **Enregistrer** : seuls les étudiants
+   affichés sur la page courante sont pris en compte par cet enregistrement.
+5. **Pour modifier une attribution** : revenir sur cette même page à tout
+   moment, ajuster la sélection et enregistrer à nouveau — la sauvegarde
+   remplace entièrement les référents précédemment attribués à chaque
+   étudiant modifié sur la page soumise.
+
+### Import en masse depuis Excel/CSV
+
+Pour attribuer les référents à un grand nombre d'étudiants d'un coup plutôt
+qu'un par un, un bouton **Importer un fichier CSV** est disponible sur cette
+même page :
+
+1. Préparer un tableau avec les colonnes (avec ou sans ligne d'en-tête) :
+   `studentemail ; teacher1email ; teacher2email`
+   - `studentemail` : adresse de l'étudiant, telle qu'inscrite au cours ;
+   - `teacher1email` : adresse d'un enseignant référent potentiel inscrit
+     au cours ;
+   - `teacher2email` : adresse d'un second référent (facultatif).
+2. Enregistrer ce tableau en CSV (séparateur point-virgule ou virgule).
+3. Sur la page **Importer un fichier CSV** (attribution), sélectionner ce
+   fichier et cliquer sur **Importer**.
+4. Chaque ligne **remplace entièrement** l'attribution existante de
+   l'étudiant concerné (comme l'enregistrement manuel). Les lignes dont un
+   e-mail ne correspond à aucun étudiant/enseignant inscrit sont signalées
+   sans bloquer l'import des autres lignes.
+
+## 7. Conventions de stage (PDF)
+
+Le module génère un PDF de convention de stage par saisie : une page 1
+recréée dynamiquement à partir des données du stage (établissement,
+structure d'accueil, stagiaire, thématique/durée, encadrement), suivie des
+pages 2 à 4 (articles juridiques, texte fixe) d'un gabarit PDF choisi par
+l'étudiant. **L'auto-évaluation de l'étudiant n'est ouverte qu'une fois la
+convention signée.**
+
+### Dépendance technique : FPDI
+
+La génération du PDF nécessite la librairie tierce **FPDI**
+(`setasign/fpdi`, licence MIT), qui doit être présente dans
+`mod/stage/thirdparty/vendor/`. Si vous avez cloné ce dépôt tel quel, elle y
+est déjà incluse. Si vous reconstruisez le dossier `thirdparty` vous-même :
+
+```bash
+cd mod/stage/thirdparty
+composer require setasign/fpdi:^2.6
+```
+
+Tant que cette librairie n'est pas présente, la page **Générer la
+convention** affiche un message d'erreur explicite plutôt qu'une erreur
+fatale.
+
+### Étape 1 : gabarits et logos (DEVE)
+
+1. Ouvrir l'activité, puis le lien **Gabarits de convention** (visible avec
+   la même capacité que « Gérer les thématiques »).
+2. **Ajouter un gabarit** : donner un nom, choisir sa **langue** (Français
+   standard ou Anglais), et téléverser le PDF des pages 2 à 4 (articles
+   juridiques) correspondant. Un même stage peut proposer plusieurs
+   gabarits, dans une ou les deux langues — l'étudiant choisira parmi eux
+   au moment de sa demande.
+3. **Logos** (bas de la même page) : téléverser les deux logos affichés en
+   haut de la page 1 de **toutes** les conventions de ce stage (haut
+   gauche / haut droit), au format PNG. Facultatif : la page 1 s'affiche
+   sans logo si aucun n'est fourni.
+4. Un gabarit déjà utilisé par une demande de convention ne peut plus être
+   supprimé (le lien Supprimer renvoie une erreur) tant que cette demande
+   existe.
+
+### Étape 2 : demande par l'étudiant
+
+Sur sa page d'activité, pour chaque stage sans convention en cours,
+l'étudiant a un lien **Demander la convention** : il y choisit la langue de
+la convention, puis un gabarit parmi ceux proposés dans cette langue, et
+valide. Le stage passe alors au statut de convention **Demandée**.
+
+### Étape 3 : suivi et validation (DEVE)
+
+1. Ouvrir l'activité, puis le lien **Conventions** : la liste de toutes les
+   demandes en cours s'affiche, avec le gabarit choisi et le statut.
+2. **Marquer éditée** : une fois la convention imprimée et prête à être
+   envoyée pour signature (utiliser **Générer la convention**, disponible
+   dès qu'un gabarit est choisi, pour télécharger/imprimer le PDF).
+3. **Marquer signée** : une fois le document effectivement signé (retour
+   papier). **Cette étape ouvre le droit à l'auto-évaluation de l'étudiant
+   et à l'évaluation de l'enseignant référent** — avant cela, la page
+   d'auto-évaluation de l'étudiant affiche un message l'invitant à
+   attendre la signature.
+
+Le lien **Générer la convention** reste disponible à tout moment depuis la
+page « Enregistrer des stages » et depuis la page « Conventions », pour
+tout stage ayant un gabarit choisi.
+
+## 8. Export Excel de tous les stages (DEVE)
 
 Le lien **Exporter en Excel**, visible depuis la page de l'activité et
 depuis la page « Enregistrer des stages », télécharge un fichier `.xlsx`
@@ -162,21 +258,33 @@ d'accueil, dates, durée déclarée et durée retenue, statut, enseignant(s)
 référent(s), commentaire enseignant et commentaire DEVE. Il s'ouvre
 directement dans Excel, sans étape intermédiaire.
 
-## 8. Utilisation courante
+## 9. Utilisation courante
 
 - **Étudiant** : sur la page de l'activité, suivi de l'avancement des
-  thématiques obligatoires et de la liste de ses propres stages
-  (enregistrés par la DEVE) uniquement, avec un lien « Auto-évaluer mon
-  stage » sur chacun.
+  thématiques obligatoires (regroupées par année d'étude) et de la liste
+  de ses propres stages (enregistrés par la DEVE) uniquement, avec pour
+  chacun : un lien « Demander la convention » tant qu'aucune n'est en
+  cours, le statut de sa convention, puis un lien « Auto-évaluer mon
+  stage » une fois celle-ci signée (voir § 7). Une fois l'auto-évaluation
+  soumise, elle n'est plus modifiable, sauf réinitialisation par la DEVE.
 - **Enseignant référent** : lien « Validation enseignant », qui liste
-  uniquement les stages des étudiants qui lui ont été attribués, avec un
-  commentaire d'évaluation.
+  uniquement les stages des étudiants qui lui ont été attribués (recherche
+  par nom, filtre par thématique/statut, tri des colonnes, pagination), et
+  un lien « Tableau de pilotage » restreint à ses propres étudiants. Sur
+  chaque stage, il peut valider l'évaluation ou la **marquer non validée**
+  (avec un motif) plutôt que la valider — dans les deux cas, elle n'est
+  ensuite plus modifiable sans réinitialisation par la DEVE.
 - **DEVE** : lien « Validation DEVE » pour valider un stage un par un
   (durée retenue + commentaire) ou en masse (sélection de plusieurs lignes
-  + bouton « Valider la sélection ») — que le stage ait été ou non évalué
-  au préalable par un enseignant référent.
+  + bouton « Valider la sélection »), avec la même possibilité de
+  **marquer non validé** plutôt que de valider ; lien « Réinitialiser »
+  (depuis la liste des stages ou l'écran de validation) pour redonner la
+  main à l'étudiant et à l'enseignant référent sur une saisie déjà évaluée
+  ou rejetée ; lien **Tableau de pilotage** donnant une vue d'ensemble de
+  tous les étudiants (avancement sur les thématiques obligatoires, stages
+  en attente, durée totale retenue) avec accès au détail de chacun.
 
-## 9. API web services
+## 10. API web services
 
 Le module expose deux fonctions de service web Moodle (`db/services.php`),
 regroupées dans le service prédéfini **« Gestion des stages (mod_stage) »** :
@@ -211,7 +319,7 @@ Ce point d'entrée permet d'automatiser l'enregistrement des stages depuis un
 outil externe (script, ENT, tableur converti côté client) sans passer par
 l'import CSV manuel.
 
-## 10. Générer un lot d'utilisateurs de test
+## 11. Générer un lot d'utilisateurs de test
 
 Pour explorer rapidement le module sans saisie manuelle, un script CLI crée
 un lot d'étudiants, d'enseignants référents et un utilisateur DEVE, les

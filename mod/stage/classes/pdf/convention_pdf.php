@@ -48,6 +48,22 @@ class convention_pdf extends \pdf {
     /** @var array Couleur du texte sur bandeau (RGB). */
     const BAND_TEXT_COLOR = [255, 255, 255];
 
+    /** @var string Langue de la convention (gabarit choisi par l'étudiant), 'fr' ou 'en'. */
+    protected $lang = 'fr';
+
+    /**
+     * Raccourci vers get_string forçant la langue de la convention plutôt que la langue de
+     * session de l'utilisateur qui génère le PDF (généralement la DEVE) : la page 1 doit être
+     * dans la même langue que le gabarit choisi par l'étudiant pour ses pages 2 à 4.
+     *
+     * @param string $id
+     * @param mixed $a
+     * @return string
+     */
+    protected function str($id, $a = null) {
+        return get_string($id, 'mod_stage', $a, $this->lang);
+    }
+
     /**
      * Génère la page 1 de la convention à partir des données préparées par convention.php.
      *
@@ -58,12 +74,15 @@ class convention_pdf extends \pdf {
      *                         tutor (nom du tuteur en structure d'accueil, vide si non saisi).
      * @param string|null $logoleftpath Chemin d'un fichier PNG (logo haut gauche), ou null.
      * @param string|null $logorightpath Chemin d'un fichier PNG (logo haut droit), ou null.
+     * @param string $lang Langue de la convention ('fr' ou 'en'), celle du gabarit choisi.
      * @return void
      */
-    public function generate_page1(array $stagedata, $logoleftpath = null, $logorightpath = null) {
+    public function generate_page1(array $stagedata, $logoleftpath = null, $logorightpath = null, $lang = 'fr') {
+        $this->lang = $lang;
+
         $this->SetCreator('Moodle mod_stage');
         $this->SetAuthor($stagedata['establishment'] ?? 'VetAgro Sup');
-        $this->SetTitle(get_string('conventiontitle', 'mod_stage'));
+        $this->SetTitle($this->str('conventiontitle'));
         $this->setPrintHeader(false);
         $this->setPrintFooter(false);
         $this->SetMargins(15, 15, 15);
@@ -89,36 +108,36 @@ class convention_pdf extends \pdf {
         }
 
         $this->SetFont('freesans', 'B', 16);
-        $this->Cell(0, 10, get_string('conventiontitle', 'mod_stage'), 0, 1, 'C');
+        $this->Cell(0, 10, $this->str('conventiontitle'), 0, 1, 'C');
         $this->Ln(4);
 
-        $this->section_heading(get_string('conventionestablishment', 'mod_stage'));
-        $this->field_row(get_string('conventionestablishment', 'mod_stage'), $stagedata['establishment']);
-        $this->field_row(get_string('conventionhoststructure', 'mod_stage'), $stagedata['hoststructure']);
+        $this->section_heading($this->str('conventionestablishment'));
+        $this->field_row($this->str('conventionestablishment'), $stagedata['establishment']);
+        $this->field_row($this->str('conventionhoststructure'), $stagedata['hoststructure']);
         $this->Ln(3);
 
-        $this->section_heading(get_string('conventionstudent', 'mod_stage'));
-        $this->field_row(get_string('fullname'), $stagedata['student']['fullname']);
-        $this->field_row(get_string('email'), $stagedata['student']['email']);
+        $this->section_heading($this->str('conventionstudent'));
+        $this->field_row(get_string('fullname', '', null, $this->lang), $stagedata['student']['fullname']);
+        $this->field_row(get_string('email', '', null, $this->lang), $stagedata['student']['email']);
         $this->Ln(3);
 
-        $this->section_heading(get_string('conventionthemeduration', 'mod_stage'));
-        $this->field_row(get_string('theme', 'mod_stage'), $stagedata['theme']['name']);
-        $this->field_row(get_string('studyyear', 'mod_stage'), $stagedata['theme']['studyyear']);
-        $this->field_row(get_string('datestart', 'mod_stage'), $stagedata['dates']['start']);
-        $this->field_row(get_string('dateend', 'mod_stage'), $stagedata['dates']['end']);
-        $this->field_row(get_string('declaredduration', 'mod_stage'), $stagedata['duration']['declared']);
-        $this->field_row(get_string('retainedduration', 'mod_stage'), $stagedata['duration']['retained']);
-        $this->field_row(get_string('status', 'mod_stage'), $stagedata['statuslabel']);
+        $this->section_heading($this->str('conventionthemeduration'));
+        $this->field_row($this->str('theme'), $stagedata['theme']['name']);
+        $this->field_row($this->str('studyyear'), $stagedata['theme']['studyyear']);
+        $this->field_row($this->str('datestart'), $stagedata['dates']['start']);
+        $this->field_row($this->str('dateend'), $stagedata['dates']['end']);
+        $this->field_row($this->str('declaredduration'), $stagedata['duration']['declared']);
+        $this->field_row($this->str('retainedduration'), $stagedata['duration']['retained']);
+        $this->field_row($this->str('status'), $stagedata['statuslabel']);
         $this->Ln(3);
 
-        $this->section_heading(get_string('conventionsupervision', 'mod_stage'));
-        $this->field_row(get_string('referentteachers', 'mod_stage'),
+        $this->section_heading($this->str('conventionsupervision'));
+        $this->field_row($this->str('referentteachers'),
             !empty($stagedata['referentteachers']) ? implode(', ', $stagedata['referentteachers']) : '-');
         // TODO : aucun champ "tuteur en structure d'accueil" n'existe dans le schéma actuel
         // (db/install.xml : stage_entry n'a pas de colonne dédiée). À ajouter en base le jour où
         // cette information doit être saisie et conservée ; en attendant, ligne laissée vide.
-        $this->field_row(get_string('conventiontutor', 'mod_stage'), $stagedata['tutor'] ?: '-');
+        $this->field_row($this->str('conventiontutor'), $stagedata['tutor'] ?: '-');
     }
 
     /**

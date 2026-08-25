@@ -19,6 +19,7 @@ namespace mod_stage\form;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/formslib.php');
+require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
  * Formulaire de création / édition d'un gabarit de convention de stage (DEVE) : un nom et le
@@ -46,6 +47,9 @@ class convention_template_form extends \moodleform {
         $mform->addElement('text', 'name', get_string('conventiontemplatename', 'mod_stage'), ['size' => '64']);
         $mform->setType('name', PARAM_TEXT);
         $mform->addRule('name', null, 'required', null, 'client');
+
+        $mform->addElement('select', 'lang', get_string('conventionlang', 'mod_stage'), stage_convention_lang_options());
+        $mform->setDefault('lang', 'fr');
 
         $mform->addElement('filemanager', 'templatefile', get_string('conventiontemplatefile', 'mod_stage'), null, [
             'subdirs' => 0,

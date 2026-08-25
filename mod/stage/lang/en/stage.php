@@ -218,6 +218,9 @@ $string['conventionlogos_help'] = 'These two logos (PNG) are displayed at the to
 $string['conventionlogoleft'] = 'Top-left logo';
 $string['conventionlogoright'] = 'Top-right logo';
 $string['conventionlogossaved'] = 'The logos have been saved.';
+$string['conventionlang'] = 'Agreement language';
+$string['conventionlang_fr'] = 'French (standard)';
+$string['conventionlang_en'] = 'English';
 
 // Messages.
 $string['stagesaved'] = 'Internship saved.';

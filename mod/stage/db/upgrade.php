@@ -172,5 +172,15 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082406, 'stage');
     }
 
+    if ($oldversion < 2026082407) {
+        $table = new xmldb_table('stage_convention_template');
+        $field = new xmldb_field('lang', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'fr', 'name');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082407, 'stage');
+    }
+
     return true;
 }

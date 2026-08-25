@@ -59,6 +59,9 @@ if (empty($entry->conventiontemplateid)) {
     exit;
 }
 
+$conventiontemplate = $DB->get_record('stage_convention_template', ['id' => $entry->conventiontemplateid]);
+$conventionlang = $conventiontemplate ? $conventiontemplate->lang : 'fr';
+
 $templatefile = stage_get_convention_template_file($context, $entry->conventiontemplateid);
 if (!$templatefile) {
     echo $OUTPUT->header();
@@ -85,7 +88,10 @@ $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
 $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
 $referentteachers = stage_get_student_teachers($stage->id, $entry->userid);
 
-$dateformat = get_string('strftimedate', 'langconfig');
+// Les libellés (statut, année d'étude...) sont dans la langue du gabarit choisi par l'étudiant,
+// pas dans celle de la session de qui génère le PDF (généralement la DEVE) : voir
+// convention_pdf.php::str().
+$dateformat = get_string('strftimedate', 'langconfig', null, $conventionlang);
 $stagedata = [
     'establishment' => 'VetAgro Sup',
     'hoststructure' => (string) $entry->structure,
@@ -95,7 +101,7 @@ $stagedata = [
     ],
     'theme' => [
         'name' => $theme ? format_string($theme->name) : '-',
-        'studyyear' => $theme ? stage_studyyear_label($theme->studyyear) : '-',
+        'studyyear' => $theme ? stage_studyyear_label($theme->studyyear, $conventionlang) : '-',
     ],
     'dates' => [
         'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
@@ -105,7 +111,7 @@ $stagedata = [
         'declared' => $entry->declaredduration,
         'retained' => $entry->retainedduration,
     ],
-    'statuslabel' => stage_status_label($entry->status),
+    'statuslabel' => stage_status_label($entry->status, $conventionlang),
     'referentteachers' => array_map('fullname', $referentteachers),
     // TODO : pas de champ "tuteur en structure d'accueil" dans le schéma actuel (voir
     // db/install.xml, table stage_entry) ; à ajouter en base si cette information doit être
@@ -135,7 +141,7 @@ if ($logofile) {
 // Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
 // pour être réimportée ci-dessous comme un PDF source parmi d'autres.
 $page1 = new convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-$page1->generate_page1($stagedata, $logoleftpath, $logorightpath);
+$page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
 $page1pdf = $page1->Output('', 'S');
 
 // Assemblage final avec FPDI : la page 1 générée ci-dessus, suivie des pages 2 à 4 (articles

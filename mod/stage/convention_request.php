@@ -68,7 +68,10 @@ if (empty($templates)) {
 
 if (data_submitted() && confirm_sesskey()) {
     $templateid = required_param('conventiontemplateid', PARAM_INT);
-    if (!isset($templates[$templateid])) {
+    $lang = required_param('conventionlang', PARAM_ALPHA);
+    if (!isset($templates[$templateid]) || $templates[$templateid]->lang !== $lang) {
+        // Le choix de langue et le gabarit doivent correspondre (filtrage normalement déjà
+        // assuré côté client) : rejette toute incohérence plutôt que de l'ignorer en silence.
         throw new moodle_exception('invalidparameter', 'debug');
     }
     stage_request_convention($entry, $templateid);
@@ -81,20 +84,60 @@ echo html_writer::link($viewurl, get_string('back'));
 
 echo $OUTPUT->box(get_string('requestconvention_help', 'mod_stage'), 'generalbox mb-3');
 
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl]);
+echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl, 'id' => 'stage-convention-request']);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 
-$templateoptions = [];
+echo html_writer::tag('label', get_string('conventionlang', 'mod_stage'), ['for' => 'conventionlang']);
+echo html_writer::select(stage_convention_lang_options(), 'conventionlang', 'fr', false,
+    ['id' => 'conventionlang', 'required' => 'required', 'class' => 'form-control']);
+
+echo html_writer::tag('label', get_string('conventiontemplatename', 'mod_stage'),
+    ['for' => 'conventiontemplateid', 'class' => 'mt-3 d-block']);
+echo html_writer::start_tag('select', [
+    'id' => 'conventiontemplateid', 'name' => 'conventiontemplateid', 'required' => 'required', 'class' => 'form-control',
+]);
+echo html_writer::tag('option', '', ['value' => '']);
 foreach ($templates as $template) {
-    $templateoptions[$template->id] = format_string($template->name);
+    // data-lang permet au script ci-dessous de ne proposer que les gabarits de la langue
+    // choisie ; conventionlang est revérifié côté serveur, ce filtrage n'est qu'un confort.
+    echo html_writer::tag('option', format_string($template->name),
+        ['value' => $template->id, 'data-lang' => $template->lang]);
 }
-echo html_writer::tag('label', get_string('conventiontemplatename', 'mod_stage'), ['for' => 'conventiontemplateid']);
-echo html_writer::select($templateoptions, 'conventiontemplateid', '', false,
-    ['id' => 'conventiontemplateid', 'required' => 'required', 'class' => 'form-control']);
+echo html_writer::end_tag('select');
 
 echo html_writer::empty_tag('input', [
     'type' => 'submit', 'value' => get_string('requestconvention', 'mod_stage'), 'class' => 'btn btn-primary mt-3',
 ]);
 echo html_writer::end_tag('form');
+
+// Filtre les gabarits proposés selon la langue choisie (simple confort : la cohérence
+// gabarit/langue est de toute façon revérifiée côté serveur à la soumission).
+$PAGE->requires->js_init_code("
+(function() {
+    var langSelect = document.getElementById('conventionlang');
+    var templateSelect = document.getElementById('conventiontemplateid');
+    if (!langSelect || !templateSelect) {
+        return;
+    }
+    var options = Array.prototype.slice.call(templateSelect.options);
+    function applyFilter() {
+        var lang = langSelect.value;
+        var firstVisible = null;
+        options.forEach(function(option) {
+            var matches = option.value === '' || option.dataset.lang === lang;
+            option.hidden = !matches;
+            option.disabled = !matches;
+            if (matches && !firstVisible && option.value !== '') {
+                firstVisible = option;
+            }
+        });
+        if (templateSelect.selectedOptions[0] && templateSelect.selectedOptions[0].hidden && firstVisible) {
+            templateSelect.value = firstVisible.value;
+        }
+    }
+    langSelect.addEventListener('change', applyFilter);
+    applyFilter();
+})();
+");
 
 echo $OUTPUT->footer();

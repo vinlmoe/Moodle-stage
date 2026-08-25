@@ -32,18 +32,18 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
  * @param int $status
  * @return string
  */
-function stage_status_label($status) {
+function stage_status_label($status, $lang = null) {
     switch ((int) $status) {
         case STAGE_STATUS_NON_VALIDE:
-            return get_string('status_nonvalide', 'mod_stage');
+            return get_string('status_nonvalide', 'mod_stage', null, $lang);
         case STAGE_STATUS_ENREGISTRE:
-            return get_string('status_enregistre', 'mod_stage');
+            return get_string('status_enregistre', 'mod_stage', null, $lang);
         case STAGE_STATUS_EVAL_ETUDIANT:
-            return get_string('status_evaletudiant', 'mod_stage');
+            return get_string('status_evaletudiant', 'mod_stage', null, $lang);
         case STAGE_STATUS_EVAL_ENSEIGNANT:
-            return get_string('status_evalenseignant', 'mod_stage');
+            return get_string('status_evalenseignant', 'mod_stage', null, $lang);
         case STAGE_STATUS_VALIDE_DEVE:
-            return get_string('status_validedeve', 'mod_stage');
+            return get_string('status_validedeve', 'mod_stage', null, $lang);
         default:
             return '';
     }
@@ -134,10 +134,10 @@ function stage_get_themes($stageid, $onlyvisible = false) {
  *
  * @return array int => libellé
  */
-function stage_studyyear_options() {
-    $options = [0 => get_string('studyyear_unspecified', 'mod_stage')];
+function stage_studyyear_options($lang = null) {
+    $options = [0 => get_string('studyyear_unspecified', 'mod_stage', null, $lang)];
     for ($year = 1; $year <= 6; $year++) {
-        $options[$year] = get_string('studyyear_n', 'mod_stage', $year);
+        $options[$year] = get_string('studyyear_n', 'mod_stage', $year, $lang);
     }
     return $options;
 }
@@ -148,8 +148,8 @@ function stage_studyyear_options() {
  * @param int $studyyear
  * @return string
  */
-function stage_studyyear_label($studyyear) {
-    $options = stage_studyyear_options();
+function stage_studyyear_label($studyyear, $lang = null) {
+    $options = stage_studyyear_options($lang);
     return $options[(int) $studyyear] ?? $options[0];
 }
 
@@ -1253,12 +1253,43 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
  * Liste les gabarits de convention disponibles pour un stage.
  *
  * @param int $stageid
+ * @param string|null $lang Si fourni, ne retourne que les gabarits dans cette langue ('fr'/'en').
  * @return array
  */
-function stage_get_convention_templates($stageid) {
+function stage_get_convention_templates($stageid, $lang = null) {
     global $DB;
 
-    return $DB->get_records('stage_convention_template', ['stageid' => $stageid], 'name ASC');
+    $params = ['stageid' => $stageid];
+    $where = 'stageid = :stageid';
+    if ($lang !== null) {
+        $where .= ' AND lang = :lang';
+        $params['lang'] = $lang;
+    }
+    return $DB->get_records_select('stage_convention_template', $where, $params, 'name ASC');
+}
+
+/**
+ * Langues proposées pour un gabarit de convention (et pour la demande de l'étudiant, qui en
+ * hérite selon le gabarit choisi).
+ *
+ * @return array 'fr'/'en' => libellé
+ */
+function stage_convention_lang_options() {
+    return [
+        'fr' => get_string('conventionlang_fr', 'mod_stage'),
+        'en' => get_string('conventionlang_en', 'mod_stage'),
+    ];
+}
+
+/**
+ * Libellé lisible d'une langue de convention.
+ *
+ * @param string $lang
+ * @return string
+ */
+function stage_convention_lang_label($lang) {
+    $options = stage_convention_lang_options();
+    return $options[$lang] ?? $lang;
 }
 
 /**
