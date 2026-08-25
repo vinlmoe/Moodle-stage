@@ -180,6 +180,45 @@ $string['conventiontemplatemissing'] = 'The convention articles template '
 $string['conventionfpdimissing'] = 'The FPDI library required to generate conventions '
     . '(mod/stage/thirdparty/vendor) could not be found on this site. Contact an administrator.';
 
+// Conventions: request, templates, logos, DEVE workflow.
+$string['conventions'] = 'Internship agreements';
+$string['requestconvention'] = 'Request the agreement';
+$string['requestconvention_help'] = 'Choose the agreement template matching your internship. '
+    . 'The DEVE will then process your request (edited, then signed); self-assessment will only '
+    . 'be possible once the agreement has been signed.';
+$string['conventionalreadyrequested'] = 'The agreement for this internship has already been requested.';
+$string['conventionrequested'] = 'The agreement request has been sent to the DEVE.';
+$string['conventionnotemplatechosen'] = 'No agreement template has been chosen for this internship.';
+$string['conventionnotsignedyet'] = 'The internship agreement must be signed by the DEVE before you can '
+    . 'self-assess. Check your agreement status on your dashboard.';
+$string['conventionstatus'] = 'Agreement status';
+$string['conventionstatus_none'] = 'Not requested';
+$string['conventionstatus_requested'] = 'Requested';
+$string['conventionstatus_edited'] = 'Edited';
+$string['conventionstatus_signed'] = 'Signed';
+$string['conventionmarkedited'] = 'Mark as edited';
+$string['conventionmarkededited'] = 'The agreement has been marked as edited.';
+$string['conventionmarksigned'] = 'Mark as signed';
+$string['conventionmarkedsigned'] = 'The agreement has been marked as signed: the student and the referent '
+    . 'teacher can now proceed with the evaluations.';
+$string['noconventionrequests'] = 'No agreement requests yet.';
+$string['conventiontemplates'] = 'Agreement templates';
+$string['addconventiontemplate'] = 'Add a template';
+$string['conventiontemplatename'] = 'Template name';
+$string['conventiontemplatefile'] = 'PDF file (articles, pages 2 to 4)';
+$string['conventiontemplatefilerequired'] = 'Please select a PDF file.';
+$string['conventiontemplatesaved'] = 'The template has been saved.';
+$string['conventiontemplatedeleted'] = 'The template has been deleted.';
+$string['conventiontemplateinuse'] = 'Cannot delete: this template is used by at least one agreement request.';
+$string['confirmdeleteconventiontemplate'] = 'Delete this agreement template?';
+$string['noconventiontemplatesyet'] = 'No agreement template has been created by the DEVE yet.';
+$string['conventionlogos'] = 'Agreement logos';
+$string['conventionlogos_help'] = 'These two logos (PNG) are displayed at the top of page 1 of every '
+    . 'agreement for this internship activity: one on the left, one on the right.';
+$string['conventionlogoleft'] = 'Top-left logo';
+$string['conventionlogoright'] = 'Top-right logo';
+$string['conventionlogossaved'] = 'The logos have been saved.';
+
 // Messages.
 $string['stagesaved'] = 'Internship saved.';
 $string['themesaved'] = 'Theme saved.';

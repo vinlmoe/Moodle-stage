@@ -40,6 +40,20 @@
       </KEYS>
     </TABLE>
 
+    <TABLE NAME="stage_convention_template" COMMENT="Gabarit de convention de stage (articles juridiques, pages 2 à 4) proposé au choix de l'étudiant">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="stageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="stageid" TYPE="foreign" FIELDS="stageid" REFTABLE="stage" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
     <TABLE NAME="stage_entry" COMMENT="Stage effectué par un étudiant sur une thématique">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
@@ -59,6 +73,17 @@
         <FIELD NAME="deveuserid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Utilisateur DEVE ayant valide"/>
         <FIELD NAME="devecomment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="devetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventiontemplateid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Gabarit de convention choisi par l'étudiant à la demande"/>
+        <FIELD NAME="conventionstatus" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
+            COMMENT="0 aucune, 1 demandee, 2 editee, 3 signee"/>
+        <FIELD NAME="conventionrequesttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventioneditedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Utilisateur DEVE ayant passe la convention au stade editee"/>
+        <FIELD NAME="conventionedittime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventionsignedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Utilisateur DEVE ayant passe la convention au stade signee"/>
+        <FIELD NAME="conventionsigntime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -69,6 +94,10 @@
         <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="teacherid" TYPE="foreign" FIELDS="teacherid" REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="deveuserid" TYPE="foreign" FIELDS="deveuserid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="conventiontemplateid" TYPE="foreign" FIELDS="conventiontemplateid"
+            REFTABLE="stage_convention_template" REFFIELDS="id"/>
+        <KEY NAME="conventioneditedby" TYPE="foreign" FIELDS="conventioneditedby" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="conventionsignedby" TYPE="foreign" FIELDS="conventionsignedby" REFTABLE="user" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="stageid-userid" UNIQUE="false" FIELDS="stageid, userid"/>

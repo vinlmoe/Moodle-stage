@@ -73,6 +73,44 @@ function stage_status_badgeclass($status) {
 }
 
 /**
+ * Retourne le libellé lisible d'un statut de convention de stage.
+ *
+ * @param int $status
+ * @return string
+ */
+function stage_convention_status_label($status) {
+    switch ((int) $status) {
+        case STAGE_CONVENTION_REQUESTED:
+            return get_string('conventionstatus_requested', 'mod_stage');
+        case STAGE_CONVENTION_EDITED:
+            return get_string('conventionstatus_edited', 'mod_stage');
+        case STAGE_CONVENTION_SIGNED:
+            return get_string('conventionstatus_signed', 'mod_stage');
+        default:
+            return get_string('conventionstatus_none', 'mod_stage');
+    }
+}
+
+/**
+ * Retourne une classe CSS de badge selon le statut de convention.
+ *
+ * @param int $status
+ * @return string
+ */
+function stage_convention_status_badgeclass($status) {
+    switch ((int) $status) {
+        case STAGE_CONVENTION_REQUESTED:
+            return 'badge-info';
+        case STAGE_CONVENTION_EDITED:
+            return 'badge-primary';
+        case STAGE_CONVENTION_SIGNED:
+            return 'badge-success';
+        default:
+            return 'badge-secondary';
+    }
+}
+
+/**
  * Liste les thématiques d'une activité stage, triées par année d'étude puis par ordre défini.
  *
  * @param int $stageid
@@ -1155,6 +1193,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         get_string('declaredduration', 'mod_stage'),
         get_string('retainedduration', 'mod_stage'),
         get_string('status', 'mod_stage'),
+        get_string('conventionstatus', 'mod_stage'),
     ];
     if ($cm && ($selfevallink || $detaillink)) {
         $table->head[] = get_string('actions', 'mod_stage');
@@ -1163,6 +1202,8 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         $theme = $themes[$entry->themeid] ?? null;
         $themename = $theme ? format_string($theme->name) : '-';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
+        $conventionbadge = html_writer::span(stage_convention_status_label($entry->conventionstatus),
+            'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
         $row = [
             $themename,
             $theme ? stage_studyyear_label($theme->studyyear) : '-',
@@ -1170,14 +1211,24 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $entry->declaredduration,
             $entry->retainedduration,
             $badge,
+            $conventionbadge,
         ];
         if ($cm && ($selfevallink || $detaillink)) {
             $actions = [];
             if ($selfevallink) {
-                $actions[] = html_writer::link(
-                    new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                    get_string('selfeval', 'mod_stage')
-                );
+                if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE) {
+                    $actions[] = html_writer::link(
+                        new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                        get_string('requestconvention', 'mod_stage')
+                    );
+                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED) {
+                    $actions[] = html_writer::link(
+                        new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                        get_string('selfeval', 'mod_stage')
+                    );
+                }
+                // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
+                // l'instant, le badge de statut ci-dessus suffit à le renseigner.
             }
             if ($detaillink) {
                 $actions[] = html_writer::link(
@@ -1196,4 +1247,111 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     }
 
     echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
+}
+
+/**
+ * Liste les gabarits de convention disponibles pour un stage.
+ *
+ * @param int $stageid
+ * @return array
+ */
+function stage_get_convention_templates($stageid) {
+    global $DB;
+
+    return $DB->get_records('stage_convention_template', ['stageid' => $stageid], 'name ASC');
+}
+
+/**
+ * Enregistre la demande de convention d'un étudiant : choix du gabarit, passage au statut
+ * "demandée". Réservé à l'étudiant propriétaire de la saisie (voir convention_request.php).
+ *
+ * @param stdClass $entry
+ * @param int $templateid
+ * @return void
+ */
+function stage_request_convention(stdClass $entry, $templateid) {
+    global $DB;
+
+    $entry->conventiontemplateid = $templateid;
+    $entry->conventionstatus = STAGE_CONVENTION_REQUESTED;
+    $entry->conventionrequesttime = time();
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Fait passer une convention demandée au statut "éditée" (DEVE).
+ *
+ * @param stdClass $entry
+ * @param int $byuserid
+ * @return void
+ */
+function stage_convention_mark_edited(stdClass $entry, $byuserid) {
+    global $DB;
+
+    $entry->conventionstatus = STAGE_CONVENTION_EDITED;
+    $entry->conventioneditedby = $byuserid;
+    $entry->conventionedittime = time();
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Fait passer une convention éditée au statut "signée" (DEVE). Ouvre le droit à
+ * l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant référent.
+ *
+ * @param stdClass $entry
+ * @param int $byuserid
+ * @return void
+ */
+function stage_convention_mark_signed(stdClass $entry, $byuserid) {
+    global $DB;
+
+    $entry->conventionstatus = STAGE_CONVENTION_SIGNED;
+    $entry->conventionsignedby = $byuserid;
+    $entry->conventionsigntime = time();
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Récupère le fichier PDF d'un gabarit de convention (stocké via l'API fichiers de Moodle,
+ * itemid = id du gabarit).
+ *
+ * @param context $context Contexte du module stage.
+ * @param int $templateid
+ * @return \stored_file|null
+ */
+function stage_get_convention_template_file(context $context, $templateid) {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($context->id, 'mod_stage', 'conventiontemplate', $templateid, 'itemid', false);
+    return $files ? reset($files) : null;
+}
+
+/**
+ * Récupère le logo (gauche ou droit) affiché sur la page 1 de toutes les conventions du stage.
+ *
+ * @param context $context Contexte du module stage.
+ * @param string $side 'left' ou 'right'.
+ * @return \stored_file|null
+ */
+function stage_get_convention_logo_file(context $context, $side) {
+    $fs = get_file_storage();
+    $filearea = $side === 'right' ? 'conventionlogoright' : 'conventionlogoleft';
+    $files = $fs->get_area_files($context->id, 'mod_stage', $filearea, 0, 'itemid', false);
+    return $files ? reset($files) : null;
+}
+
+/**
+ * Copie un fichier stocké par l'API fichiers de Moodle vers un fichier temporaire sur disque,
+ * pour les usages (TCPDF, FPDI) qui exigent un chemin de fichier réel plutôt qu'un contenu en
+ * mémoire. L'appelant est responsable de supprimer le fichier retourné (unlink) une fois fini.
+ *
+ * @param \stored_file $file
+ * @return string Chemin du fichier temporaire.
+ */
+function stage_stored_file_to_temp(\stored_file $file) {
+    $tmppath = tempnam(sys_get_temp_dir(), 'stageconv_');
+    $file->copy_content_to($tmppath);
+    return $tmppath;
 }

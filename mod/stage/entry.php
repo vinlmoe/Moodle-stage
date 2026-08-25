@@ -57,9 +57,12 @@ $PAGE->set_context($context);
 
 $questions = stage_get_questions($entry->themeid, 'student');
 
-// L'auto-évaluation n'est modifiable que tant qu'elle n'a pas encore été soumise : une fois
-// soumise (ou la saisie rejetée), seule la DEVE peut réinitialiser la saisie pour la rouvrir.
-$editable = ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
+// L'auto-évaluation n'est ouverte qu'une fois la convention de stage signée (voir
+// convention_request.php / conventions.php), et n'est modifiable que tant qu'elle n'a pas
+// encore été soumise : une fois soumise (ou la saisie rejetée), seule la DEVE peut réinitialiser
+// la saisie pour la rouvrir.
+$conventionsigned = ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED);
+$editable = $conventionsigned && ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
 
 // Traite la soumission du formulaire dynamique avant tout affichage, pour permettre la redirection.
 if ($editable && !empty($questions) && data_submitted() && confirm_sesskey()) {
@@ -114,7 +117,8 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('selfeval', 'mod_stage'));
 
 if (!$editable) {
-    echo $OUTPUT->notification(get_string('entrynoteditable', 'mod_stage'), 'info');
+    $message = !$conventionsigned ? get_string('conventionnotsignedyet', 'mod_stage') : get_string('entrynoteditable', 'mod_stage');
+    echo $OUTPUT->notification($message, 'info');
     $answers = stage_get_answers($entry->id);
     if (!empty($questions)) {
         echo stage_render_answers_readonly($questions, $answers);

@@ -56,9 +56,11 @@ class convention_pdf extends \pdf {
      *                         theme{name, studyyear}, dates{start, end}, duration{declared,
      *                         retained}, statuslabel, referentteachers (array de noms),
      *                         tutor (nom du tuteur en structure d'accueil, vide si non saisi).
+     * @param string|null $logoleftpath Chemin d'un fichier PNG (logo haut gauche), ou null.
+     * @param string|null $logorightpath Chemin d'un fichier PNG (logo haut droit), ou null.
      * @return void
      */
-    public function generate_page1(array $stagedata) {
+    public function generate_page1(array $stagedata, $logoleftpath = null, $logorightpath = null) {
         $this->SetCreator('Moodle mod_stage');
         $this->SetAuthor($stagedata['establishment'] ?? 'VetAgro Sup');
         $this->SetTitle(get_string('conventiontitle', 'mod_stage'));
@@ -67,6 +69,24 @@ class convention_pdf extends \pdf {
         $this->SetMargins(15, 15, 15);
         $this->SetAutoPageBreak(true, 15);
         $this->AddPage();
+
+        // Logos DEVE (mêmes pour tous les stages), haut gauche / haut droit de la page 1.
+        // Hauteur fixe, largeur calculée automatiquement (0) pour respecter le ratio du PNG.
+        if ($logoleftpath) {
+            $this->Image($logoleftpath, 15, 10, 0, 18, 'PNG');
+        }
+        if ($logorightpath) {
+            // On mesure l'image pour calculer sa largeur à hauteur fixe (18mm) et la positionner
+            // alignée à droite dans la marge.
+            $size = @getimagesize($logorightpath);
+            $ratio = ($size && $size[1] > 0) ? $size[0] / $size[1] : 1;
+            $logowidth = 18 * $ratio;
+            $pagewidth = $this->getPageWidth();
+            $this->Image($logorightpath, $pagewidth - 15 - $logowidth, 10, $logowidth, 18, 'PNG');
+        }
+        if ($logoleftpath || $logorightpath) {
+            $this->SetY(32);
+        }
 
         $this->SetFont('freesans', 'B', 16);
         $this->Cell(0, 10, get_string('conventiontitle', 'mod_stage'), 0, 1, 'C');

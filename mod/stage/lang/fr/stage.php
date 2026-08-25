@@ -181,6 +181,45 @@ $string['conventiontemplatemissing'] = "Le gabarit des articles de la convention
 $string['conventionfpdimissing'] = "La librairie FPDI nécessaire à la génération des conventions "
     . '(mod/stage/thirdparty/vendor) est introuvable sur ce site. Contactez un administrateur.';
 
+// Conventions : demande, gabarits, logos, workflow DEVE.
+$string['conventions'] = 'Conventions de stage';
+$string['requestconvention'] = 'Demander la convention';
+$string['requestconvention_help'] = "Choisissez le modèle de convention correspondant à votre stage. "
+    . "La DEVE traitera ensuite votre demande (édition puis signature) ; l'auto-évaluation ne sera "
+    . 'possible qu\'une fois la convention signée.';
+$string['conventionalreadyrequested'] = 'La convention de ce stage a déjà été demandée.';
+$string['conventionrequested'] = 'La demande de convention a été envoyée à la DEVE.';
+$string['conventionnotemplatechosen'] = "Aucun modèle de convention n'a été choisi pour ce stage.";
+$string['conventionnotsignedyet'] = "La convention de stage doit être signée par la DEVE avant de pouvoir vous "
+    . 'auto-évaluer. Consultez le statut de votre convention sur votre tableau de bord.';
+$string['conventionstatus'] = 'Statut de la convention';
+$string['conventionstatus_none'] = 'Non demandée';
+$string['conventionstatus_requested'] = 'Demandée';
+$string['conventionstatus_edited'] = 'Éditée';
+$string['conventionstatus_signed'] = 'Signée';
+$string['conventionmarkedited'] = 'Marquer éditée';
+$string['conventionmarkededited'] = "La convention a été marquée comme éditée.";
+$string['conventionmarksigned'] = 'Marquer signée';
+$string['conventionmarkedsigned'] = "La convention a été marquée comme signée : l'étudiant et l'enseignant "
+    . 'référent peuvent maintenant procéder aux évaluations.';
+$string['noconventionrequests'] = 'Aucune demande de convention pour le moment.';
+$string['conventiontemplates'] = 'Gabarits de convention';
+$string['addconventiontemplate'] = 'Ajouter un gabarit';
+$string['conventiontemplatename'] = 'Nom du gabarit';
+$string['conventiontemplatefile'] = 'Fichier PDF (articles, pages 2 à 4)';
+$string['conventiontemplatefilerequired'] = 'Veuillez sélectionner un fichier PDF.';
+$string['conventiontemplatesaved'] = 'Le gabarit a été enregistré.';
+$string['conventiontemplatedeleted'] = 'Le gabarit a été supprimé.';
+$string['conventiontemplateinuse'] = 'Impossible de supprimer : ce gabarit est utilisé par au moins une demande de convention.';
+$string['confirmdeleteconventiontemplate'] = 'Supprimer ce gabarit de convention ?';
+$string['noconventiontemplatesyet'] = "Aucun gabarit de convention n'a encore été créé par la DEVE.";
+$string['conventionlogos'] = 'Logos de la convention';
+$string['conventionlogos_help'] = "Ces deux logos (PNG) sont affichés en haut de la page 1 de toutes les "
+    . 'conventions de ce stage : à gauche et à droite.';
+$string['conventionlogoleft'] = 'Logo en haut à gauche';
+$string['conventionlogoright'] = 'Logo en haut à droite';
+$string['conventionlogossaved'] = 'Les logos ont été enregistrés.';
+
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';
 $string['themesaved'] = 'La thématique a été enregistrée.';

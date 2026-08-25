@@ -52,10 +52,14 @@ $navlinks = [];
 if (has_capability('mod/stage:registerstages', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
         get_string('registerstages', 'mod_stage'));
+    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]),
+        get_string('conventions', 'mod_stage'));
 }
 if (has_capability('mod/stage:managethemes', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id]),
         get_string('managethemes', 'mod_stage'));
+    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id]),
+        get_string('conventiontemplates', 'mod_stage'));
 }
 if (has_capability('mod/stage:manageteachers', $context)) {
     $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teachers.php', ['id' => $cm->id]),

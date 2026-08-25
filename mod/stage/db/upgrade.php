@@ -115,5 +115,62 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082401, 'stage');
     }
 
+    if ($oldversion < 2026082406) {
+        $table = new xmldb_table('stage_convention_template');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('stageid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('stageid', XMLDB_KEY_FOREIGN, ['stageid'], 'stage', ['id']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $entrytable = new xmldb_table('stage_entry');
+
+        $field = new xmldb_field('conventiontemplateid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'devetime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionstatus', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'conventiontemplateid');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionrequesttime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionstatus');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventioneditedby', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionrequesttime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionedittime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventioneditedby');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionsignedby', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionedittime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionsigntime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionsignedby');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        $key = new xmldb_key('conventiontemplateid', XMLDB_KEY_FOREIGN, ['conventiontemplateid'],
+            'stage_convention_template', ['id']);
+        $dbman->add_key($entrytable, $key);
+
+        upgrade_mod_savepoint(true, 2026082406, 'stage');
+    }
+
     return true;
 }

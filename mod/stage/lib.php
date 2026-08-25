@@ -37,6 +37,15 @@ define('STAGE_STATUS_NON_VALIDE', -1);
 /** Nombre de lignes par page pour les listes paginées (DEVE / enseignant référent). */
 define('STAGE_LIST_PERPAGE', 40);
 
+/** Convention de stage : pas encore demandée par l'étudiant. */
+define('STAGE_CONVENTION_NONE', 0);
+/** Convention de stage : demandée par l'étudiant (gabarit choisi), en attente de la DEVE. */
+define('STAGE_CONVENTION_REQUESTED', 1);
+/** Convention de stage : éditée par la DEVE (prête à être imprimée et signée). */
+define('STAGE_CONVENTION_EDITED', 2);
+/** Convention de stage : signée. Condition requise pour ouvrir l'auto-évaluation et l'évaluation. */
+define('STAGE_CONVENTION_SIGNED', 3);
+
 /**
  * Returns the list of features supported by this module.
  *
@@ -120,6 +129,7 @@ function stage_delete_instance($id) {
     }
     $DB->delete_records('stage_question', ['stageid' => $id]);
     $DB->delete_records('stage_theme', ['stageid' => $id]);
+    $DB->delete_records('stage_convention_template', ['stageid' => $id]);
     $DB->delete_records('stage', ['id' => $id]);
 
     return true;

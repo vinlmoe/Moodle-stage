@@ -16,8 +16,10 @@
 
 /**
  * Génère la convention de stage (PDF) d'une saisie donnée, pour la DEVE : une page 1 recréée
- * dynamiquement à partir des données de la base, suivie des pages 2 à 4 du document original
- * (articles juridiques, texte fixe) réimportées depuis un PDF gabarit via FPDI.
+ * dynamiquement à partir des données de la base (avec les deux logos configurés par la DEVE),
+ * suivie des pages 2 à 4 (articles juridiques, texte fixe) du gabarit choisi par l'étudiant lors
+ * de sa demande de convention (voir convention_request.php, convention_templates.php),
+ * réimportées via FPDI.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -47,11 +49,21 @@ require_capability('mod/stage:registerstages', $context);
 
 $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
 
-$templatepath = $CFG->dirroot . '/mod/stage/templates/convention_articles.pdf';
-if (!is_readable($templatepath)) {
+$backurl = new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
+
+if (empty($entry->conventiontemplateid)) {
+    echo $OUTPUT->header();
+    echo $OUTPUT->notification(get_string('conventionnotemplatechosen', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
+    echo html_writer::link($backurl, get_string('back'));
+    echo $OUTPUT->footer();
+    exit;
+}
+
+$templatefile = stage_get_convention_template_file($context, $entry->conventiontemplateid);
+if (!$templatefile) {
     echo $OUTPUT->header();
     echo $OUTPUT->notification(get_string('conventiontemplatemissing', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
-    echo html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]), get_string('back'));
+    echo html_writer::link($backurl, get_string('back'));
     echo $OUTPUT->footer();
     exit;
 }
@@ -60,7 +72,7 @@ $fpdiautoload = $CFG->dirroot . '/mod/stage/thirdparty/vendor/autoload.php';
 if (!is_readable($fpdiautoload)) {
     echo $OUTPUT->header();
     echo $OUTPUT->notification(get_string('conventionfpdimissing', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
-    echo html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]), get_string('back'));
+    echo html_writer::link($backurl, get_string('back'));
     echo $OUTPUT->footer();
     exit;
 }
@@ -101,16 +113,35 @@ $stagedata = [
     'tutor' => '',
 ];
 
+// Les gabarits/logos sont stockés via l'API fichiers de Moodle : TCPDF/FPDI ont besoin d'un
+// chemin de fichier réel, on les copie donc vers des fichiers temporaires, nettoyés à la fin.
+$tempfiles = [];
+$templatepath = stage_stored_file_to_temp($templatefile);
+$tempfiles[] = $templatepath;
+
+$logoleftpath = null;
+$logofile = stage_get_convention_logo_file($context, 'left');
+if ($logofile) {
+    $logoleftpath = stage_stored_file_to_temp($logofile);
+    $tempfiles[] = $logoleftpath;
+}
+$logorightpath = null;
+$logofile = stage_get_convention_logo_file($context, 'right');
+if ($logofile) {
+    $logorightpath = stage_stored_file_to_temp($logofile);
+    $tempfiles[] = $logorightpath;
+}
+
 // Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
 // pour être réimportée ci-dessous comme un PDF source parmi d'autres.
 $page1 = new convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-$page1->generate_page1($stagedata);
+$page1->generate_page1($stagedata, $logoleftpath, $logorightpath);
 $page1pdf = $page1->Output('', 'S');
 
 // Assemblage final avec FPDI : la page 1 générée ci-dessus, suivie des pages 2 à 4 (articles
-// juridiques, texte fixe) du PDF gabarit. FPDI gère seule cette réimportation de pages
-// existantes ; on ne cherche pas à faire hériter une seule classe à la fois de \pdf et de la
-// classe d'import FPDI (voir la note dans convention_pdf.php).
+// juridiques, texte fixe) du gabarit choisi par l'étudiant. FPDI gère seule cette réimportation
+// de pages existantes ; on ne cherche pas à faire hériter une seule classe à la fois de \pdf et
+// de la classe d'import FPDI (voir la note dans convention_pdf.php).
 $merger = new \setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
 $merger->setPrintHeader(false);
 $merger->setPrintFooter(false);
@@ -130,6 +161,10 @@ for ($pageno = 1; $pageno <= $articlespagecount; $pageno++) {
     $size = $merger->getTemplateSize($tplidx);
     $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
     $merger->useTemplate($tplidx);
+}
+
+foreach ($tempfiles as $tempfile) {
+    unlink($tempfile);
 }
 
 $filename = clean_filename('convention_stage_' . fullname($student) . '_' . $entry->id . '.pdf');
