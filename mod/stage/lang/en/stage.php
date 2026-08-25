@@ -207,7 +207,15 @@ $string['conventionmarkedited'] = 'Mark as edited';
 $string['conventionmarkededited'] = 'The agreement has been marked as edited.';
 $string['conventionmarksigned'] = 'Mark as signed';
 $string['conventionmarkedsigned'] = 'The agreement has been marked as signed: the student and the referent '
-    . 'teacher can now proceed with the evaluations.';
+    . 'teacher can now proceed with the evaluations. The signed PDF can be downloaded by the student from '
+    . 'their dashboard.';
+$string['conventionsignedfile'] = 'Signed agreement (PDF)';
+$string['conventionsignedfile_help'] = 'Upload the PDF of the actually signed agreement (a scan of the paper '
+    . "document). Once saved, the student will be able to download it from their dashboard, and the internship "
+    . 'can proceed to the evaluations.';
+$string['conventionsignedfilerequired'] = 'Please select the PDF of the signed agreement.';
+$string['conventionsignedfilemissing'] = 'The PDF of the signed agreement was not found.';
+$string['downloadsignedconvention'] = 'Download the signed agreement';
 $string['noconventionrequests'] = 'No agreement requests yet.';
 $string['conventionreview'] = 'Generate the agreement';
 $string['conventionreviewfor'] = 'Agreement request from {$a}: check and complete the information below if '

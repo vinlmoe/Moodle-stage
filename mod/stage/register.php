@@ -133,6 +133,13 @@ if ($mode === 'list') {
             $conventionurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($conventionurl, get_string('generateconvention', 'mod_stage'));
         }
+        if ($conventionstatus === STAGE_CONVENTION_EDITED) {
+            $signurl = new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+            $actions .= ' | ' . html_writer::link($signurl, get_string('conventionmarksigned', 'mod_stage'));
+        } else if ($conventionstatus === STAGE_CONVENTION_SIGNED) {
+            $signedurl = new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+            $actions .= ' | ' . html_writer::link($signedurl, get_string('downloadsignedconvention', 'mod_stage'));
+        }
         if ((int) $entry->status !== STAGE_STATUS_ENREGISTRE) {
             $reseturl = new moodle_url('/mod/stage/register.php',
                 ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]);

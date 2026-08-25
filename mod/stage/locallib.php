@@ -1260,6 +1260,10 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                         new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('selfeval', 'mod_stage')
                     );
+                    $actions[] = html_writer::link(
+                        new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                        get_string('downloadsignedconvention', 'mod_stage')
+                    );
                 }
                 // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
                 // l'instant, le badge de statut ci-dessus suffit à le renseigner.
@@ -1537,6 +1541,20 @@ function stage_get_convention_logo_file(context $context, $side) {
     $fs = get_file_storage();
     $filearea = $side === 'right' ? 'conventionlogoright' : 'conventionlogoleft';
     $files = $fs->get_area_files($context->id, 'mod_stage', $filearea, 0, 'itemid', false);
+    return $files ? reset($files) : null;
+}
+
+/**
+ * Récupère la convention de stage signée (PDF scanné), téléversée par la DEVE lors du passage au
+ * statut "signée".
+ *
+ * @param context $context Contexte du module stage.
+ * @param int $entryid
+ * @return \stored_file|null
+ */
+function stage_get_signed_convention_file(context $context, $entryid) {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($context->id, 'mod_stage', 'signedconvention', $entryid, 'itemid', false);
     return $files ? reset($files) : null;
 }
 

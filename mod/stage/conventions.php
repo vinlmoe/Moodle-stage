@@ -16,9 +16,10 @@
 
 /**
  * Suivi par la DEVE des demandes de convention de stage : validation d'une demande étudiante
- * (passage au statut "éditée"), puis marquage "signée" une fois la convention effectivement
- * signée (papier), ce qui ouvre le droit à l'auto-évaluation de l'étudiant et à l'évaluation de
- * l'enseignant référent.
+ * (passage au statut "éditée"), puis passage au statut "signée" une fois le PDF de la convention
+ * effectivement signée (scan du document papier) téléversé (voir convention_sign.php), ce qui
+ * ouvre le droit à l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant référent, et
+ * rend ce PDF téléchargeable par l'étudiant.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -30,7 +31,6 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
-$entryid = optional_param('entryid', 0, PARAM_INT);
 $page = optional_param('page', 0, PARAM_INT);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
@@ -46,19 +46,6 @@ $PAGE->set_url($baseurl);
 $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('conventions', 'mod_stage'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
-
-// Fait avancer une convention d'une étape (demandée -> éditée, via convention_review.php ;
-// éditée -> signée, ci-dessous).
-if ($entryid && confirm_sesskey()) {
-    $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
-
-    if (optional_param('marksigned', 0, PARAM_INT) && (int) $entry->conventionstatus === STAGE_CONVENTION_EDITED) {
-        stage_convention_mark_signed($entry, $USER->id);
-        redirect($baseurl, get_string('conventionmarkedsigned', 'mod_stage'), null,
-            \core\output\notification::NOTIFY_SUCCESS);
-    }
-    redirect($baseurl);
-}
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('conventions', 'mod_stage'));
@@ -109,9 +96,14 @@ if (empty($allentries)) {
         }
         if ($status === STAGE_CONVENTION_EDITED) {
             $actions[] = html_writer::link(
-                new moodle_url('/mod/stage/conventions.php',
-                    ['id' => $cm->id, 'entryid' => $entry->id, 'marksigned' => 1, 'sesskey' => sesskey()]),
+                new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                 get_string('conventionmarksigned', 'mod_stage')
+            );
+        }
+        if ($status === STAGE_CONVENTION_SIGNED) {
+            $actions[] = html_writer::link(
+                new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                get_string('downloadsignedconvention', 'mod_stage')
             );
         }
         if ($status >= STAGE_CONVENTION_EDITED) {
