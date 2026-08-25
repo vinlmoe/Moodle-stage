@@ -70,6 +70,19 @@ if ($action === 'togglemandatory' && $themeid) {
     redirect($baseurl);
 }
 
+// Bascule rapide activée/désactivée : une thématique désactivée (visible = 0) n'est plus
+// proposée aux étudiants (enregistrement DEVE en masse/unitaire, auto-enregistrement étudiant),
+// mais reste affichée ici et sur les stages déjà enregistrés sur cette thématique.
+if ($action === 'togglevisible' && $themeid) {
+    require_sesskey();
+    $theme = $DB->get_record('stage_theme', ['id' => $themeid, 'stageid' => $stage->id], '*', MUST_EXIST);
+    $theme->visible = $theme->visible ? 0 : 1;
+    $theme->timemodified = time();
+    $DB->update_record('stage_theme', $theme);
+    redirect($baseurl, get_string('themevisibilitytoggled', 'mod_stage'), null,
+        \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Formulaire d'ajout / édition d'une thématique.
 if ($action === 'edit') {
     $formurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $themeid]);
@@ -139,6 +152,7 @@ echo html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => 
 
 echo html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit']),
     get_string('addtheme', 'mod_stage'), ['class' => 'btn btn-primary d-block mt-2 mb-3', 'style' => 'width:fit-content']);
+echo $OUTPUT->notification(get_string('themevisible_help', 'mod_stage'), 'info');
 
 $themes = stage_get_themes($stage->id);
 
@@ -170,7 +184,11 @@ if (empty($themes)) {
         ]);
         $studyyearselect = html_writer::select(stage_studyyear_options(), 'studyyear_' . $theme->id, $theme->studyyear,
             false, ['class' => 'form-control']);
-        $visible = $theme->visible ? get_string('yes') : get_string('no');
+        $togglevisibleurl = new moodle_url('/mod/stage/themes.php',
+            ['id' => $cm->id, 'action' => 'togglevisible', 'themeid' => $theme->id, 'sesskey' => sesskey()]);
+        $visible = html_writer::link($togglevisibleurl,
+            $theme->visible ? get_string('yes') : get_string('no'),
+            ['class' => $theme->visible ? 'badge badge-success' : 'badge badge-secondary']);
 
         $editurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $theme->id]);
         $toggleurl = new moodle_url('/mod/stage/themes.php',

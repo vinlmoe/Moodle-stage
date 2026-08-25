@@ -265,9 +265,9 @@ $string['conventionreview'] = 'Générer la convention';
 $string['conventionreviewfor'] = "Demande de convention de {\$a} : vérifiez et complétez si besoin les "
     . 'informations ci-dessous avant de valider, ou refusez la demande avec un commentaire pour que '
     . "l'étudiant puisse la corriger.";
-$string['conventionteachervalidatefor'] = "Demande de convention de {\$a} : vérifiez les informations "
-    . "ci-dessous, puis validez pour la transmettre à la DEVE, ou refusez-la avec un commentaire pour que "
-    . "l'étudiant puisse la corriger.";
+$string['conventionteachervalidatefor'] = "Demande de convention de {\$a} : vérifiez et corrigez si besoin les "
+    . "informations ci-dessous, puis validez pour la transmettre à la DEVE, ou refusez-la avec un commentaire "
+    . "pour que l'étudiant puisse la corriger.";
 $string['conventionnotrequested'] = "Cette convention n'est pas (ou plus) en attente de revue.";
 $string['validateconvention'] = 'Valider';
 $string['rejectconvention'] = 'Refuser';
@@ -365,6 +365,10 @@ $string['conventionleavemodalities'] = "Modalités de congés et d'autorisation 
 $string['stagesaved'] = 'Le stage a été enregistré.';
 $string['themesaved'] = 'La thématique a été enregistrée.';
 $string['themedeleted'] = 'La thématique a été supprimée.';
+$string['themevisibilitytoggled'] = "L'activation de la thématique a été mise à jour.";
+$string['themevisible_help'] = "Cliquez sur Oui/Non dans la colonne « Visible » pour activer ou désactiver une "
+    . "thématique pour ce cours. Une thématique désactivée n'est plus proposée à l'enregistrement d'un stage "
+    . "(par la DEVE ou par l'étudiant), mais reste affichée ici et sur les stages déjà enregistrés dessus.";
 $string['themeinuse'] = 'Impossible de supprimer : des stages utilisent cette thématique.';
 $string['bulkthemessaved'] = 'Les thématiques ont été mises à jour.';
 $string['teachersassigned'] = 'Les enseignants référents ont été mis à jour.';

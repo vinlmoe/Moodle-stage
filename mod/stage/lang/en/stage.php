@@ -259,8 +259,8 @@ $string['noconventionrequests'] = 'No agreement requests yet.';
 $string['conventionreview'] = 'Generate the agreement';
 $string['conventionreviewfor'] = 'Agreement request from {$a}: check and complete the information below if '
     . 'needed before validating, or reject the request with a comment so the student can correct it.';
-$string['conventionteachervalidatefor'] = 'Agreement request from {$a}: check the information below, then '
-    . 'validate to send it to the DEVE, or reject it with a comment so the student can correct it.';
+$string['conventionteachervalidatefor'] = 'Agreement request from {$a}: check and correct the information below '
+    . 'if needed, then validate to send it to the DEVE, or reject it with a comment so the student can correct it.';
 $string['conventionnotrequested'] = 'This agreement is not (or no longer) awaiting review.';
 $string['validateconvention'] = 'Validate';
 $string['rejectconvention'] = 'Reject';
@@ -357,6 +357,10 @@ $string['conventionleavemodalities'] = 'Leave and absence authorisation arrangem
 $string['stagesaved'] = 'Internship saved.';
 $string['themesaved'] = 'Theme saved.';
 $string['themedeleted'] = 'Theme deleted.';
+$string['themevisibilitytoggled'] = "The theme's activation has been updated.";
+$string['themevisible_help'] = 'Click Yes/No in the "Visible" column to activate or deactivate a theme for this '
+    . 'course. A deactivated theme is no longer offered when registering an internship (by the DEVE or the '
+    . 'student), but stays listed here and on internships already registered on it.';
 $string['themeinuse'] = 'Cannot delete: internships use this theme.';
 $string['bulkthemessaved'] = 'Themes updated.';
 $string['teachersassigned'] = 'Referent teachers updated.';

@@ -105,6 +105,11 @@ une requise) :
      « Obligatoire » et saisir la durée requise pour plusieurs thématiques
      simultanément, puis **Enregistrer les modifications** (un seul
      formulaire pour toutes les lignes du tableau).
+4. **Activer/désactiver une thématique pour ce cours** : cliquer sur
+   Oui/Non dans la colonne « Visible » (bascule immédiate, sans passer par
+   le formulaire d'édition). Une thématique désactivée n'est plus proposée
+   à l'enregistrement d'un stage (ni par la DEVE, ni par l'étudiant), mais
+   reste visible ici et sur les stages déjà enregistrés dessus.
 
 ## 5. Enregistrement des stages (DEVE, ou par l'étudiant)
 
@@ -343,10 +348,13 @@ référent** : elle n'apparaît pas encore dans la liste de la DEVE. Chacun
 des enseignants référents de l'étudiant reçoit un courriel et retrouve la
 demande dans une section dédiée en haut de sa page **Validation des
 stages**, avec un lien **Valider la demande**. Cette page affiche les
-informations saisies par l'étudiant en lecture seule, avec deux actions :
+le même formulaire complet, entièrement éditable, que celui utilisé par
+la DEVE à l'étape 3 : l'enseignant.e peut corriger n'importe quel champ
+saisi par l'étudiant avant de se prononcer, avec deux actions :
 
-- **Valider la demande** : transmet la demande à la DEVE (statut
-  **Demandée**), qui la traite ensuite normalement (voir étape 3) ;
+- **Valider la demande** : enregistre les éventuelles corrections et
+  transmet la demande à la DEVE (statut **Demandée**), qui la traite
+  ensuite normalement (voir étape 3) ;
 - **Refuser** (commentaire obligatoire) : fait passer la convention au
   statut **Refusée** et envoie le commentaire par courriel à l'étudiant,
   exactement comme un refus par la DEVE.
