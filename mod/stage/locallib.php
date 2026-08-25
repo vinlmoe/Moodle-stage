@@ -1362,9 +1362,11 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                         get_string('selfeval', 'mod_stage')
                     );
                     // Le PDF de la convention signée n'existe que pour le circuit de gestion de
-                    // convention de ce plugin (STAGE_CONVENTION_SIGNED) : les stages enregistrés
-                    // en masse (SignVet) n'en ont pas.
-                    if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED) {
+                    // convention de ce plugin (STAGE_CONVENTION_SIGNED), et seulement si la DEVE
+                    // en a effectivement téléversé un (facultatif, voir convention_sign.php) : les
+                    // stages enregistrés en masse (SignVet) n'en ont jamais.
+                    if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED
+                            && stage_get_signed_convention_file(context_module::instance($cm->id), $entry->id)) {
                         $actions[] = html_writer::link(
                             new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                             get_string('downloadsignedconvention', 'mod_stage')

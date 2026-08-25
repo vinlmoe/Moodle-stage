@@ -136,7 +136,8 @@ if ($mode === 'list') {
         if ($conventionstatus === STAGE_CONVENTION_EDITED) {
             $signurl = new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($signurl, get_string('conventionmarksigned', 'mod_stage'));
-        } else if ($conventionstatus === STAGE_CONVENTION_SIGNED) {
+        } else if ($conventionstatus === STAGE_CONVENTION_SIGNED
+                && stage_get_signed_convention_file($context, $entry->id)) {
             $signedurl = new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($signedurl, get_string('downloadsignedconvention', 'mod_stage'));
         }

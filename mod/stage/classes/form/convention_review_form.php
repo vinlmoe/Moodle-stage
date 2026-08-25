@@ -42,7 +42,7 @@ class convention_review_form extends \moodleform {
     const REQUIRED_FIELDS = [
         'referentteacherid', 'studentbirthdate', 'studentaddress', 'studentphone',
         'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
-        'hostemail', 'hostlocation', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
+        'hostemail', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
         'gratificationamount',
     ];
 

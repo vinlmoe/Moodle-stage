@@ -16,10 +16,10 @@
 
 /**
  * Passage d'une convention de stage au statut "signée" (DEVE) : le PDF de la convention
- * effectivement signée (scan du document papier) doit être téléversé ici. Cette étape ouvre le
- * droit à l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant référent ; le PDF
- * téléversé devient téléchargeable par l'étudiant depuis son tableau de bord
- * (convention_signed.php).
+ * effectivement signée (scan du document papier) peut être téléversé ici, facultativement. Cette
+ * étape ouvre le droit à l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant
+ * référent, que le PDF soit fourni ou non ; s'il est fourni, il devient téléchargeable par
+ * l'étudiant, la DEVE et l'enseignant référent (convention_signed.php).
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain

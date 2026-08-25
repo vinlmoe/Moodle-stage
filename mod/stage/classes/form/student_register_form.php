@@ -138,7 +138,6 @@ class student_register_form extends \moodleform {
         $mform->addRule('hostemail', null, 'required', null, 'client');
         $mform->addElement('text', 'hostlocation', get_string('conventionhostlocation', 'mod_stage'), ['size' => '64']);
         $mform->setType('hostlocation', PARAM_TEXT);
-        $mform->addRule('hostlocation', null, 'required', null, 'client');
         $mform->addHelpButton('hostlocation', 'conventionhostlocation', 'mod_stage');
 
         // Tuteur / tutrice de stage.

@@ -233,13 +233,12 @@ $string['conventionmarkedited'] = 'Marquer éditée';
 $string['conventionmarkededited'] = "La convention a été marquée comme éditée.";
 $string['conventionmarksigned'] = 'Marquer signée';
 $string['conventionmarkedsigned'] = "La convention a été marquée comme signée : l'étudiant et l'enseignant "
-    . 'référent peuvent maintenant procéder aux évaluations. Le PDF signé est téléchargeable par '
-    . "l'étudiant depuis son tableau de bord.";
+    . 'référent peuvent maintenant procéder aux évaluations. Si un PDF signé a été fourni, il est '
+    . "téléchargeable par l'étudiant depuis son tableau de bord.";
 $string['conventionsignedfile'] = 'Convention signée (PDF)';
-$string['conventionsignedfile_help'] = "Téléversez le PDF de la convention effectivement signée (scan du document "
-    . "papier). Une fois enregistré, l'étudiant pourra le télécharger depuis son tableau de bord, et le stage "
-    . "pourra passer aux évaluations.";
-$string['conventionsignedfilerequired'] = 'Veuillez sélectionner le PDF de la convention signée.';
+$string['conventionsignedfile_help'] = "Facultatif : téléversez le PDF de la convention effectivement signée "
+    . "(scan du document papier). S'il est fourni, l'étudiant pourra le télécharger depuis son tableau de bord. "
+    . "Dans tous les cas, valider ce formulaire fait passer le stage aux évaluations.";
 $string['conventionsignedfilemissing'] = "Le PDF de la convention signée n'a pas été trouvé.";
 $string['downloadsignedconvention'] = 'Télécharger la convention signée';
 $string['noconventionrequests'] = 'Aucune demande de convention pour le moment.';

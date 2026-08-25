@@ -122,7 +122,7 @@ if (empty($allentries)) {
                 get_string('conventionmarksigned', 'mod_stage')
             );
         }
-        if ($status === STAGE_CONVENTION_SIGNED) {
+        if ($status === STAGE_CONVENTION_SIGNED && stage_get_signed_convention_file($context, $entry->id)) {
             $actions[] = html_writer::link(
                 new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                 get_string('downloadsignedconvention', 'mod_stage')

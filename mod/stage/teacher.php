@@ -212,7 +212,8 @@ if (empty($assignedids)) {
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $action = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]),
             get_string('evaluate', 'mod_stage'));
-        if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED) {
+        if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED
+                && stage_get_signed_convention_file($context, $entry->id)) {
             $action .= ' | ' . html_writer::link(
                 new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                 get_string('downloadsignedconvention', 'mod_stage')

@@ -283,7 +283,9 @@ la précédente demande a été **refusée** par la DEVE, voir étape 3),
 l'étudiant a un lien **Demander la convention**. Le formulaire y rassemble
 toutes les informations de la page 1 de la convention que la DEVE ne
 connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
-à l'enregistrement du stage). **Tous les champs sont obligatoires** :
+à l'enregistrement du stage). **Tous les champs sont obligatoires, sauf le
+lieu du stage** (facultatif, à renseigner uniquement s'il diffère de
+l'adresse de l'organisme) :
 
 - langue de la convention (Français standard ou Anglais) et gabarit choisi
   parmi ceux proposés dans cette langue ;
@@ -352,16 +354,17 @@ au statut **Demandée** et sont immédiatement visibles par la DEVE.
      l'étudiant, qui peut alors corriger sa demande et la soumettre à
      nouveau depuis son tableau de bord.
 3. **Marquer signée** (une fois la convention au statut Éditée) : ouvre une
-   page dédiée où la DEVE doit téléverser le PDF de la convention
-   effectivement signée (scan du document papier retourné) — impossible de
-   passer au statut Signée sans ce fichier. **Cette étape ouvre le droit à
-   l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant
-   référent** — avant cela, la page d'auto-évaluation de l'étudiant affiche
-   un message l'invitant à attendre la signature. Une fois signée, le PDF
-   téléversé devient téléchargeable (lien **Télécharger la convention
-   signée**) par l'étudiant depuis son tableau de bord, par l'enseignant
-   référent depuis sa page d'évaluation, et par la DEVE depuis les pages
-   « Conventions » et « Enregistrer des stages ».
+   page dédiée où la DEVE peut, facultativement, téléverser le PDF de la
+   convention effectivement signée (scan du document papier retourné) —
+   valider le formulaire fait passer le stage au statut Signée que ce PDF
+   soit fourni ou non. **Cette étape ouvre le droit à l'auto-évaluation de
+   l'étudiant et à l'évaluation de l'enseignant référent** — avant cela, la
+   page d'auto-évaluation de l'étudiant affiche un message l'invitant à
+   attendre la signature. Si un PDF a été téléversé, il devient
+   téléchargeable (lien **Télécharger la convention signée**) par
+   l'étudiant depuis son tableau de bord, par l'enseignant référent depuis
+   sa page d'évaluation, et par la DEVE depuis les pages « Conventions » et
+   « Enregistrer des stages ».
 
 Le lien **Générer la convention** (téléchargement direct du PDF) n'est
 proposé qu'une fois la convention au statut Éditée ou Signée ; tant

@@ -22,8 +22,8 @@ require_once($CFG->libdir . '/formslib.php');
 
 /**
  * Formulaire de passage d'une convention au statut "signée" (DEVE) : le PDF de la convention
- * effectivement signée (scan du document papier) doit être téléversé, il devient alors
- * téléchargeable par l'étudiant.
+ * effectivement signée (scan du document papier) peut être téléversé, facultativement — s'il
+ * l'est, il devient alors téléchargeable par l'étudiant, la DEVE et l'enseignant référent.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -53,37 +53,8 @@ class convention_sign_form extends \moodleform {
             'maxbytes' => $CFG->maxbytes,
             'accepted_types' => ['.pdf'],
         ]);
+        $mform->addHelpButton('signedfile', 'conventionsignedfile', 'mod_stage');
 
         $this->add_action_buttons(true, get_string('conventionmarksigned', 'mod_stage'));
-    }
-
-    /**
-     * Server-side validation : le PDF signé est obligatoire (comparable à convention_template_form
-     * : une règle "required" côté client n'est pas fiable sur un élément filemanager).
-     *
-     * @param array $data
-     * @param array $files
-     * @return array
-     */
-    public function validation($data, $files) {
-        global $USER;
-
-        $errors = parent::validation($data, $files);
-
-        $draftitemid = $data['signedfile'] ?? 0;
-        $fs = get_file_storage();
-        $usercontext = \context_user::instance($USER->id);
-        $hasfile = false;
-        foreach ($fs->get_area_files($usercontext->id, 'user', 'draft', $draftitemid) as $file) {
-            if (!$file->is_directory()) {
-                $hasfile = true;
-                break;
-            }
-        }
-        if (!$hasfile) {
-            $errors['signedfile'] = get_string('conventionsignedfilerequired', 'mod_stage');
-        }
-
-        return $errors;
     }
 }
