@@ -106,6 +106,51 @@
       </INDEXES>
     </TABLE>
 
+    <TABLE NAME="stage_convention_detail" COMMENT="Informations complémentaires saisies par l'étudiant pour compléter la page 1 de sa convention de stage (coordonnées, organisme d'accueil, tuteur, modalités, gratification, congés)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="entryid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="yearsituation" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="normal"
+            COMMENT="normal, redoublant ou detteue (combiné à stage_theme.studyyear pour la case A1..A5)"/>
+        <FIELD NAME="stagetype" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="obligatoire"
+            COMMENT="obligatoire ou complementaire (EP)"/>
+        <FIELD NAME="studentbirthdate" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="studentaddress" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="studentphone" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostaddress" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostrepresentative" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostrepresentativetitle" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Qualité du représentant / de la représentante"/>
+        <FIELD NAME="hostservice" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostphone" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostemail" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hostlocation" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Lieu du stage si différent de l'adresse de l'organisme"/>
+        <FIELD NAME="tutorname" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="tutorfunction" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="tutorphone" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="tutoremail" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="nightpresence" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="sundaypresence" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="holidaypresence" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="homebased" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"
+            COMMENT="Stage au domicile"/>
+        <FIELD NAME="othermodality" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hasleave" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"
+            COMMENT="Case à cocher congés/autorisations d'absence (art. 10.1)"/>
+        <FIELD NAME="leavedays" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="leavemodalities" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="gratificationamount" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Montant mensuel de la gratification, en euros (art. 5.13)"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="entryid" TYPE="foreign-unique" FIELDS="entryid" REFTABLE="stage_entry" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
     <TABLE NAME="stage_entry_teacher" COMMENT="Enseignant referent affecte a un etudiant pour une activite stage">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>

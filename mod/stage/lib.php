@@ -119,6 +119,7 @@ function stage_delete_instance($id) {
     $entries = $DB->get_records('stage_entry', ['stageid' => $id], '', 'id');
     foreach ($entries as $entry) {
         $DB->delete_records('stage_answer', ['entryid' => $entry->id]);
+        $DB->delete_records('stage_convention_detail', ['entryid' => $entry->id]);
     }
     $DB->delete_records('stage_entry_teacher', ['stageid' => $id]);
     $DB->delete_records('stage_entry', ['stageid' => $id]);

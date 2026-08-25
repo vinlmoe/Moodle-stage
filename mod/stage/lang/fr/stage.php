@@ -222,6 +222,42 @@ $string['conventionlogossaved'] = 'Les logos ont été enregistrés.';
 $string['conventionlang'] = 'Langue de la convention';
 $string['conventionlang_fr'] = 'Français (standard)';
 $string['conventionlang_en'] = 'Anglais';
+$string['conventiontemplatelangmismatch'] = "Le gabarit sélectionné ne correspond pas à la langue choisie.";
+
+// Convention : informations complémentaires demandées à l'étudiant.
+$string['conventionyearsituation'] = "Situation";
+$string['conventionyearsituation_normal'] = 'Année normale';
+$string['conventionyearsituation_redoublant'] = 'Redoublant.e';
+$string['conventionyearsituation_detteue'] = "Dette d'UE";
+$string['conventionstagetype'] = 'Type de stage';
+$string['conventionstagetype_obligatoire'] = 'Stage obligatoire';
+$string['conventionstagetype_complementaire'] = 'Stage complémentaire (EP)';
+$string['conventionbirthdate'] = 'Date de naissance';
+$string['conventionstudentaddress'] = 'Adresse';
+$string['conventionstudentphone'] = 'Téléphone';
+$string['conventionhostaddress'] = "Adresse de l'organisme";
+$string['conventionhostrepresentative'] = "Représenté par";
+$string['conventionhostrepresentativetitle'] = 'Qualité du représentant / de la représentante';
+$string['conventionhostservice'] = 'Service dans lequel le stage sera effectué';
+$string['conventionhostphone'] = "Téléphone de l'organisme";
+$string['conventionhostemail'] = "Courriel de l'organisme";
+$string['conventionhostlocation'] = "Lieu du stage (si différent de l'adresse de l'organisme)";
+$string['conventionhostlocation_help'] = "À remplir uniquement si le stage se déroule à une adresse différente de celle de l'organisme d'accueil.";
+$string['conventiontutorname'] = 'Nom et prénom du tuteur / de la tutrice de stage';
+$string['conventiontutorfunction'] = 'Fonction';
+$string['conventiontutorphone'] = 'Téléphone';
+$string['conventiontutoremail'] = 'Courriel';
+$string['conventionmodalities'] = 'Modalités particulières du stage (art. 3.2)';
+$string['conventionnightpresence'] = 'Présence de nuit';
+$string['conventionsundaypresence'] = 'Présence le dimanche';
+$string['conventionholidaypresence'] = 'Présence les jours fériés';
+$string['conventionhomebased'] = 'Stage au domicile';
+$string['conventionothermodality'] = 'Autre modalité particulière';
+$string['conventiongratification'] = 'Montant de la gratification (par mois, en euros)';
+$string['conventionleave'] = "Congés et autorisations d'absence (art. 10.1)";
+$string['conventionhasleave'] = "Ce stage comporte des congés ou autorisations d'absence";
+$string['conventionleavedays'] = 'Nombre de jours de congés';
+$string['conventionleavemodalities'] = "Modalités de congés et d'autorisation d'absence";
 
 // Messages.
 $string['stagesaved'] = 'Le stage a été enregistré.';

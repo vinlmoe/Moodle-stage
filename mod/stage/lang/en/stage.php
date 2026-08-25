@@ -221,6 +221,42 @@ $string['conventionlogossaved'] = 'The logos have been saved.';
 $string['conventionlang'] = 'Agreement language';
 $string['conventionlang_fr'] = 'French (standard)';
 $string['conventionlang_en'] = 'English';
+$string['conventiontemplatelangmismatch'] = 'The selected template does not match the chosen language.';
+
+// Convention: additional information requested from the student.
+$string['conventionyearsituation'] = 'Situation';
+$string['conventionyearsituation_normal'] = 'Normal year';
+$string['conventionyearsituation_redoublant'] = 'Repeating year';
+$string['conventionyearsituation_detteue'] = 'Outstanding credit (dette d\'UE)';
+$string['conventionstagetype'] = 'Internship type';
+$string['conventionstagetype_obligatoire'] = 'Mandatory internship';
+$string['conventionstagetype_complementaire'] = 'Additional internship (EP)';
+$string['conventionbirthdate'] = 'Date of birth';
+$string['conventionstudentaddress'] = 'Address';
+$string['conventionstudentphone'] = 'Phone';
+$string['conventionhostaddress'] = 'Host organisation address';
+$string['conventionhostrepresentative'] = 'Represented by';
+$string['conventionhostrepresentativetitle'] = "Representative's title";
+$string['conventionhostservice'] = 'Department where the internship will take place';
+$string['conventionhostphone'] = 'Host organisation phone';
+$string['conventionhostemail'] = 'Host organisation email';
+$string['conventionhostlocation'] = 'Internship location (if different from the host organisation address)';
+$string['conventionhostlocation_help'] = 'Fill this in only if the internship takes place at an address different from the host organisation\'s.';
+$string['conventiontutorname'] = 'Name of the host organisation supervisor';
+$string['conventiontutorfunction'] = 'Role';
+$string['conventiontutorphone'] = 'Phone';
+$string['conventiontutoremail'] = 'Email';
+$string['conventionmodalities'] = 'Specific internship arrangements (art. 3.2)';
+$string['conventionnightpresence'] = 'Night presence';
+$string['conventionsundaypresence'] = 'Sunday presence';
+$string['conventionholidaypresence'] = 'Public holiday presence';
+$string['conventionhomebased'] = 'Home-based internship';
+$string['conventionothermodality'] = 'Other specific arrangement';
+$string['conventiongratification'] = 'Monthly allowance amount (in euros)';
+$string['conventionleave'] = 'Leave and absence authorisations (art. 10.1)';
+$string['conventionhasleave'] = 'This internship includes leave or absence authorisations';
+$string['conventionleavedays'] = 'Number of leave days';
+$string['conventionleavemodalities'] = 'Leave and absence authorisation arrangements';
 
 // Messages.
 $string['stagesaved'] = 'Internship saved.';

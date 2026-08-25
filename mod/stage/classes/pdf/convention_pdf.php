@@ -68,10 +68,15 @@ class convention_pdf extends \pdf {
      * Génère la page 1 de la convention à partir des données préparées par convention.php.
      *
      * @param array $stagedata Voir convention.php pour la structure exacte attendue :
-     *                         establishment, hoststructure, student{fullname, email},
-     *                         theme{name, studyyear}, dates{start, end}, duration{declared,
-     *                         retained}, statuslabel, referentteachers (array de noms),
-     *                         tutor (nom du tuteur en structure d'accueil, vide si non saisi).
+     *                         establishment, hoststructure, yearlabel, stagetypelabel,
+     *                         host{address, representative, representativetitle, service,
+     *                         phone, email, location}, student{fullname, email, birthdate,
+     *                         address, phone}, theme{name}, dates{start, end},
+     *                         duration{declared, retained}, statuslabel, referentteachers
+     *                         (array de noms), tutor{name, function, phone, email},
+     *                         modalities{night, sunday, holiday, homebased (bool), other
+     *                         (texte)}, gratification (texte), leave{has (bool), days,
+     *                         modalities (texte)}.
      * @param string|null $logoleftpath Chemin d'un fichier PNG (logo haut gauche), ou null.
      * @param string|null $logorightpath Chemin d'un fichier PNG (logo haut droit), ou null.
      * @param string $lang Langue de la convention ('fr' ou 'en'), celle du gabarit choisi.
@@ -107,23 +112,34 @@ class convention_pdf extends \pdf {
             $this->SetY(32);
         }
 
-        $this->SetFont('freesans', 'B', 16);
-        $this->Cell(0, 10, $this->str('conventiontitle'), 0, 1, 'C');
-        $this->Ln(4);
+        $this->SetFont('freesans', 'B', 15);
+        $this->Cell(0, 9, $this->str('conventiontitle'), 0, 1, 'C');
+        $this->SetFont('freesans', '', 10);
+        $this->Cell(0, 6, $stagedata['yearlabel'] . ' - ' . $stagedata['stagetypelabel'], 0, 1, 'C');
+        $this->Ln(2);
 
         $this->section_heading($this->str('conventionestablishment'));
         $this->field_row($this->str('conventionestablishment'), $stagedata['establishment']);
         $this->field_row($this->str('conventionhoststructure'), $stagedata['hoststructure']);
+        $this->field_row($this->str('conventionhostaddress'), $stagedata['host']['address']);
+        $this->field_row($this->str('conventionhostrepresentative'), $stagedata['host']['representative']);
+        $this->field_row($this->str('conventionhostrepresentativetitle'), $stagedata['host']['representativetitle']);
+        $this->field_row($this->str('conventionhostservice'), $stagedata['host']['service']);
+        $this->field_row($this->str('conventionhostphone'), $stagedata['host']['phone']);
+        $this->field_row($this->str('conventionhostemail'), $stagedata['host']['email']);
+        $this->field_row($this->str('conventionhostlocation'), $stagedata['host']['location']);
         $this->Ln(3);
 
         $this->section_heading($this->str('conventionstudent'));
         $this->field_row(get_string('fullname', '', null, $this->lang), $stagedata['student']['fullname']);
+        $this->field_row($this->str('conventionbirthdate'), $stagedata['student']['birthdate']);
+        $this->field_row($this->str('conventionstudentaddress'), $stagedata['student']['address']);
+        $this->field_row($this->str('conventionstudentphone'), $stagedata['student']['phone']);
         $this->field_row(get_string('email', '', null, $this->lang), $stagedata['student']['email']);
         $this->Ln(3);
 
         $this->section_heading($this->str('conventionthemeduration'));
         $this->field_row($this->str('theme'), $stagedata['theme']['name']);
-        $this->field_row($this->str('studyyear'), $stagedata['theme']['studyyear']);
         $this->field_row($this->str('datestart'), $stagedata['dates']['start']);
         $this->field_row($this->str('dateend'), $stagedata['dates']['end']);
         $this->field_row($this->str('declaredduration'), $stagedata['duration']['declared']);
@@ -134,10 +150,60 @@ class convention_pdf extends \pdf {
         $this->section_heading($this->str('conventionsupervision'));
         $this->field_row($this->str('referentteachers'),
             !empty($stagedata['referentteachers']) ? implode(', ', $stagedata['referentteachers']) : '-');
-        // TODO : aucun champ "tuteur en structure d'accueil" n'existe dans le schéma actuel
-        // (db/install.xml : stage_entry n'a pas de colonne dédiée). À ajouter en base le jour où
-        // cette information doit être saisie et conservée ; en attendant, ligne laissée vide.
-        $this->field_row($this->str('conventiontutor'), $stagedata['tutor'] ?: '-');
+        $this->field_row($this->str('conventiontutorname'), $stagedata['tutor']['name']);
+        $this->field_row($this->str('conventiontutorfunction'), $stagedata['tutor']['function']);
+        $this->field_row($this->str('conventiontutorphone'), $stagedata['tutor']['phone']);
+        $this->field_row($this->str('conventiontutoremail'), $stagedata['tutor']['email']);
+        $this->Ln(3);
+
+        $this->section_heading($this->str('conventionmodalities'));
+        $this->checkbox_row($this->str('conventionnightpresence'), !empty($stagedata['modalities']['night']));
+        $this->checkbox_row($this->str('conventionsundaypresence'), !empty($stagedata['modalities']['sunday']));
+        $this->checkbox_row($this->str('conventionholidaypresence'), !empty($stagedata['modalities']['holiday']));
+        $this->checkbox_row($this->str('conventionhomebased'), !empty($stagedata['modalities']['homebased']));
+        if (!empty($stagedata['modalities']['other'])) {
+            $this->field_row($this->str('conventionothermodality'), $stagedata['modalities']['other']);
+        }
+        $this->Ln(3);
+
+        $this->section_heading($this->str('conventiongratification'));
+        $this->field_row($this->str('conventiongratification'), $stagedata['gratification'] ?: '-');
+        $this->Ln(3);
+
+        $this->section_heading($this->str('conventionleave'));
+        $this->checkbox_row($this->str('conventionhasleave'), !empty($stagedata['leave']['has']));
+        if (!empty($stagedata['leave']['has'])) {
+            $this->field_row($this->str('conventionleavedays'), $stagedata['leave']['days']);
+            if (!empty($stagedata['leave']['modalities'])) {
+                $this->field_row($this->str('conventionleavemodalities'), $stagedata['leave']['modalities']);
+            }
+        }
+    }
+
+    /**
+     * Ligne à case à cocher : dessine une case (cochée ou non) suivie d'un libellé, pour les
+     * options activables de la convention (modalités particulières, congés...).
+     *
+     * @param string $label
+     * @param bool $checked
+     * @return void
+     */
+    protected function checkbox_row($label, $checked) {
+        $x = $this->GetX();
+        $y = $this->GetY();
+        $size = 4;
+
+        $this->Rect($x, $y + 1, $size, $size, $checked ? 'DF' : 'D', [], $checked ? self::BAND_COLOR : [0, 0, 0]);
+        if ($checked) {
+            $this->SetDrawColor(255, 255, 255);
+            $this->Line($x + 0.8, $y + 1 + 2, $x + 1.6, $y + 1 + 3.2);
+            $this->Line($x + 1.6, $y + 1 + 3.2, $x + 3.2, $y + 1 + 0.8);
+            $this->SetDrawColor(0, 0, 0);
+        }
+
+        $this->SetXY($x + $size + 2, $y);
+        $this->SetFont('freesans', '', 10);
+        $this->Cell(0, 6, $label, 0, 1, 'L');
     }
 
     /**

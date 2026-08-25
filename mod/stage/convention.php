@@ -87,6 +87,21 @@ require_once($fpdiautoload);
 $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
 $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
 $referentteachers = stage_get_student_teachers($stage->id, $entry->userid);
+$detail = stage_get_convention_detail($entry->id);
+if (!$detail) {
+    // Ne devrait pas arriver (convention_request.php enregistre toujours ces informations en
+    // même temps que la demande), mais évite un fatal error si une demande a été créée avant
+    // l'ajout de ce détail ou directement en base.
+    $detail = (object) array_fill_keys([
+        'yearsituation', 'stagetype', 'studentbirthdate', 'studentaddress', 'studentphone',
+        'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
+        'hostemail', 'hostlocation', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
+        'nightpresence', 'sundaypresence', 'holidaypresence', 'homebased', 'othermodality',
+        'hasleave', 'leavedays', 'leavemodalities', 'gratificationamount',
+    ], null);
+    $detail->yearsituation = 'normal';
+    $detail->stagetype = 'obligatoire';
+}
 
 // Les libellés (statut, année d'étude...) sont dans la langue du gabarit choisi par l'étudiant,
 // pas dans celle de la session de qui génère le PDF (généralement la DEVE) : voir
@@ -95,13 +110,26 @@ $dateformat = get_string('strftimedate', 'langconfig', null, $conventionlang);
 $stagedata = [
     'establishment' => 'VetAgro Sup',
     'hoststructure' => (string) $entry->structure,
+    'yearlabel' => $theme ? stage_convention_year_label($theme->studyyear, $detail->yearsituation, $conventionlang) : '-',
+    'stagetypelabel' => stage_convention_stagetype_options($conventionlang)[$detail->stagetype] ?? $detail->stagetype,
+    'host' => [
+        'address' => (string) $detail->hostaddress,
+        'representative' => (string) $detail->hostrepresentative,
+        'representativetitle' => (string) $detail->hostrepresentativetitle,
+        'service' => (string) $detail->hostservice,
+        'phone' => (string) $detail->hostphone,
+        'email' => (string) $detail->hostemail,
+        'location' => (string) $detail->hostlocation,
+    ],
     'student' => [
         'fullname' => fullname($student),
         'email' => $student->email,
+        'birthdate' => $detail->studentbirthdate ? userdate($detail->studentbirthdate, $dateformat) : '-',
+        'address' => (string) $detail->studentaddress,
+        'phone' => (string) $detail->studentphone,
     ],
     'theme' => [
         'name' => $theme ? format_string($theme->name) : '-',
-        'studyyear' => $theme ? stage_studyyear_label($theme->studyyear, $conventionlang) : '-',
     ],
     'dates' => [
         'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
@@ -113,10 +141,25 @@ $stagedata = [
     ],
     'statuslabel' => stage_status_label($entry->status, $conventionlang),
     'referentteachers' => array_map('fullname', $referentteachers),
-    // TODO : pas de champ "tuteur en structure d'accueil" dans le schéma actuel (voir
-    // db/install.xml, table stage_entry) ; à ajouter en base si cette information doit être
-    // saisie et conservée.
-    'tutor' => '',
+    'tutor' => [
+        'name' => (string) $detail->tutorname,
+        'function' => (string) $detail->tutorfunction,
+        'phone' => (string) $detail->tutorphone,
+        'email' => (string) $detail->tutoremail,
+    ],
+    'modalities' => [
+        'night' => (bool) $detail->nightpresence,
+        'sunday' => (bool) $detail->sundaypresence,
+        'holiday' => (bool) $detail->holidaypresence,
+        'homebased' => (bool) $detail->homebased,
+        'other' => (string) $detail->othermodality,
+    ],
+    'gratification' => (string) $detail->gratificationamount,
+    'leave' => [
+        'has' => (bool) $detail->hasleave,
+        'days' => $detail->leavedays,
+        'modalities' => (string) $detail->leavemodalities,
+    ],
 ];
 
 // Les gabarits/logos sont stockés via l'API fichiers de Moodle : TCPDF/FPDI ont besoin d'un

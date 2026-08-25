@@ -182,5 +182,45 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082407, 'stage');
     }
 
+    if ($oldversion < 2026082408) {
+        $table = new xmldb_table('stage_convention_detail');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('entryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('yearsituation', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'normal');
+        $table->add_field('stagetype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'obligatoire');
+        $table->add_field('studentbirthdate', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('studentaddress', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('studentphone', XMLDB_TYPE_CHAR, '30', null, null, null, null);
+        $table->add_field('hostaddress', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hostrepresentative', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hostrepresentativetitle', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hostservice', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hostphone', XMLDB_TYPE_CHAR, '30', null, null, null, null);
+        $table->add_field('hostemail', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hostlocation', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('tutorname', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('tutorfunction', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('tutorphone', XMLDB_TYPE_CHAR, '30', null, null, null, null);
+        $table->add_field('tutoremail', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('nightpresence', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('sundaypresence', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('holidaypresence', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('homebased', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('othermodality', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('hasleave', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('leavedays', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('leavemodalities', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('gratificationamount', XMLDB_TYPE_CHAR, '20', null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('entryid', XMLDB_KEY_FOREIGN_UNIQUE, ['entryid'], 'stage_entry', ['id']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_mod_savepoint(true, 2026082408, 'stage');
+    }
+
     return true;
 }

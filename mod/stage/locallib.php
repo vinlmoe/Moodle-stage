@@ -1293,6 +1293,90 @@ function stage_convention_lang_label($lang) {
 }
 
 /**
+ * Situations d'année d'étude proposées pour la case A1..A5 de la convention (année normale,
+ * redoublant.e, ou dette d'UE).
+ *
+ * @param string|null $lang
+ * @return array 'normal'/'redoublant'/'detteue' => libellé
+ */
+function stage_convention_yearsituation_options($lang = null) {
+    return [
+        'normal' => get_string('conventionyearsituation_normal', 'mod_stage', null, $lang),
+        'redoublant' => get_string('conventionyearsituation_redoublant', 'mod_stage', null, $lang),
+        'detteue' => get_string('conventionyearsituation_detteue', 'mod_stage', null, $lang),
+    ];
+}
+
+/**
+ * Libellé combinant l'année d'étude de la thématique (A1..A5) et la situation de l'étudiant
+ * (normale, redoublant.e, dette d'UE), tel qu'affiché dans la case A de la convention.
+ *
+ * @param int $studyyear
+ * @param string $yearsituation
+ * @param string|null $lang
+ * @return string
+ */
+function stage_convention_year_label($studyyear, $yearsituation, $lang = null) {
+    $studyyear = (int) $studyyear;
+    $base = $studyyear >= 1 && $studyyear <= 5 ? 'A' . $studyyear : stage_studyyear_label($studyyear, $lang);
+    $situations = stage_convention_yearsituation_options($lang);
+    if ($yearsituation === 'normal' || empty($yearsituation)) {
+        return $base;
+    }
+    return $base . ' ' . ($situations[$yearsituation] ?? '');
+}
+
+/**
+ * Types de stage proposés (obligatoire ou complémentaire / EP).
+ *
+ * @param string|null $lang
+ * @return array 'obligatoire'/'complementaire' => libellé
+ */
+function stage_convention_stagetype_options($lang = null) {
+    return [
+        'obligatoire' => get_string('conventionstagetype_obligatoire', 'mod_stage', null, $lang),
+        'complementaire' => get_string('conventionstagetype_complementaire', 'mod_stage', null, $lang),
+    ];
+}
+
+/**
+ * Récupère les informations complémentaires de convention d'une saisie (coordonnées,
+ * organisme d'accueil, tuteur, modalités, gratification, congés).
+ *
+ * @param int $entryid
+ * @return stdClass|false
+ */
+function stage_get_convention_detail($entryid) {
+    global $DB;
+
+    return $DB->get_record('stage_convention_detail', ['entryid' => $entryid]);
+}
+
+/**
+ * Enregistre (création ou mise à jour) les informations complémentaires de convention d'une
+ * saisie, saisies par l'étudiant lors de sa demande.
+ *
+ * @param int $entryid
+ * @param stdClass $data Champs de stage_convention_detail (sans id/entryid/timecreated/timemodified).
+ * @return void
+ */
+function stage_save_convention_detail($entryid, stdClass $data) {
+    global $DB;
+
+    $data->entryid = $entryid;
+    $data->timemodified = time();
+
+    $existing = stage_get_convention_detail($entryid);
+    if ($existing) {
+        $data->id = $existing->id;
+        $DB->update_record('stage_convention_detail', $data);
+    } else {
+        $data->timecreated = time();
+        $DB->insert_record('stage_convention_detail', $data);
+    }
+}
+
+/**
  * Enregistre la demande de convention d'un étudiant : choix du gabarit, passage au statut
  * "demandée". Réservé à l'étudiant propriétaire de la saisie (voir convention_request.php).
  *

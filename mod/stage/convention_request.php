@@ -15,9 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Demande de convention de stage par l'étudiant : choix d'un gabarit parmi ceux proposés par
- * la DEVE. La DEVE valide ensuite la demande (passage au statut "éditée" puis "signée", ce qui
- * ouvre le droit à l'auto-évaluation et à l'évaluation) depuis conventions.php.
+ * Demande de convention de stage par l'étudiant : choix de la langue et d'un gabarit parmi ceux
+ * proposés par la DEVE, ainsi que toutes les informations de la page 1 de la convention que la
+ * DEVE ne connaît pas déjà (coordonnées de l'étudiant, organisme d'accueil, tuteur, modalités
+ * particulières, gratification, congés). La DEVE valide ensuite la demande (passage au statut
+ * "éditée" puis "signée", ce qui ouvre le droit à l'auto-évaluation et à l'évaluation) depuis
+ * conventions.php.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -27,6 +30,9 @@
 require(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
+require_once($CFG->dirroot . '/mod/stage/classes/form/convention_request_form.php');
+
+use mod_stage\form\convention_request_form;
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
@@ -66,15 +72,42 @@ if (empty($templates)) {
     exit;
 }
 
-if (data_submitted() && confirm_sesskey()) {
-    $templateid = required_param('conventiontemplateid', PARAM_INT);
-    $lang = required_param('conventionlang', PARAM_ALPHA);
-    if (!isset($templates[$templateid]) || $templates[$templateid]->lang !== $lang) {
-        // Le choix de langue et le gabarit doivent correspondre (filtrage normalement déjà
-        // assuré côté client) : rejette toute incohérence plutôt que de l'ignorer en silence.
-        throw new moodle_exception('invalidparameter', 'debug');
-    }
-    stage_request_convention($entry, $templateid);
+$mform = new convention_request_form($baseurl, ['templates' => $templates]);
+$mform->set_data((object) ['id' => $cm->id, 'entryid' => $entryid]);
+
+if ($mform->is_cancelled()) {
+    redirect($viewurl);
+} else if ($data = $mform->get_data()) {
+    stage_request_convention($entry, $data->conventiontemplateid);
+
+    $detail = new stdClass();
+    $detail->yearsituation = $data->yearsituation;
+    $detail->stagetype = $data->stagetype;
+    $detail->studentbirthdate = $data->studentbirthdate ?: null;
+    $detail->studentaddress = $data->studentaddress;
+    $detail->studentphone = $data->studentphone;
+    $detail->hostaddress = $data->hostaddress;
+    $detail->hostrepresentative = $data->hostrepresentative;
+    $detail->hostrepresentativetitle = $data->hostrepresentativetitle;
+    $detail->hostservice = $data->hostservice;
+    $detail->hostphone = $data->hostphone;
+    $detail->hostemail = $data->hostemail;
+    $detail->hostlocation = $data->hostlocation;
+    $detail->tutorname = $data->tutorname;
+    $detail->tutorfunction = $data->tutorfunction;
+    $detail->tutorphone = $data->tutorphone;
+    $detail->tutoremail = $data->tutoremail;
+    $detail->nightpresence = !empty($data->nightpresence) ? 1 : 0;
+    $detail->sundaypresence = !empty($data->sundaypresence) ? 1 : 0;
+    $detail->holidaypresence = !empty($data->holidaypresence) ? 1 : 0;
+    $detail->homebased = !empty($data->homebased) ? 1 : 0;
+    $detail->othermodality = $data->othermodality;
+    $detail->hasleave = !empty($data->hasleave) ? 1 : 0;
+    $detail->leavedays = $detail->hasleave ? $data->leavedays : null;
+    $detail->leavemodalities = $detail->hasleave ? $data->leavemodalities : '';
+    $detail->gratificationamount = $data->gratificationamount;
+    stage_save_convention_detail($entry->id, $detail);
+
     redirect($viewurl, get_string('conventionrequested', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
@@ -84,60 +117,6 @@ echo html_writer::link($viewurl, get_string('back'));
 
 echo $OUTPUT->box(get_string('requestconvention_help', 'mod_stage'), 'generalbox mb-3');
 
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl, 'id' => 'stage-convention-request']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-
-echo html_writer::tag('label', get_string('conventionlang', 'mod_stage'), ['for' => 'conventionlang']);
-echo html_writer::select(stage_convention_lang_options(), 'conventionlang', 'fr', false,
-    ['id' => 'conventionlang', 'required' => 'required', 'class' => 'form-control']);
-
-echo html_writer::tag('label', get_string('conventiontemplatename', 'mod_stage'),
-    ['for' => 'conventiontemplateid', 'class' => 'mt-3 d-block']);
-echo html_writer::start_tag('select', [
-    'id' => 'conventiontemplateid', 'name' => 'conventiontemplateid', 'required' => 'required', 'class' => 'form-control',
-]);
-echo html_writer::tag('option', '', ['value' => '']);
-foreach ($templates as $template) {
-    // data-lang permet au script ci-dessous de ne proposer que les gabarits de la langue
-    // choisie ; conventionlang est revérifié côté serveur, ce filtrage n'est qu'un confort.
-    echo html_writer::tag('option', format_string($template->name),
-        ['value' => $template->id, 'data-lang' => $template->lang]);
-}
-echo html_writer::end_tag('select');
-
-echo html_writer::empty_tag('input', [
-    'type' => 'submit', 'value' => get_string('requestconvention', 'mod_stage'), 'class' => 'btn btn-primary mt-3',
-]);
-echo html_writer::end_tag('form');
-
-// Filtre les gabarits proposés selon la langue choisie (simple confort : la cohérence
-// gabarit/langue est de toute façon revérifiée côté serveur à la soumission).
-$PAGE->requires->js_init_code("
-(function() {
-    var langSelect = document.getElementById('conventionlang');
-    var templateSelect = document.getElementById('conventiontemplateid');
-    if (!langSelect || !templateSelect) {
-        return;
-    }
-    var options = Array.prototype.slice.call(templateSelect.options);
-    function applyFilter() {
-        var lang = langSelect.value;
-        var firstVisible = null;
-        options.forEach(function(option) {
-            var matches = option.value === '' || option.dataset.lang === lang;
-            option.hidden = !matches;
-            option.disabled = !matches;
-            if (matches && !firstVisible && option.value !== '') {
-                firstVisible = option;
-            }
-        });
-        if (templateSelect.selectedOptions[0] && templateSelect.selectedOptions[0].hidden && firstVisible) {
-            templateSelect.value = firstVisible.value;
-        }
-    }
-    langSelect.addEventListener('change', applyFilter);
-    applyFilter();
-})();
-");
+$mform->display();
 
 echo $OUTPUT->footer();

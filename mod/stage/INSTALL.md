@@ -227,9 +227,24 @@ fatale.
 ### Étape 2 : demande par l'étudiant
 
 Sur sa page d'activité, pour chaque stage sans convention en cours,
-l'étudiant a un lien **Demander la convention** : il y choisit la langue de
-la convention, puis un gabarit parmi ceux proposés dans cette langue, et
-valide. Le stage passe alors au statut de convention **Demandée**.
+l'étudiant a un lien **Demander la convention**. Le formulaire y rassemble
+toutes les informations de la page 1 de la convention que la DEVE ne
+connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
+à l'enregistrement du stage) :
+
+- langue de la convention (Français standard ou Anglais) et gabarit choisi
+  parmi ceux proposés dans cette langue ;
+- situation de l'étudiant (année normale, redoublant.e, dette d'UE) et type
+  de stage (obligatoire ou complémentaire/EP) ;
+- coordonnées de l'étudiant : date de naissance, adresse, téléphone ;
+- organisme d'accueil : adresse, représenté par, qualité du représentant,
+  service, téléphone, courriel, lieu du stage si différent de l'adresse ;
+- tuteur / tutrice de stage : nom, fonction, téléphone, courriel ;
+- modalités particulières (présence de nuit / dimanche / jours fériés,
+  stage au domicile, autre) et montant de la gratification mensuelle ;
+- congés et autorisations d'absence (nombre de jours, modalités).
+
+Une fois validé, le stage passe au statut de convention **Demandée**.
 
 ### Étape 3 : suivi et validation (DEVE)
 
