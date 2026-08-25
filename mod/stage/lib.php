@@ -57,6 +57,14 @@ define('STAGE_CONVENTION_SIGNED', 3);
  * Ouvre le droit à l'auto-évaluation et à l'évaluation au même titre que STAGE_CONVENTION_SIGNED.
  */
 define('STAGE_CONVENTION_SIGNVET', 4);
+/**
+ * Convention de stage : demande soumise par l'étudiant, en attente de validation par
+ * l'enseignant.e référent.e AVANT d'être visible par la DEVE (voir
+ * stage_convention_requires_teacher_validation()). N'existe que si l'option est activée dans les
+ * paramètres généraux des conventions ; sinon la demande passe directement au statut
+ * STAGE_CONVENTION_REQUESTED.
+ */
+define('STAGE_CONVENTION_TEACHERPENDING', 5);
 
 /**
  * Returns the list of features supported by this module.

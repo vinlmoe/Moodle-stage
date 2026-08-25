@@ -14,18 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_stage\form;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . '/formslib.php');
+
 /**
- * Version details for mod_stage.
+ * Paramètres généraux des conventions de stage (DEVE), applicables à toutes les demandes de ce
+ * stage.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class convention_settings_form extends \moodleform {
 
-defined('MOODLE_INTERNAL') || die();
+    /**
+     * Defines the form fields.
+     */
+    public function definition() {
+        $mform = $this->_form;
 
-$plugin->component = 'mod_stage';
-$plugin->version   = 2026082412;
-$plugin->requires  = 2022041900; // Moodle 4.0+.
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
+
+        $mform->addElement('advcheckbox', 'conventionrequireteachervalidation',
+            get_string('conventionrequireteachervalidation', 'mod_stage'));
+        $mform->addHelpButton('conventionrequireteachervalidation', 'conventionrequireteachervalidation', 'mod_stage');
+
+        $this->add_action_buttons();
+    }
+}

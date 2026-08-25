@@ -16,10 +16,12 @@
 
 /**
  * Génère la convention de stage (PDF) d'une saisie donnée, pour la DEVE : une page 1 recréée
- * dynamiquement à partir des données de la base (avec les deux logos configurés par la DEVE),
- * suivie des pages 2 à 4 (articles juridiques, texte fixe) du gabarit choisi par l'étudiant lors
- * de sa demande de convention (voir convention_request.php, convention_templates.php),
- * réimportées via FPDI.
+ * dynamiquement à partir des données de la base (avec les deux logos et les informations
+ * d'établissement configurés par la DEVE), suivie des pages 2 à 4 (articles juridiques, texte
+ * fixe) du gabarit choisi par l'étudiant lors de sa demande de convention (voir
+ * convention_request.php, convention_templates.php), réimportées via FPDI. L'assemblage lui-même
+ * est fait par stage_build_convention_pdf() (locallib.php), réutilisée aussi par
+ * convention_review.php pour un téléchargement immédiat après validation.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -29,9 +31,6 @@
 require(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
-require_once($CFG->dirroot . '/mod/stage/classes/pdf/convention_pdf.php');
-
-use mod_stage\pdf\convention_pdf;
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
@@ -51,192 +50,13 @@ $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->
 
 $backurl = new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
 
-if (empty($entry->conventiontemplateid)) {
+$result = stage_build_convention_pdf($stage, $entry, $context);
+if ($result['error']) {
     echo $OUTPUT->header();
-    echo $OUTPUT->notification(get_string('conventionnotemplatechosen', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
+    echo $OUTPUT->notification(get_string($result['error'], 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
     echo html_writer::link($backurl, get_string('back'));
     echo $OUTPUT->footer();
     exit;
 }
 
-$conventiontemplate = $DB->get_record('stage_convention_template', ['id' => $entry->conventiontemplateid]);
-$conventionlang = $conventiontemplate ? $conventiontemplate->lang : 'fr';
-
-$templatefile = stage_get_convention_template_file($context, $entry->conventiontemplateid);
-if (!$templatefile) {
-    echo $OUTPUT->header();
-    echo $OUTPUT->notification(get_string('conventiontemplatemissing', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
-    echo html_writer::link($backurl, get_string('back'));
-    echo $OUTPUT->footer();
-    exit;
-}
-
-$fpdiautoload = $CFG->dirroot . '/mod/stage/thirdparty/vendor/autoload.php';
-if (!is_readable($fpdiautoload)) {
-    echo $OUTPUT->header();
-    echo $OUTPUT->notification(get_string('conventionfpdimissing', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
-    echo html_writer::link($backurl, get_string('back'));
-    echo $OUTPUT->footer();
-    exit;
-}
-require_once($fpdiautoload);
-
-// Rassemble les données affichées sur la page 1, en réutilisant les fonctions déjà existantes
-// de locallib.php plutôt que de dupliquer une logique déjà écrite ailleurs (register.php,
-// export.php).
-$student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
-$theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
-$detail = stage_get_convention_detail($entry->id);
-if (!$detail) {
-    // Ne devrait pas arriver (convention_request.php enregistre toujours ces informations en
-    // même temps que la demande), mais évite un fatal error si une demande a été créée avant
-    // l'ajout de ce détail ou directement en base.
-    $detail = (object) array_fill_keys([
-        'yearsituation', 'stagetype', 'studentbirthdate', 'studentaddress', 'studentphone',
-        'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
-        'hostemail', 'hostlocation', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
-        'nightpresence', 'sundaypresence', 'holidaypresence', 'homebased', 'othermodality',
-        'hasleave', 'leavedays', 'leavemodalities', 'gratificationamount', 'referentteacherid',
-    ], null);
-    $detail->yearsituation = 'normal';
-    $detail->stagetype = 'obligatoire';
-}
-
-// Enseignant.e référent.e choisi.e par l'étudiant lors de la demande : le courriel est toujours
-// chargé depuis son compte, jamais saisi à la main. Si la demande a été créée avant l'ajout de ce
-// champ (aucun choisi), on retombe sur le premier enseignant attribué à l'étudiant.
-$referentteacher = null;
-if (!empty($detail->referentteacherid)) {
-    $referentteacher = $DB->get_record('user', ['id' => $detail->referentteacherid]);
-}
-if (!$referentteacher) {
-    $studentteachers = stage_get_student_teachers($stage->id, $entry->userid);
-    $referentteacher = $studentteachers ? reset($studentteachers) : null;
-}
-
-// Les libellés (statut, année d'étude...) sont dans la langue du gabarit choisi par l'étudiant,
-// pas dans celle de la session de qui génère le PDF (généralement la DEVE) : voir
-// convention_pdf.php::str().
-$dateformat = get_string('strftimedate', 'langconfig', null, $conventionlang);
-$establishmentinfo = stage_get_establishment_info($stage);
-$stagedata = [
-    'establishment' => [
-        'name' => $establishmentinfo->name,
-        'address' => $establishmentinfo->address,
-        'representative' => $establishmentinfo->representative,
-        'representativetitle' => $establishmentinfo->representativetitle,
-        'phone' => $establishmentinfo->phone,
-        'email' => $establishmentinfo->email,
-    ],
-    'hoststructure' => (string) $entry->structure,
-    'yearlabel' => $theme ? stage_convention_year_label($theme->studyyear, $detail->yearsituation, $conventionlang) : '-',
-    'stagetypelabel' => stage_convention_stagetype_options($conventionlang)[$detail->stagetype] ?? $detail->stagetype,
-    'host' => [
-        'address' => (string) $detail->hostaddress,
-        'representative' => (string) $detail->hostrepresentative,
-        'representativetitle' => (string) $detail->hostrepresentativetitle,
-        'service' => (string) $detail->hostservice,
-        'phone' => (string) $detail->hostphone,
-        'email' => (string) $detail->hostemail,
-        'location' => (string) $detail->hostlocation,
-    ],
-    'student' => [
-        'fullname' => fullname($student),
-        'email' => $student->email,
-        'birthdate' => $detail->studentbirthdate ? userdate($detail->studentbirthdate, $dateformat) : '-',
-        'address' => (string) $detail->studentaddress,
-        'phone' => (string) $detail->studentphone,
-    ],
-    'theme' => [
-        'name' => $theme ? format_string($theme->name) : '-',
-    ],
-    'dates' => [
-        'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
-        'end' => $entry->dateend ? userdate($entry->dateend, $dateformat) : '-',
-    ],
-    'duration' => [
-        'declared' => $entry->declaredduration,
-        'retained' => $entry->retainedduration,
-    ],
-    'statuslabel' => stage_status_label($entry->status, $conventionlang),
-    'referentteacher' => [
-        'name' => $referentteacher ? fullname($referentteacher) : '-',
-        'email' => $referentteacher ? $referentteacher->email : '-',
-    ],
-    'tutor' => [
-        'name' => (string) $detail->tutorname,
-        'function' => (string) $detail->tutorfunction,
-        'phone' => (string) $detail->tutorphone,
-        'email' => (string) $detail->tutoremail,
-    ],
-    'modalities' => [
-        'night' => (bool) $detail->nightpresence,
-        'sunday' => (bool) $detail->sundaypresence,
-        'holiday' => (bool) $detail->holidaypresence,
-        'homebased' => (bool) $detail->homebased,
-        'other' => (string) $detail->othermodality,
-    ],
-    'gratification' => (string) $detail->gratificationamount,
-    'leave' => [
-        'has' => (bool) $detail->hasleave,
-        'days' => $detail->leavedays,
-        'modalities' => (string) $detail->leavemodalities,
-    ],
-];
-
-// Les gabarits/logos sont stockés via l'API fichiers de Moodle : TCPDF/FPDI ont besoin d'un
-// chemin de fichier réel, on les copie donc vers des fichiers temporaires, nettoyés à la fin.
-$tempfiles = [];
-$templatepath = stage_stored_file_to_temp($templatefile);
-$tempfiles[] = $templatepath;
-
-$logoleftpath = null;
-$logofile = stage_get_convention_logo_file($context, 'left');
-if ($logofile) {
-    $logoleftpath = stage_stored_file_to_temp($logofile);
-    $tempfiles[] = $logoleftpath;
-}
-$logorightpath = null;
-$logofile = stage_get_convention_logo_file($context, 'right');
-if ($logofile) {
-    $logorightpath = stage_stored_file_to_temp($logofile);
-    $tempfiles[] = $logorightpath;
-}
-
-// Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
-// pour être réimportée ci-dessous comme un PDF source parmi d'autres.
-$page1 = new convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-$page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
-$page1pdf = $page1->Output('', 'S');
-
-// Assemblage final avec FPDI : la page 1 générée ci-dessus, suivie des pages 2 à 4 (articles
-// juridiques, texte fixe) du gabarit choisi par l'étudiant. FPDI gère seule cette réimportation
-// de pages existantes ; on ne cherche pas à faire hériter une seule classe à la fois de \pdf et
-// de la classe d'import FPDI (voir la note dans convention_pdf.php).
-$merger = new \setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
-$merger->setPrintHeader(false);
-$merger->setPrintFooter(false);
-
-$streamreader = \setasign\Fpdi\PdfParser\StreamReader::createByString($page1pdf);
-$pagecount = $merger->setSourceFile($streamreader);
-for ($pageno = 1; $pageno <= $pagecount; $pageno++) {
-    $tplidx = $merger->importPage($pageno);
-    $size = $merger->getTemplateSize($tplidx);
-    $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
-    $merger->useTemplate($tplidx);
-}
-
-$articlespagecount = $merger->setSourceFile($templatepath);
-for ($pageno = 1; $pageno <= $articlespagecount; $pageno++) {
-    $tplidx = $merger->importPage($pageno);
-    $size = $merger->getTemplateSize($tplidx);
-    $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
-    $merger->useTemplate($tplidx);
-}
-
-foreach ($tempfiles as $tempfile) {
-    unlink($tempfile);
-}
-
-$filename = clean_filename('convention_stage_' . fullname($student) . '_' . $entry->id . '.pdf');
-$merger->Output($filename, 'D');
+$result['pdf']->Output($result['filename'], 'D');

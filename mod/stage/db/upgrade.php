@@ -305,5 +305,31 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082411, 'stage');
     }
 
+    if ($oldversion < 2026082412) {
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('conventionrequireteachervalidation', XMLDB_TYPE_INTEGER, '1', null,
+            XMLDB_NOTNULL, null, '0', 'establishmentemail');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('conventionteachervalidatedby', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionrequesttime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionteachervalidatetime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionteachervalidatedby');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $key = new xmldb_key('conventionteachervalidatedby', XMLDB_KEY_FOREIGN, ['conventionteachervalidatedby'],
+            'user', ['id']);
+        $dbman->add_key($entrytable, $key);
+
+        upgrade_mod_savepoint(true, 2026082412, 'stage');
+    }
+
     return true;
 }

@@ -248,7 +248,13 @@ fatale.
    haut de la page 1 de **toutes** les conventions de ce stage (haut
    gauche / haut droit), au format PNG. Facultatif : la page 1 s'affiche
    sans logo si aucun n'est fourni.
-5. Un gabarit déjà utilisé par une demande de convention ne peut plus être
+5. **Paramètres généraux** (haut de la même page) : case à cocher « Exiger
+   la validation de l'enseignant.e référent.e avant transmission à la
+   DEVE ». Si activée, toute nouvelle demande de convention doit d'abord
+   être validée par un enseignant référent de l'étudiant (voir « Validation
+   par l'enseignant référent » ci-dessous) avant d'apparaître dans la liste
+   des demandes à traiter par la DEVE.
+6. Un gabarit déjà utilisé par une demande de convention ne peut plus être
    supprimé (le lien Supprimer renvoie une erreur) tant que cette demande
    existe.
 
@@ -283,19 +289,46 @@ connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
 Si l'étudiant n'a pas encore d'enseignant référent attribué, le formulaire
 n'est pas accessible : un message l'invite à contacter la DEVE.
 
-Une fois validé, le stage passe au statut de convention **Demandée**.
+Une fois validé, le stage passe au statut de convention **Demandée** (ou
+**En attente de l'enseignant référent** si l'option de validation
+enseignant est activée, voir ci-dessous).
+
+### Validation par l'enseignant référent (optionnelle)
+
+Si l'option « Exiger la validation de l'enseignant.e référent.e avant
+transmission à la DEVE » est activée (voir étape 1), toute nouvelle demande
+de convention passe d'abord au statut **En attente de l'enseignant
+référent** : elle n'apparaît pas encore dans la liste de la DEVE. Chacun
+des enseignants référents de l'étudiant reçoit un courriel et retrouve la
+demande dans une section dédiée en haut de sa page **Validation des
+stages**, avec un lien **Valider la demande**. Cette page affiche les
+informations saisies par l'étudiant en lecture seule, avec deux actions :
+
+- **Valider la demande** : transmet la demande à la DEVE (statut
+  **Demandée**), qui la traite ensuite normalement (voir étape 3) ;
+- **Refuser** (commentaire obligatoire) : fait passer la convention au
+  statut **Refusée** et envoie le commentaire par courriel à l'étudiant,
+  exactement comme un refus par la DEVE.
+
+Si l'option est désactivée (par défaut), les demandes passent directement
+au statut **Demandée** et sont immédiatement visibles par la DEVE.
 
 ### Étape 3 : revue et validation (DEVE)
 
 1. Ouvrir l'activité, puis le lien **Conventions** : la liste de toutes les
-   demandes en cours s'affiche, avec le gabarit choisi et le statut.
+   demandes en cours s'affiche (celles en attente de validation enseignant
+   n'y apparaissent pas encore), avec le gabarit choisi, le statut et la
+   date de la demande — recherchable par nom d'étudiant et triable par
+   colonne (les demandes les plus récentes sont affichées en premier par
+   défaut).
 2. Pour une demande au statut **Demandée**, cliquer sur **Générer la
    convention** (depuis la page Conventions, ou depuis « Enregistrer des
    stages ») ouvre une page de revue affichant le formulaire rempli par
    l'étudiant, entièrement éditable par la DEVE. Deux actions possibles :
-   - **Valider** : enregistre les éventuelles corrections et fait passer
-     la convention au statut **Éditée** ; le PDF est alors prêt à être
-     généré (télécharger/imprimer depuis **Générer la convention**) ;
+   - **Valider** : enregistre les éventuelles corrections, fait passer
+     la convention au statut **Éditée** et télécharge immédiatement le
+     PDF généré (retélécharger à tout moment depuis **Générer la
+     convention**) ;
    - **Refuser** (commentaire obligatoire) : fait passer la convention au
      statut **Refusée** et envoie le commentaire par courriel à
      l'étudiant, qui peut alors corriger sa demande et la soumettre à

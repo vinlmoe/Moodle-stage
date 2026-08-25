@@ -17,8 +17,8 @@
 /**
  * Revue par la DEVE d'une demande de convention soumise par l'étudiant : affiche le formulaire
  * rempli par l'étudiant, éditable, avec deux actions possibles : valider (enregistre les
- * éventuelles corrections et fait passer la convention au statut "éditée", prête à être générée
- * depuis convention.php) ou refuser avec un commentaire obligatoire (envoyé par courriel à
+ * éventuelles corrections, fait passer la convention au statut "éditée" et télécharge
+ * immédiatement le PDF généré) ou refuser avec un commentaire obligatoire (envoyé par courriel à
  * l'étudiant, qui peut alors corriger et resoumettre sa demande depuis convention_request.php).
  *
  * @package   mod_stage
@@ -109,8 +109,17 @@ if ($mform->is_cancelled()) {
 
     if (!empty($data->validateconvention)) {
         stage_convention_mark_edited($entry, $USER->id);
-        redirect($backurl, get_string('conventionvalidatedgenerating', 'mod_stage'), null,
-            \core\output\notification::NOTIFY_SUCCESS);
+
+        // Génère et télécharge immédiatement le PDF de la convention, plutôt que d'obliger la
+        // DEVE à revenir ensuite sur la liste pour cliquer "Générer la convention" séparément.
+        $entry = $DB->get_record('stage_entry', ['id' => $entry->id], '*', MUST_EXIST);
+        $result = stage_build_convention_pdf($stage, $entry, $context);
+        if ($result['error']) {
+            redirect($backurl, get_string('conventionvalidatedpdferror', 'mod_stage', get_string($result['error'], 'mod_stage')),
+                null, \core\output\notification::NOTIFY_WARNING);
+        }
+        $result['pdf']->Output($result['filename'], 'D');
+        exit;
     } else if (!empty($data->rejectconvention)) {
         stage_reject_convention($entry, $USER->id, $data->rejectcomment);
         stage_notify_student_convention_rejected($stage, $cm, $entry, $data->rejectcomment);

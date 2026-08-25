@@ -149,6 +149,43 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 if (empty($assignedids)) {
     echo $OUTPUT->notification(get_string('noassignedstudents', 'mod_stage'), 'info');
 } else {
+    // Demandes de convention en attente de validation (voir
+    // stage_convention_requires_teacher_validation()), avant transmission à la DEVE.
+    $pendingconventions = stage_get_teacher_pending_convention_entries($stage->id, $USER->id);
+    echo $OUTPUT->heading(get_string('conventionteachervalidation', 'mod_stage'), 4);
+    if (empty($pendingconventions)) {
+        echo $OUTPUT->notification(get_string('noconventionteachervalidations', 'mod_stage'), 'info');
+    } else {
+        $pendingstudents = stage_get_entry_users($pendingconventions);
+        $pendingthemes = stage_get_themes($stage->id);
+        $pendingtable = new html_table();
+        $pendingtable->head = [
+            get_string('student', 'mod_stage'),
+            get_string('theme', 'mod_stage'),
+            get_string('conventionrequestdate', 'mod_stage'),
+            get_string('actions', 'mod_stage'),
+        ];
+        foreach ($pendingconventions as $pendingentry) {
+            $pendingstudent = $pendingstudents[$pendingentry->userid] ?? null;
+            $pendingthemename = isset($pendingthemes[$pendingentry->themeid])
+                ? format_string($pendingthemes[$pendingentry->themeid]->name) : '-';
+            $pendingtable->data[] = [
+                $pendingstudent ? fullname($pendingstudent) : '-',
+                $pendingthemename,
+                $pendingentry->conventionrequesttime
+                    ? userdate($pendingentry->conventionrequesttime, get_string('strftimedatetimeshort')) : '-',
+                html_writer::link(
+                    new moodle_url('/mod/stage/convention_teacher_validate.php',
+                        ['id' => $cm->id, 'entryid' => $pendingentry->id]),
+                    get_string('conventionteachervalidate', 'mod_stage')
+                ),
+            ];
+        }
+        echo html_writer::table($pendingtable);
+    }
+
+    echo $OUTPUT->heading(get_string('teachervalidation', 'mod_stage'), 4);
+
     $themes = stage_get_themes($stage->id);
 
     $listurl = new moodle_url($baseurl, [

@@ -94,6 +94,8 @@ function stage_convention_status_label($status) {
             return get_string('conventionstatus_signed', 'mod_stage');
         case STAGE_CONVENTION_SIGNVET:
             return get_string('conventionstatus_signvet', 'mod_stage');
+        case STAGE_CONVENTION_TEACHERPENDING:
+            return get_string('conventionstatus_teacherpending', 'mod_stage');
         default:
             return get_string('conventionstatus_none', 'mod_stage');
     }
@@ -129,9 +131,40 @@ function stage_convention_status_badgeclass($status) {
             return 'badge-success';
         case STAGE_CONVENTION_SIGNVET:
             return 'badge-success';
+        case STAGE_CONVENTION_TEACHERPENDING:
+            return 'badge-warning';
         default:
             return 'badge-secondary';
     }
+}
+
+/**
+ * Indique si les demandes de convention de ce stage doivent d'abord être validées par
+ * l'enseignant.e référent.e de l'étudiant avant d'être visibles par la DEVE (paramètre général
+ * réglé par la DEVE, voir convention_templates.php).
+ *
+ * @param stdClass $stage
+ * @return bool
+ */
+function stage_convention_requires_teacher_validation(stdClass $stage) {
+    return !empty($stage->conventionrequireteachervalidation);
+}
+
+/**
+ * Enregistre le paramètre général "validation enseignant avant transmission à la DEVE".
+ *
+ * @param int $stageid
+ * @param bool $require
+ * @return void
+ */
+function stage_save_convention_teacher_validation_setting($stageid, $require) {
+    global $DB;
+
+    $DB->update_record('stage', (object) [
+        'id' => $stageid,
+        'conventionrequireteachervalidation' => $require ? 1 : 0,
+        'timemodified' => time(),
+    ]);
 }
 
 /**
@@ -1378,6 +1411,83 @@ function stage_get_convention_templates($stageid, $lang = null) {
 }
 
 /**
+ * Liste les saisies suivies dans le circuit de gestion de convention de ce plugin, visibles par
+ * la DEVE (exclut les stages sans convention, signées sur SignVet, et en attente de validation
+ * par l'enseignant référent, hors de ce circuit ou pas encore transmises à la DEVE), avec
+ * recherche par nom d'étudiant et tri, pour la page conventions.php (DEVE).
+ *
+ * @param int $stageid
+ * @param string $search Nom d'étudiant recherché.
+ * @param string $sort Une des clés : 'student', 'theme', 'status', 'requested'.
+ * @param string $dir 'ASC' ou 'DESC'.
+ * @return array
+ */
+function stage_get_convention_entries($stageid, $search = '', $sort = 'requested', $dir = 'DESC') {
+    global $DB;
+
+    $params = [
+        'stageid' => $stageid, 'none' => STAGE_CONVENTION_NONE, 'signvet' => STAGE_CONVENTION_SIGNVET,
+        'pending' => STAGE_CONVENTION_TEACHERPENDING,
+    ];
+    // "!= none" plutôt que "> none" : une convention refusée (statut -1) doit rester visible ici
+    // (avec son motif) pour que la DEVE garde trace de la demande tant que l'étudiant ne l'a pas
+    // corrigée et resoumise.
+    $where = [
+        'e.stageid = :stageid', 'e.conventionstatus != :none', 'e.conventionstatus != :signvet',
+        'e.conventionstatus != :pending',
+    ];
+
+    if ($search !== '') {
+        $fullname = $DB->sql_concat('u.firstname', "' '", 'u.lastname');
+        $where[] = $DB->sql_like($fullname, ':search', false, false);
+        $params['search'] = '%' . $DB->sql_like_escape($search) . '%';
+    }
+
+    $sortmap = [
+        'student' => 'u.lastname, u.firstname',
+        'theme' => 't.name',
+        'status' => 'e.conventionstatus',
+        'requested' => 'e.conventionrequesttime',
+    ];
+    $sortcolumn = $sortmap[$sort] ?? $sortmap['requested'];
+    $dir = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+    $sql = "SELECT e.*
+              FROM {stage_entry} e
+              JOIN {user} u ON u.id = e.userid
+         LEFT JOIN {stage_theme} t ON t.id = e.themeid
+             WHERE " . implode(' AND ', $where) . "
+          ORDER BY $sortcolumn $dir, e.id DESC";
+
+    return $DB->get_records_sql($sql, $params);
+}
+
+/**
+ * Liste les demandes de convention en attente de validation par un enseignant.e référent.e
+ * donné.e (voir stage_convention_requires_teacher_validation()), pour ses seuls étudiants
+ * attribués.
+ *
+ * @param int $stageid
+ * @param int $teacherid
+ * @return array
+ */
+function stage_get_teacher_pending_convention_entries($stageid, $teacherid) {
+    global $DB;
+
+    $assignedids = array_keys(stage_get_assigned_students($stageid, $teacherid));
+    if (empty($assignedids)) {
+        return [];
+    }
+
+    [$insql, $inparams] = $DB->get_in_or_equal($assignedids, SQL_PARAMS_NAMED, 'stud');
+    $params = array_merge($inparams, ['stageid' => $stageid, 'pending' => STAGE_CONVENTION_TEACHERPENDING]);
+
+    return $DB->get_records_select('stage_entry',
+        "stageid = :stageid AND conventionstatus = :pending AND userid $insql", $params,
+        'conventionrequesttime ASC');
+}
+
+/**
  * Langues proposées pour un gabarit de convention (et pour la demande de l'étudiant, qui en
  * hérite selon le gabarit choisi).
  *
@@ -1487,20 +1597,68 @@ function stage_save_convention_detail($entryid, stdClass $data) {
 
 /**
  * Enregistre la demande de convention d'un étudiant : choix du gabarit, passage au statut
- * "demandée". Réservé à l'étudiant propriétaire de la saisie (voir convention_request.php).
+ * "demandée" (ou "en attente de validation enseignant" si l'option est activée pour ce stage,
+ * voir stage_convention_requires_teacher_validation()). Réservé à l'étudiant propriétaire de la
+ * saisie (voir convention_request.php, student_register.php).
  *
  * @param stdClass $entry
  * @param int $templateid
+ * @param bool $requireteachervalidation
  * @return void
  */
-function stage_request_convention(stdClass $entry, $templateid) {
+function stage_request_convention(stdClass $entry, $templateid, $requireteachervalidation = false) {
     global $DB;
 
     $entry->conventiontemplateid = $templateid;
-    $entry->conventionstatus = STAGE_CONVENTION_REQUESTED;
+    $entry->conventionstatus = $requireteachervalidation
+        ? STAGE_CONVENTION_TEACHERPENDING : STAGE_CONVENTION_REQUESTED;
     $entry->conventionrequesttime = time();
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Fait passer une demande de convention en attente de validation enseignant au statut
+ * "demandée" (désormais visible par la DEVE), une fois validée par l'enseignant.e référent.e.
+ *
+ * @param stdClass $entry
+ * @param int $byuserid
+ * @return void
+ */
+function stage_teacher_validate_convention(stdClass $entry, $byuserid) {
+    global $DB;
+
+    $entry->conventionstatus = STAGE_CONVENTION_REQUESTED;
+    $entry->conventionteachervalidatedby = $byuserid;
+    $entry->conventionteachervalidatetime = time();
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Envoie un e-mail aux enseignants référents d'un étudiant lorsqu'une demande de convention
+ * attend leur validation avant transmission à la DEVE.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @return void
+ */
+function stage_notify_teacher_convention_pending(stdClass $stage, stdClass $cm, stdClass $entry) {
+    $teachers = stage_get_student_teachers($stage->id, $entry->userid);
+    if (empty($teachers)) {
+        return;
+    }
+
+    $url = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
+    $subject = get_string('conventionteacherpendingnotifsubject', 'mod_stage', format_string($stage->name));
+    foreach ($teachers as $teacher) {
+        $body = get_string('conventionteacherpendingnotifbody', 'mod_stage', (object) [
+            'stage' => format_string($stage->name),
+            'url' => $url->out(false),
+        ]);
+        email_to_user($teacher, core_user::get_noreply_user(), $subject, $body);
+    }
 }
 
 /**
@@ -1641,4 +1799,206 @@ function stage_stored_file_to_temp(\stored_file $file) {
     $tmppath = tempnam(sys_get_temp_dir(), 'stageconv_');
     $file->copy_content_to($tmppath);
     return $tmppath;
+}
+
+/**
+ * Construit le PDF complet de la convention de stage d'une saisie donnée : une page 1 recréée
+ * dynamiquement à partir des données de la base (avec les deux logos et les informations
+ * d'établissement configurés par la DEVE), suivie des pages 2 à 4 (articles juridiques, texte
+ * fixe) du gabarit choisi par l'étudiant, réimportées via FPDI.
+ *
+ * Logique partagée entre convention.php (téléchargement à la demande) et convention_review.php
+ * (téléchargement immédiat après validation par la DEVE), pour ne pas dupliquer cet assemblage
+ * PDF à deux endroits.
+ *
+ * @param stdClass $stage
+ * @param stdClass $entry
+ * @param context $context Contexte du module stage.
+ * @return array ['error' => string|null (clé de chaîne de langue mod_stage), 'pdf' => objet FPDI
+ *               prêt pour Output(), ou null en cas d'erreur, 'filename' => string|null]
+ */
+function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context) {
+    global $DB, $CFG;
+
+    if (empty($entry->conventiontemplateid)) {
+        return ['error' => 'conventionnotemplatechosen', 'pdf' => null, 'filename' => null];
+    }
+
+    $conventiontemplate = $DB->get_record('stage_convention_template', ['id' => $entry->conventiontemplateid]);
+    $conventionlang = $conventiontemplate ? $conventiontemplate->lang : 'fr';
+
+    $templatefile = stage_get_convention_template_file($context, $entry->conventiontemplateid);
+    if (!$templatefile) {
+        return ['error' => 'conventiontemplatemissing', 'pdf' => null, 'filename' => null];
+    }
+
+    $fpdiautoload = $CFG->dirroot . '/mod/stage/thirdparty/vendor/autoload.php';
+    if (!is_readable($fpdiautoload)) {
+        return ['error' => 'conventionfpdimissing', 'pdf' => null, 'filename' => null];
+    }
+    require_once($fpdiautoload);
+    require_once($CFG->dirroot . '/mod/stage/classes/pdf/convention_pdf.php');
+
+    // Rassemble les données affichées sur la page 1, en réutilisant les fonctions déjà
+    // existantes de locallib.php plutôt que de dupliquer une logique déjà écrite ailleurs
+    // (register.php, export.php).
+    $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
+    $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
+    $detail = stage_get_convention_detail($entry->id);
+    if (!$detail) {
+        // Ne devrait pas arriver (convention_request.php enregistre toujours ces informations en
+        // même temps que la demande), mais évite un fatal error si une demande a été créée avant
+        // l'ajout de ce détail ou directement en base.
+        $detail = (object) array_fill_keys([
+            'yearsituation', 'stagetype', 'studentbirthdate', 'studentaddress', 'studentphone',
+            'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
+            'hostemail', 'hostlocation', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
+            'nightpresence', 'sundaypresence', 'holidaypresence', 'homebased', 'othermodality',
+            'hasleave', 'leavedays', 'leavemodalities', 'gratificationamount', 'referentteacherid',
+        ], null);
+        $detail->yearsituation = 'normal';
+        $detail->stagetype = 'obligatoire';
+    }
+
+    // Enseignant.e référent.e choisi.e par l'étudiant lors de la demande : le courriel est
+    // toujours chargé depuis son compte, jamais saisi à la main. Si la demande a été créée avant
+    // l'ajout de ce champ (aucun choisi), on retombe sur le premier enseignant attribué à
+    // l'étudiant.
+    $referentteacher = null;
+    if (!empty($detail->referentteacherid)) {
+        $referentteacher = $DB->get_record('user', ['id' => $detail->referentteacherid]);
+    }
+    if (!$referentteacher) {
+        $studentteachers = stage_get_student_teachers($stage->id, $entry->userid);
+        $referentteacher = $studentteachers ? reset($studentteachers) : null;
+    }
+
+    // Les libellés (statut, année d'étude...) sont dans la langue du gabarit choisi par
+    // l'étudiant, pas dans celle de la session de qui génère le PDF (généralement la DEVE) : voir
+    // convention_pdf.php::str().
+    $dateformat = get_string('strftimedate', 'langconfig', null, $conventionlang);
+    $establishmentinfo = stage_get_establishment_info($stage);
+    $stagedata = [
+        'establishment' => [
+            'name' => $establishmentinfo->name,
+            'address' => $establishmentinfo->address,
+            'representative' => $establishmentinfo->representative,
+            'representativetitle' => $establishmentinfo->representativetitle,
+            'phone' => $establishmentinfo->phone,
+            'email' => $establishmentinfo->email,
+        ],
+        'hoststructure' => (string) $entry->structure,
+        'yearlabel' => $theme ? stage_convention_year_label($theme->studyyear, $detail->yearsituation, $conventionlang)
+            : '-',
+        'stagetypelabel' => stage_convention_stagetype_options($conventionlang)[$detail->stagetype] ?? $detail->stagetype,
+        'host' => [
+            'address' => (string) $detail->hostaddress,
+            'representative' => (string) $detail->hostrepresentative,
+            'representativetitle' => (string) $detail->hostrepresentativetitle,
+            'service' => (string) $detail->hostservice,
+            'phone' => (string) $detail->hostphone,
+            'email' => (string) $detail->hostemail,
+            'location' => (string) $detail->hostlocation,
+        ],
+        'student' => [
+            'fullname' => fullname($student),
+            'email' => $student->email,
+            'birthdate' => $detail->studentbirthdate ? userdate($detail->studentbirthdate, $dateformat) : '-',
+            'address' => (string) $detail->studentaddress,
+            'phone' => (string) $detail->studentphone,
+        ],
+        'theme' => [
+            'name' => $theme ? format_string($theme->name) : '-',
+        ],
+        'dates' => [
+            'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
+            'end' => $entry->dateend ? userdate($entry->dateend, $dateformat) : '-',
+        ],
+        'duration' => [
+            'declared' => $entry->declaredduration,
+            'retained' => $entry->retainedduration,
+        ],
+        'statuslabel' => stage_status_label($entry->status, $conventionlang),
+        'referentteacher' => [
+            'name' => $referentteacher ? fullname($referentteacher) : '-',
+            'email' => $referentteacher ? $referentteacher->email : '-',
+        ],
+        'tutor' => [
+            'name' => (string) $detail->tutorname,
+            'function' => (string) $detail->tutorfunction,
+            'phone' => (string) $detail->tutorphone,
+            'email' => (string) $detail->tutoremail,
+        ],
+        'modalities' => [
+            'night' => (bool) $detail->nightpresence,
+            'sunday' => (bool) $detail->sundaypresence,
+            'holiday' => (bool) $detail->holidaypresence,
+            'homebased' => (bool) $detail->homebased,
+            'other' => (string) $detail->othermodality,
+        ],
+        'gratification' => (string) $detail->gratificationamount,
+        'leave' => [
+            'has' => (bool) $detail->hasleave,
+            'days' => $detail->leavedays,
+            'modalities' => (string) $detail->leavemodalities,
+        ],
+    ];
+
+    // Les gabarits/logos sont stockés via l'API fichiers de Moodle : TCPDF/FPDI ont besoin d'un
+    // chemin de fichier réel, on les copie donc vers des fichiers temporaires, nettoyés à la fin.
+    $tempfiles = [];
+    $templatepath = stage_stored_file_to_temp($templatefile);
+    $tempfiles[] = $templatepath;
+
+    $logoleftpath = null;
+    $logofile = stage_get_convention_logo_file($context, 'left');
+    if ($logofile) {
+        $logoleftpath = stage_stored_file_to_temp($logofile);
+        $tempfiles[] = $logoleftpath;
+    }
+    $logorightpath = null;
+    $logofile = stage_get_convention_logo_file($context, 'right');
+    if ($logofile) {
+        $logorightpath = stage_stored_file_to_temp($logofile);
+        $tempfiles[] = $logorightpath;
+    }
+
+    // Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
+    // pour être réimportée ci-dessous comme un PDF source parmi d'autres.
+    $page1 = new \mod_stage\pdf\convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
+    $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
+    $page1pdf = $page1->Output('', 'S');
+
+    // Assemblage final avec FPDI : la page 1 générée ci-dessus, suivie des pages 2 à 4 (articles
+    // juridiques, texte fixe) du gabarit choisi par l'étudiant. FPDI gère seule cette
+    // réimportation de pages existantes ; on ne cherche pas à faire hériter une seule classe à la
+    // fois de \pdf et de la classe d'import FPDI (voir la note dans convention_pdf.php).
+    $merger = new \setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
+    $merger->setPrintHeader(false);
+    $merger->setPrintFooter(false);
+
+    $streamreader = \setasign\Fpdi\PdfParser\StreamReader::createByString($page1pdf);
+    $pagecount = $merger->setSourceFile($streamreader);
+    for ($pageno = 1; $pageno <= $pagecount; $pageno++) {
+        $tplidx = $merger->importPage($pageno);
+        $size = $merger->getTemplateSize($tplidx);
+        $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $merger->useTemplate($tplidx);
+    }
+
+    $articlespagecount = $merger->setSourceFile($templatepath);
+    for ($pageno = 1; $pageno <= $articlespagecount; $pageno++) {
+        $tplidx = $merger->importPage($pageno);
+        $size = $merger->getTemplateSize($tplidx);
+        $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $merger->useTemplate($tplidx);
+    }
+
+    foreach ($tempfiles as $tempfile) {
+        unlink($tempfile);
+    }
+
+    $filename = clean_filename('convention_stage_' . fullname($student) . '_' . $entry->id . '.pdf');
+
+    return ['error' => null, 'pdf' => $merger, 'filename' => $filename];
 }

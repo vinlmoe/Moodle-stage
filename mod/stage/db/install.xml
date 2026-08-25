@@ -18,6 +18,8 @@
         <FIELD NAME="establishmentrepresentativetitle" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="establishmentphone" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="establishmentemail" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventionrequireteachervalidation" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"
+            COMMENT="Si 1, une demande de convention doit être validée par l'enseignant.e référent.e avant d'être visible par la DEVE (voir STAGE_CONVENTION_TEACHERPENDING)"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -84,12 +86,15 @@
         <FIELD NAME="conventiontemplateid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Gabarit de convention choisi par l'étudiant à la demande"/>
         <FIELD NAME="conventionstatus" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
-            COMMENT="-1 refusee par la DEVE, 0 aucune, 1 demandee, 2 editee, 3 signee, 4 signee sur SignVet (enregistrement en masse)"/>
+            COMMENT="-1 refusee par la DEVE, 0 aucune, 1 demandee, 2 editee, 3 signee, 4 signee sur SignVet (enregistrement en masse), 5 en attente de validation enseignant"/>
         <FIELD NAME="conventionrejectedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Utilisateur DEVE ayant refusé la convention"/>
         <FIELD NAME="conventionrejecttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="conventionrejectcomment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="conventionrequesttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventionteachervalidatedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Enseignant référent ayant validé la demande de convention avant transmission à la DEVE"/>
+        <FIELD NAME="conventionteachervalidatetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="conventioneditedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Utilisateur DEVE ayant passe la convention au stade editee"/>
         <FIELD NAME="conventionedittime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
@@ -115,6 +120,8 @@
         <KEY NAME="conventioneditedby" TYPE="foreign" FIELDS="conventioneditedby" REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="conventionsignedby" TYPE="foreign" FIELDS="conventionsignedby" REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="cancelledby" TYPE="foreign" FIELDS="cancelledby" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="conventionteachervalidatedby" TYPE="foreign" FIELDS="conventionteachervalidatedby"
+            REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="conventionrejectedby" TYPE="foreign" FIELDS="conventionrejectedby" REFTABLE="user" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>

@@ -31,10 +31,12 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 require_once($CFG->dirroot . '/mod/stage/classes/form/convention_template_form.php');
 require_once($CFG->dirroot . '/mod/stage/classes/form/convention_logos_form.php');
 require_once($CFG->dirroot . '/mod/stage/classes/form/convention_establishment_form.php');
+require_once($CFG->dirroot . '/mod/stage/classes/form/convention_settings_form.php');
 
 use mod_stage\form\convention_template_form;
 use mod_stage\form\convention_logos_form;
 use mod_stage\form\convention_establishment_form;
+use mod_stage\form\convention_settings_form;
 
 $id = required_param('id', PARAM_INT);
 $templateid = optional_param('templateid', 0, PARAM_INT);
@@ -129,6 +131,18 @@ if ($action === 'edit') {
     exit;
 }
 
+// Paramètres généraux des conventions (formulaire séparé, affiché en tête de page).
+$settingsform = new convention_settings_form($baseurl);
+$settingsform->set_data((object) [
+    'id' => $cm->id,
+    'conventionrequireteachervalidation' => stage_convention_requires_teacher_validation($stage) ? 1 : 0,
+]);
+
+if ($settingsdata = $settingsform->get_data()) {
+    stage_save_convention_teacher_validation_setting($stage->id, !empty($settingsdata->conventionrequireteachervalidation));
+    redirect($baseurl, get_string('conventionsettingssaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Informations de l'établissement d'enseignement (VetAgro Sup), affichées sur la page 1 de
 // toutes les conventions de ce stage (formulaire séparé, affiché sous la liste des gabarits).
 $establishmentform = new convention_establishment_form($baseurl);
@@ -170,6 +184,9 @@ if ($logosdata = $logosform->get_data()) {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('conventiontemplates', 'mod_stage'));
 echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+
+echo $OUTPUT->heading(get_string('generalsettings', 'mod_stage'), 4);
+$settingsform->display();
 
 echo html_writer::link(new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id, 'action' => 'edit']),
     get_string('addconventiontemplate', 'mod_stage'), ['class' => 'btn btn-primary d-block mt-2 mb-3', 'style' => 'width:fit-content']);

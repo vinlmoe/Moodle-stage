@@ -18,9 +18,11 @@
  * Demande de convention de stage par l'étudiant : choix de la langue et d'un gabarit parmi ceux
  * proposés par la DEVE, ainsi que toutes les informations de la page 1 de la convention que la
  * DEVE ne connaît pas déjà (coordonnées de l'étudiant, organisme d'accueil, tuteur, modalités
- * particulières, gratification, congés). La DEVE valide ensuite la demande (passage au statut
- * "éditée" puis "signée", ce qui ouvre le droit à l'auto-évaluation et à l'évaluation) depuis
- * conventions.php.
+ * particulières, gratification, congés). Si l'option est activée pour ce stage (voir
+ * stage_convention_requires_teacher_validation()), la demande doit d'abord être validée par un
+ * enseignant.e référent.e (convention_teacher_validate.php) avant d'être visible par la DEVE, qui
+ * la valide ensuite (passage au statut "éditée" puis "signée", ce qui ouvre le droit à
+ * l'auto-évaluation et à l'évaluation) depuis conventions.php.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -98,7 +100,8 @@ $mform->set_data($formdata);
 if ($mform->is_cancelled()) {
     redirect($viewurl);
 } else if ($data = $mform->get_data()) {
-    stage_request_convention($entry, $data->conventiontemplateid);
+    $requireteachervalidation = stage_convention_requires_teacher_validation($stage);
+    stage_request_convention($entry, $data->conventiontemplateid, $requireteachervalidation);
 
     $detail = new stdClass();
     $detail->referentteacherid = $data->referentteacherid;
@@ -128,6 +131,10 @@ if ($mform->is_cancelled()) {
     $detail->leavemodalities = $detail->hasleave ? $data->leavemodalities : '';
     $detail->gratificationamount = $data->gratificationamount;
     stage_save_convention_detail($entry->id, $detail);
+
+    if ($requireteachervalidation) {
+        stage_notify_teacher_convention_pending($stage, $cm, $entry);
+    }
 
     redirect($viewurl, get_string('conventionrequested', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
 }

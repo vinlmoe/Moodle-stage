@@ -129,7 +129,7 @@ if ($mode === 'list') {
         if ($conventionstatus === STAGE_CONVENTION_REQUESTED) {
             $reviewurl = new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($reviewurl, get_string('conventionreview', 'mod_stage'));
-        } else if ($conventionstatus >= STAGE_CONVENTION_EDITED) {
+        } else if (in_array($conventionstatus, [STAGE_CONVENTION_EDITED, STAGE_CONVENTION_SIGNED], true)) {
             $conventionurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($conventionurl, get_string('generateconvention', 'mod_stage'));
         }

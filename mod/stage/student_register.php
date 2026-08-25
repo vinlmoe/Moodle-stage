@@ -93,7 +93,8 @@ if ($mform->is_cancelled()) {
         $data->datestart, $data->dateend, $data->declaredduration);
     $entry = $DB->get_record('stage_entry', ['id' => $entryid], '*', MUST_EXIST);
 
-    stage_request_convention($entry, $data->conventiontemplateid);
+    $requireteachervalidation = stage_convention_requires_teacher_validation($stage);
+    stage_request_convention($entry, $data->conventiontemplateid, $requireteachervalidation);
 
     $detail = new stdClass();
     $detail->referentteacherid = $data->referentteacherid;
@@ -123,6 +124,10 @@ if ($mform->is_cancelled()) {
     $detail->leavemodalities = $detail->hasleave ? $data->leavemodalities : '';
     $detail->gratificationamount = $data->gratificationamount;
     stage_save_convention_detail($entry->id, $detail);
+
+    if ($requireteachervalidation) {
+        stage_notify_teacher_convention_pending($stage, $cm, $entry);
+    }
 
     redirect($viewurl, get_string('stageandconventionregistered', 'mod_stage'), null,
         \core\output\notification::NOTIFY_SUCCESS);

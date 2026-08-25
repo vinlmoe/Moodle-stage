@@ -243,11 +243,13 @@ $string['conventionreview'] = 'Générer la convention';
 $string['conventionreviewfor'] = "Demande de convention de {\$a} : vérifiez et complétez si besoin les "
     . 'informations ci-dessous avant de valider, ou refusez la demande avec un commentaire pour que '
     . "l'étudiant puisse la corriger.";
+$string['conventionteachervalidatefor'] = "Demande de convention de {\$a} : vérifiez les informations "
+    . "ci-dessous, puis validez pour la transmettre à la DEVE, ou refusez-la avec un commentaire pour que "
+    . "l'étudiant puisse la corriger.";
 $string['conventionnotrequested'] = "Cette convention n'est pas (ou plus) en attente de revue.";
 $string['validateconvention'] = 'Valider';
 $string['rejectconvention'] = 'Refuser';
 $string['conventionrejectcomment'] = 'Commentaire (envoyé à l\'étudiant en cas de refus)';
-$string['conventionvalidatedgenerating'] = 'La demande a été validée : la convention est prête à être générée.';
 $string['conventionrejected'] = "La demande de convention a été refusée. L'étudiant en a été informé par courriel.";
 $string['conventionrejectedwithcomment'] = 'Refusée : {$a}';
 $string['conventionrejectedexplain'] = 'Votre demande de convention a été refusée par la DEVE, pour le motif suivant : '
@@ -258,8 +260,27 @@ $string['conventionrejectednotifbody'] = "Votre demande de convention pour le st
     . "Merci de corriger votre demande et de la soumettre à nouveau :\n{\$a->url}";
 $string['noreferentteacheryet'] = "Aucun enseignant référent ne vous a encore été attribué pour ce stage. "
     . 'Contactez la DEVE.';
+$string['conventionvalidatedpdferror'] = 'La demande a été validée, mais la génération du PDF a échoué : {$a} '
+    . 'Vous pourrez retélécharger la convention depuis cette liste une fois le problème résolu.';
+$string['conventionstatus_teacherpending'] = "En attente de l'enseignant référent";
+$string['conventionrequireteachervalidation'] = "Exiger la validation de l'enseignant.e référent.e avant transmission à la DEVE";
+$string['conventionrequireteachervalidation_help'] = "Si activé, une demande de convention soumise par un étudiant "
+    . "doit d'abord être validée par l'un de ses enseignants référents avant d'apparaître dans la liste des "
+    . "demandes à traiter par la DEVE. L'enseignant peut aussi refuser la demande avec un commentaire, renvoyé "
+    . "à l'étudiant pour correction, exactement comme un refus par la DEVE.";
+$string['conventionsettingssaved'] = 'Les paramètres généraux des conventions ont été enregistrés.';
+$string['conventionteachervalidation'] = 'Demandes de convention à valider';
+$string['conventionteachervalidate'] = 'Valider la demande';
+$string['conventionteachervalidated'] = "La demande de convention a été validée et transmise à la DEVE.";
+$string['conventionteacherpendingnotifsubject'] = 'Convention de stage à valider : {$a}';
+$string['conventionteacherpendingnotifbody'] = 'Un.e étudiant.e que vous encadrez a soumis une demande de '
+    . "convention pour le stage \"{\$a->stage}\", qui attend votre validation avant transmission à la DEVE :\n"
+    . "{\$a->url}";
+$string['noconventionteachervalidations'] = "Aucune demande de convention en attente de votre validation.";
+$string['generalsettings'] = 'Paramètres généraux';
 $string['conventiontemplates'] = 'Gabarits de convention';
 $string['addconventiontemplate'] = 'Ajouter un gabarit';
+$string['conventionrequestdate'] = 'Date de la demande';
 $string['conventiontemplatename'] = 'Nom du gabarit';
 $string['conventiontemplatefile'] = 'Fichier PDF (articles, pages 2 à 4)';
 $string['conventiontemplatefilerequired'] = 'Veuillez sélectionner un fichier PDF.';

@@ -19,7 +19,10 @@
  * (passage au statut "éditée"), puis passage au statut "signée" une fois le PDF de la convention
  * effectivement signée (scan du document papier) téléversé (voir convention_sign.php), ce qui
  * ouvre le droit à l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant référent, et
- * rend ce PDF téléchargeable par l'étudiant.
+ * rend ce PDF téléchargeable par l'étudiant. Liste triable et cherchable par nom d'étudiant, avec
+ * les demandes les plus récentes en avant par défaut (stage_get_convention_entries()). Les
+ * demandes en attente de validation par l'enseignant référent (voir
+ * stage_convention_requires_teacher_validation()) n'apparaissent ici qu'une fois validées.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -31,6 +34,9 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
+$search = optional_param('search', '', PARAM_TEXT);
+$tsort = optional_param('tsort', 'requested', PARAM_ALPHA);
+$tdir = optional_param('tdir', 'DESC', PARAM_ALPHA);
 $page = optional_param('page', 0, PARAM_INT);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
@@ -53,13 +59,23 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 echo html_writer::link(new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id]),
     get_string('conventiontemplates', 'mod_stage'), ['class' => 'btn btn-secondary d-block mt-2 mb-3', 'style' => 'width:fit-content']);
 
-// Les stages enregistrés en masse (statut "signée sur SignVet") n'apparaissent pas ici : ils sont
-// déjà signés hors du circuit de gestion de convention de ce plugin, rien à y traiter.
-$allentries = $DB->get_records_select('stage_entry',
-    'stageid = :stageid AND conventionstatus > :none AND conventionstatus != :signvet',
-    ['stageid' => $stage->id, 'none' => STAGE_CONVENTION_NONE, 'signvet' => STAGE_CONVENTION_SIGNVET],
-    'conventionrequesttime ASC');
-[$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $baseurl);
+$listurl = new moodle_url($baseurl, ['search' => $search, 'tsort' => $tsort, 'tdir' => $tdir]);
+$searchformurl = new moodle_url($listurl);
+$searchformurl->remove_params('search', 'tsort', 'tdir');
+echo html_writer::start_tag('form', ['method' => 'get', 'action' => $searchformurl, 'class' => 'form-inline stage-filters mb-3']);
+foreach ($searchformurl->params() as $key => $value) {
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $key, 'value' => $value]);
+}
+echo html_writer::empty_tag('input', [
+    'type' => 'text', 'name' => 'search', 'value' => s($search),
+    'placeholder' => get_string('searchstudent', 'mod_stage'), 'class' => 'form-control mr-2',
+]);
+echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('search'), 'class' => 'btn btn-secondary mr-2']);
+echo html_writer::link($searchformurl, get_string('resetfilters', 'mod_stage'), ['class' => 'btn btn-link']);
+echo html_writer::end_tag('form');
+
+$allentries = stage_get_convention_entries($stage->id, $search, $tsort, $tdir);
+[$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $listurl);
 
 if (empty($allentries)) {
     echo $OUTPUT->notification(get_string('noconventionrequests', 'mod_stage'), 'info');
@@ -70,10 +86,11 @@ if (empty($allentries)) {
 
     $table = new html_table();
     $table->head = [
-        get_string('student', 'mod_stage'),
-        get_string('theme', 'mod_stage'),
+        stage_sort_header(get_string('student', 'mod_stage'), 'student', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('theme', 'mod_stage'), 'theme', $listurl, $tsort, $tdir),
         get_string('conventiontemplatename', 'mod_stage'),
-        get_string('conventionstatus', 'mod_stage'),
+        stage_sort_header(get_string('conventionstatus', 'mod_stage'), 'status', $listurl, $tsort, $tdir),
+        stage_sort_header(get_string('conventionrequestdate', 'mod_stage'), 'requested', $listurl, $tsort, $tdir),
         get_string('actions', 'mod_stage'),
     ];
     foreach ($entries as $entry) {
@@ -83,6 +100,7 @@ if (empty($allentries)) {
             ? format_string($templates[$entry->conventiontemplateid]->name) : '-';
         $badge = html_writer::span(stage_convention_status_label($entry->conventionstatus),
             'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
+        $requestdate = $entry->conventionrequesttime ? userdate($entry->conventionrequesttime, get_string('strftimedatetimeshort')) : '-';
 
         $actions = [];
         $status = (int) $entry->conventionstatus;
@@ -122,6 +140,7 @@ if (empty($allentries)) {
             $themename,
             $templatename,
             $badge,
+            $requestdate,
             implode(' | ', $actions),
         ];
     }

@@ -240,11 +240,12 @@ $string['noconventionrequests'] = 'No agreement requests yet.';
 $string['conventionreview'] = 'Generate the agreement';
 $string['conventionreviewfor'] = 'Agreement request from {$a}: check and complete the information below if '
     . 'needed before validating, or reject the request with a comment so the student can correct it.';
+$string['conventionteachervalidatefor'] = 'Agreement request from {$a}: check the information below, then '
+    . 'validate to send it to the DEVE, or reject it with a comment so the student can correct it.';
 $string['conventionnotrequested'] = 'This agreement is not (or no longer) awaiting review.';
 $string['validateconvention'] = 'Validate';
 $string['rejectconvention'] = 'Reject';
 $string['conventionrejectcomment'] = 'Comment (sent to the student if rejected)';
-$string['conventionvalidatedgenerating'] = 'The request has been validated: the agreement is ready to be generated.';
 $string['conventionrejected'] = 'The agreement request has been rejected. The student has been notified by email.';
 $string['conventionrejectedwithcomment'] = 'Rejected: {$a}';
 $string['conventionrejectedexplain'] = 'Your agreement request was rejected by the DEVE, for the following '
@@ -255,8 +256,26 @@ $string['conventionrejectednotifbody'] = "Your agreement request for the interns
     . "Please correct your request and submit it again:\n{\$a->url}";
 $string['noreferentteacheryet'] = 'No referent teacher has been assigned to you yet for this internship. '
     . 'Please contact the DEVE.';
+$string['conventionvalidatedpdferror'] = 'The request was validated, but PDF generation failed: {$a} You will be '
+    . 'able to re-download the agreement from this list once the issue is resolved.';
+$string['conventionstatus_teacherpending'] = 'Awaiting referent teacher';
+$string['conventionrequireteachervalidation'] = 'Require referent teacher validation before sending to the DEVE';
+$string['conventionrequireteachervalidation_help'] = 'If enabled, an agreement request submitted by a student '
+    . 'must first be validated by one of their referent teachers before it appears in the list of requests to '
+    . 'process for the DEVE. The teacher can also reject the request with a comment, sent back to the student '
+    . 'for correction, exactly like a rejection by the DEVE.';
+$string['conventionsettingssaved'] = 'The general agreement settings have been saved.';
+$string['conventionteachervalidation'] = 'Agreement requests to validate';
+$string['conventionteachervalidate'] = 'Validate the request';
+$string['conventionteachervalidated'] = 'The agreement request has been validated and sent to the DEVE.';
+$string['conventionteacherpendingnotifsubject'] = 'Internship agreement to validate: {$a}';
+$string['conventionteacherpendingnotifbody'] = 'A student you supervise has submitted an agreement request for '
+    . "the internship \"{\$a->stage}\", awaiting your validation before it is sent to the DEVE:\n{\$a->url}";
+$string['noconventionteachervalidations'] = 'No agreement requests awaiting your validation.';
+$string['generalsettings'] = 'General settings';
 $string['conventiontemplates'] = 'Agreement templates';
 $string['addconventiontemplate'] = 'Add a template';
+$string['conventionrequestdate'] = 'Request date';
 $string['conventiontemplatename'] = 'Template name';
 $string['conventiontemplatefile'] = 'PDF file (articles, pages 2 to 4)';
 $string['conventiontemplatefilerequired'] = 'Please select a PDF file.';
