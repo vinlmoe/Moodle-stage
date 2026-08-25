@@ -183,7 +183,7 @@ if ($logosdata = $logosform->get_data()) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('conventiontemplates', 'mod_stage'));
-echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+echo html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]), get_string('back'));
 
 echo $OUTPUT->heading(get_string('generalsettings', 'mod_stage'), 4);
 $settingsform->display();

@@ -89,7 +89,7 @@ if (data_submitted() && confirm_sesskey()) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('manageteachers', 'mod_stage'));
-echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+echo html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]), get_string('back'));
 
 echo html_writer::link(new moodle_url('/mod/stage/teachers_import.php', ['id' => $cm->id]),
     get_string('importteacherscsv', 'mod_stage'), ['class' => 'btn btn-secondary d-block mt-2 mb-3', 'style' => 'width:fit-content']);

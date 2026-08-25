@@ -73,10 +73,12 @@ if ($studentid) {
     exit;
 }
 
-// Vue d'ensemble : un étudiant par ligne, avec recherche par nom et tri.
+// Vue d'ensemble : un étudiant par ligne, avec recherche par nom et tri. Page d'atterrissage de
+// la DEVE et de l'enseignant référent (voir view.php, qui les redirige ici) : pas de lien
+// "retour" vers view.php, remplacé par la barre de navigation entre les pages de gestion.
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('pilotage', 'mod_stage'));
-echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+echo stage_render_navlinks($cm, $context);
 
 $listurl = new moodle_url($baseurl, ['search' => $search, 'tsort' => $tsort, 'tdir' => $tdir]);
 

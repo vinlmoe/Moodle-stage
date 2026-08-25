@@ -135,7 +135,7 @@ if ($action === 'bulksave' && data_submitted() && confirm_sesskey()) {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('managethemes', 'mod_stage'));
 
-echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+echo html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]), get_string('back'));
 
 echo html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit']),
     get_string('addtheme', 'mod_stage'), ['class' => 'btn btn-primary d-block mt-2 mb-3', 'style' => 'width:fit-content']);

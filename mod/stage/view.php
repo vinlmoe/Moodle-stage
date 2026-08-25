@@ -15,7 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Vue principale de l'activité mod_stage : tableau de bord de l'étudiant connecté.
+ * Vue principale de l'activité mod_stage : tableau de bord de l'étudiant connecté. La DEVE et
+ * les enseignants référents sont redirigés directement vers le tableau de pilotage
+ * (dashboard.php), qui est leur page d'atterrissage habituelle ; ils n'ont pas besoin de la
+ * section "Mes stages", réservée aux étudiants.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -36,6 +39,12 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/stage:view', $context);
 
+// La DEVE et les enseignants référents ont pour page d'atterrissage le tableau de pilotage,
+// plutôt que cette page (tableau de bord de l'étudiant, sans intérêt pour eux).
+if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
+    redirect(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]));
+}
+
 $PAGE->set_url('/mod/stage/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($stage->name));
 $PAGE->set_heading(format_string($course->fullname));
@@ -48,45 +57,12 @@ if ($stage->intro) {
     echo $OUTPUT->box(format_module_intro('stage', $stage, $cm->id), 'generalbox mod_introbox', 'stageintro');
 }
 
-$navlinks = [];
-if (has_capability('mod/stage:registerstages', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
-        get_string('registerstages', 'mod_stage'));
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]),
-        get_string('conventions', 'mod_stage'));
-}
-if (has_capability('mod/stage:managethemes', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id]),
-        get_string('managethemes', 'mod_stage'));
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id]),
-        get_string('conventiontemplates', 'mod_stage'));
-}
-if (has_capability('mod/stage:manageteachers', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teachers.php', ['id' => $cm->id]),
-        get_string('manageteachers', 'mod_stage'));
-}
-if (has_capability('mod/stage:validatedeve', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]),
-        get_string('devevalidation', 'mod_stage'));
-}
-if (has_capability('mod/stage:evaluateteacher', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
-        get_string('teachervalidation', 'mod_stage'));
-}
-if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
-        get_string('pilotage', 'mod_stage'));
-}
-if (has_capability('mod/stage:viewall', $context)) {
-    $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
-        get_string('exportexcel', 'mod_stage'));
-}
-if (!empty($navlinks)) {
-    echo $OUTPUT->box(implode(' | ', $navlinks), 'generalbox stage-navlinks');
-}
+echo stage_render_navlinks($cm, $context);
 
-// Student's own dashboard: always shown if the user has submit capability.
-if (has_capability('mod/stage:submit', $context)) {
+// Section "Mes stages" : réservée aux étudiants (la DEVE n'a pas besoin de la voir ; elle est de
+// toute façon redirigée vers le tableau de pilotage ci-dessus si elle a la capacité viewall, mais
+// on l'exclut aussi explicitement ici par défense en profondeur si son rôle diffère).
+if (has_capability('mod/stage:submit', $context) && !has_capability('mod/stage:registerstages', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
     echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');
 

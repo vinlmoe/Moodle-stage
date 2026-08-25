@@ -43,6 +43,19 @@ nécessaires (managethemes, validatedeve, manageteachers, viewall,
 evaluateteacher, view) en laissant les capacités de gestion de cours
 décochées.
 
+### Navigation
+
+Quand la DEVE ou un enseignant référent ouvre l'activité, il/elle est
+redirigé.e directement vers le **tableau de pilotage** (dashboard.php),
+qui devient sa page d'atterrissage habituelle ; la page « Mes stages »
+(tableau de bord de l'étudiant) ne leur est jamais montrée. Une barre de
+liens commune (Enregistrer des stages, Conventions, Validation DEVE,
+Validation enseignant, Pilotage, Export Excel selon les capacités) est
+affichée en haut de cette page. Les pages utilisées ponctuellement
+(gestion des thématiques, gabarits de convention, attribution des
+enseignants référents) sont regroupées sous un seul lien
+**Administration**, en fin de cette barre.
+
 ## 3. Création du cours « Stages »
 
 1. **Administration du site > Cours > Gérer les cours et catégories** :
@@ -109,16 +122,21 @@ qu'auto-évaluer ses stages une fois enregistrés.
 
 ### Auto-enregistrement par l'étudiant
 
-Sur son tableau de bord (page d'activité), l'étudiant dispose d'un bouton
-**Enregistrer un stage et sa convention**, qui combine en un seul
-formulaire l'enregistrement du stage (thématique, structure, dates, durée)
-et toutes les informations de demande de convention (voir § 7 pour le
-détail des champs). Il doit avoir au moins un enseignant référent attribué
-et au moins un gabarit de convention disponible pour y accéder, sinon un
-message l'invite à contacter la DEVE. À la validation, le stage est créé
-(statut **Enregistré**) et la demande de convention envoyée à la DEVE
-(statut **Demandée**), exactement comme s'il avait utilisé
-successivement les deux formulaires séparés.
+Les stages effectués chez des vétérinaires français sont enregistrés et
+leur convention générée automatiquement par StageVet (hors de ce plugin).
+Pour tout autre type de stage, l'étudiant dispose sur son tableau de bord
+(page d'activité) d'un bouton **Faire une demande de convention (hors
+StageVet)**, qui combine en un seul formulaire l'enregistrement du stage
+(thématique, structure, dates, durée) et toutes les informations de
+demande de convention (voir § 7 pour le détail des champs). Il doit avoir
+au moins un enseignant référent attribué et au moins un gabarit de
+convention disponible pour y accéder, sinon un message l'invite à
+contacter la DEVE. À la validation, le stage est créé (statut
+**Enregistré**) et la demande de convention envoyée à la DEVE (statut
+**Demandée**), exactement comme s'il avait utilisé successivement les
+deux formulaires séparés. Un message rappelle qu'une demande de
+convention doit être faite au moins 2 semaines avant le stage (4 semaines
+pour un stage à l'étranger).
 
 ### Questions d'évaluation personnalisées par thématique
 

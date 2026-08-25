@@ -1209,6 +1209,51 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
 }
 
 /**
+ * Rend la barre de liens de navigation entre les pages de gestion de l'activité, affichée en
+ * haut de view.php et de dashboard.php (page d'atterrissage de la DEVE et de l'enseignant
+ * référent, voir view.php). Les pages d'administration (thématiques, gabarits de convention,
+ * enseignants référents) sont regroupées sous un seul lien "Administration", en fin de liste.
+ *
+ * @param stdClass $cm Course module.
+ * @param context $context Contexte du module stage.
+ * @return string HTML, chaîne vide si l'utilisateur n'a accès à aucun lien.
+ */
+function stage_render_navlinks(stdClass $cm, context $context) {
+    $navlinks = [];
+    if (has_capability('mod/stage:registerstages', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
+            get_string('registerstages', 'mod_stage'));
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]),
+            get_string('conventions', 'mod_stage'));
+    }
+    if (has_capability('mod/stage:validatedeve', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]),
+            get_string('devevalidation', 'mod_stage'));
+    }
+    if (has_capability('mod/stage:evaluateteacher', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
+            get_string('teachervalidation', 'mod_stage'));
+    }
+    if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
+            get_string('pilotage', 'mod_stage'));
+    }
+    if (has_capability('mod/stage:viewall', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
+            get_string('exportexcel', 'mod_stage'));
+    }
+    if (has_capability('mod/stage:managethemes', $context) || has_capability('mod/stage:manageteachers', $context)) {
+        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]),
+            get_string('administration', 'mod_stage'));
+    }
+
+    if (empty($navlinks)) {
+        return '';
+    }
+    return html_writer::div(implode(' | ', $navlinks), 'generalbox stage-navlinks');
+}
+
+/**
  * Affiche l'avancement d'un étudiant (thématiques obligatoires et liste de ses saisies).
  * Utilisé par la page de l'étudiant lui-même (avec lien de saisie de l'auto-évaluation, si
  * $cm est fourni) et par le tableau de pilotage de la DEVE (lecture seule).
