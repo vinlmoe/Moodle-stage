@@ -47,8 +47,8 @@ $string['stage:manageteachers'] = 'Assign referent teachers';
 // Navigation / actions.
 $string['managethemes'] = 'Manage themes';
 $string['administration'] = 'Administration';
-$string['import'] = 'Import from another course';
-$string['import_help'] = 'Copy the themes, agreement templates, logos and/or establishment information from '
+$string['importfromcourse'] = 'Import from another course';
+$string['importfromcourse_help'] = 'Copy the themes, agreement templates, logos and/or establishment information from '
     . "another instance of the activity (usually in another course) into this one, so you don't have to redo "
     . "everything for each new course. Only instances where you yourself can manage themes are offered as a "
     . 'source. Imported items are added to what is already here (themes and templates are not merged with '

@@ -47,8 +47,8 @@ $string['stage:manageteachers'] = 'Attribuer les enseignants référents';
 // Navigation / actions.
 $string['managethemes'] = 'Gérer les thématiques';
 $string['administration'] = 'Administration';
-$string['import'] = 'Importer depuis un autre cours';
-$string['import_help'] = "Copiez les thématiques, gabarits de convention, logos et/ou informations "
+$string['importfromcourse'] = 'Importer depuis un autre cours';
+$string['importfromcourse_help'] = "Copiez les thématiques, gabarits de convention, logos et/ou informations "
     . "d'établissement d'une autre instance de l'activité (généralement dans un autre cours) vers celle-ci, "
     . "pour éviter de tout ressaisir à chaque nouveau cours. Seules les instances sur lesquelles vous avez "
     . "vous-même le droit de gérer les thématiques sont proposées comme source. Les éléments importés "

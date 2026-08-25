@@ -43,7 +43,7 @@ require_capability('mod/stage:managethemes', $context);
 
 $baseurl = new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id]);
 $PAGE->set_url($baseurl);
-$PAGE->set_title(format_string($stage->name) . ' - ' . get_string('import', 'mod_stage'));
+$PAGE->set_title(format_string($stage->name) . ' - ' . get_string('importfromcourse', 'mod_stage'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
@@ -52,7 +52,7 @@ $backurl = new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]);
 $sourceoptions = stage_get_importable_stage_instances($stage->id);
 if (empty($sourceoptions)) {
     echo $OUTPUT->header();
-    echo $OUTPUT->heading(get_string('import', 'mod_stage'));
+    echo $OUTPUT->heading(get_string('importfromcourse', 'mod_stage'));
     echo html_writer::link($backurl, get_string('back'));
     echo $OUTPUT->notification(get_string('noimportsources', 'mod_stage'), \core\output\notification::NOTIFY_INFO);
     echo $OUTPUT->footer();
@@ -85,10 +85,10 @@ if ($mform->is_cancelled()) {
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('import', 'mod_stage'));
+echo $OUTPUT->heading(get_string('importfromcourse', 'mod_stage'));
 echo html_writer::link($backurl, get_string('back'));
 
-echo $OUTPUT->box(get_string('import_help', 'mod_stage'), 'generalbox mb-3');
+echo $OUTPUT->box(get_string('importfromcourse_help', 'mod_stage'), 'generalbox mb-3');
 
 $mform->display();
 

@@ -64,7 +64,7 @@ if ($canmanageteachers) {
     $links[] = [get_string('manageteachers', 'mod_stage'), new moodle_url('/mod/stage/teachers.php', ['id' => $cm->id])];
 }
 if ($canmanagethemes) {
-    $links[] = [get_string('import', 'mod_stage'), new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id])];
+    $links[] = [get_string('importfromcourse', 'mod_stage'), new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id])];
 }
 
 echo html_writer::start_tag('ul', ['class' => 'list-unstyled']);
