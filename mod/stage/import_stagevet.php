@@ -182,7 +182,11 @@ if (data_submitted() && confirm_sesskey()) {
                     return '';
                 };
 
-                $results = (object) ['created' => 0, 'errors' => []];
+                // Les étudiants et thématiques introuvables sont regroupés par valeur (plutôt
+                // qu'une ligne d'erreur par occurrence) pour produire un rapport lisible même sur
+                // un fichier de plusieurs centaines de lignes concernant le même étudiant ou la
+                // même thématique manquante (ex. un étudiant non encore inscrit au cours).
+                $results = (object) ['created' => 0, 'unknownstudents' => [], 'unknownthemes' => [], 'errors' => []];
                 $entryrecords = [];
                 $detailbyrowkey = [];
                 $cir->init();
@@ -208,9 +212,8 @@ if (data_submitted() && confirm_sesskey()) {
                         $student = $studentsbyname[stage_normalize_name($firstname . ' ' . $lastname)] ?? null;
                     }
                     if (!$student) {
-                        $results->errors[] = get_string('importstageveterrorunknownstudent', 'mod_stage', (object) [
-                            'line' => $linenum, 'name' => trim($firstname . ' ' . $lastname) ?: $email,
-                        ]);
+                        $studentname = trim($firstname . ' ' . $lastname) ?: $email;
+                        $results->unknownstudents[$studentname][] = $linenum;
                         continue;
                     }
 
@@ -220,9 +223,7 @@ if (data_submitted() && confirm_sesskey()) {
                     }
                     $theme = $themesbyname[core_text::strtolower($themename)] ?? null;
                     if (!$theme) {
-                        $results->errors[] = get_string('importerrorunknowntheme', 'mod_stage', (object) [
-                            'line' => $linenum, 'theme' => $themename,
-                        ]);
+                        $results->unknownthemes[$themename][] = $linenum;
                         continue;
                     }
 
@@ -316,6 +317,35 @@ if ($uploaderror !== null) {
 if ($results) {
     echo $OUTPUT->notification(get_string('importresult', 'mod_stage', $results->created),
         \core\output\notification::NOTIFY_SUCCESS);
+
+    // Rapport groupé : un étudiant ou une thématique manquant sur cent lignes ne doit apparaître
+    // qu'une fois, avec la liste des lignes concernées, plutôt que cent messages identiques.
+    if (!empty($results->unknownstudents)) {
+        echo $OUTPUT->heading(get_string('importstagevetunknownstudentsreport', 'mod_stage',
+            count($results->unknownstudents)), 4);
+        $lines = [];
+        foreach ($results->unknownstudents as $name => $linenums) {
+            $lines[] = get_string('importstagevetreportline', 'mod_stage', (object) [
+                'value' => $name, 'lines' => implode(', ', $linenums),
+            ]);
+        }
+        echo $OUTPUT->notification(implode(html_writer::empty_tag('br'), $lines),
+            \core\output\notification::NOTIFY_WARNING);
+    }
+
+    if (!empty($results->unknownthemes)) {
+        echo $OUTPUT->heading(get_string('importstagevetunknownthemesreport', 'mod_stage',
+            count($results->unknownthemes)), 4);
+        $lines = [];
+        foreach ($results->unknownthemes as $name => $linenums) {
+            $lines[] = get_string('importstagevetreportline', 'mod_stage', (object) [
+                'value' => $name, 'lines' => implode(', ', $linenums),
+            ]);
+        }
+        echo $OUTPUT->notification(implode(html_writer::empty_tag('br'), $lines),
+            \core\output\notification::NOTIFY_WARNING);
+    }
+
     if (!empty($results->errors)) {
         echo $OUTPUT->notification(implode(html_writer::empty_tag('br'), $results->errors),
             \core\output\notification::NOTIFY_WARNING);

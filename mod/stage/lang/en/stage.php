@@ -98,6 +98,9 @@ $string['importstagevetnoheader'] = 'The file does not seem to have a recognisab
     . 'an unmodified StageVet export.';
 $string['importstageveterrorunknownstudent'] = 'Line {$a->line}: no enrolled student matching "{$a->name}".';
 $string['importstageveterrornotheme'] = 'Line {$a}: no theme provided.';
+$string['importstagevetunknownstudentsreport'] = '{$a} student(s) not found among those enrolled on the course';
+$string['importstagevetunknownthemesreport'] = '{$a} theme(s) not found';
+$string['importstagevetreportline'] = '{$a->value} (line(s) {$a->lines})';
 $string['importteacherscsv'] = 'Import a CSV file';
 $string['importteacherscsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following '
     . 'columns, separated by semicolons or commas, with an optional header row: '

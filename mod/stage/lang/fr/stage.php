@@ -101,6 +101,9 @@ $string['importstagevetnoheader'] = "Le fichier ne semble pas avoir de ligne d'e
     . "s'agit bien d'un export StageVet non modifié.";
 $string['importstageveterrorunknownstudent'] = 'Ligne {$a->line} : aucun étudiant inscrit correspondant à "{$a->name}".';
 $string['importstageveterrornotheme'] = 'Ligne {$a} : aucune thématique renseignée.';
+$string['importstagevetunknownstudentsreport'] = '{$a} étudiant(s) introuvable(s) parmi les inscrits au cours';
+$string['importstagevetunknownthemesreport'] = '{$a} thématique(s) introuvable(s)';
+$string['importstagevetreportline'] = '{$a->value} (ligne(s) {$a->lines})';
 $string['importteacherscsv'] = 'Importer un fichier CSV';
 $string['importteacherscsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec "
     . 'les colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '
