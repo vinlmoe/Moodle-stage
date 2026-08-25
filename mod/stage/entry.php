@@ -75,7 +75,16 @@ if ($editable && !empty($questions) && data_submitted() && confirm_sesskey()) {
 // construit et traité avant tout affichage, pour permettre la redirection après soumission.
 $mform = null;
 if ($editable && empty($questions)) {
-    $customdata = ['themes' => stage_get_themes($stage->id, true), 'locked' => true];
+    $entrytheme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
+    $customdata = [
+        'themes' => stage_get_themes($stage->id, true),
+        'locked' => true,
+        'themename' => $entrytheme ? format_string($entrytheme->name) : '',
+        'structure' => $entry->structure,
+        'datestart' => $entry->datestart,
+        'dateend' => $entry->dateend,
+        'declaredduration' => $entry->declaredduration,
+    ];
     $mform = new entry_form(null, $customdata);
 
     $toform = new stdClass();

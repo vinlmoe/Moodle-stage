@@ -157,11 +157,13 @@ if ($mode === 'single') {
         $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
     }
 
+    $entrystudent = $entry ? $DB->get_record('user', ['id' => $entry->userid]) : null;
     $formurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entryid]);
     $mform = new deve_entry_form($formurl, [
         'themes' => $themes,
         'students' => $students,
         'lockstudent' => (bool) $entry,
+        'studentname' => $entrystudent ? fullname($entrystudent) : '',
         'stageid' => $stage->id,
     ]);
 

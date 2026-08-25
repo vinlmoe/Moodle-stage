@@ -47,8 +47,20 @@ class deve_entry_form extends \moodleform {
         foreach ($students as $student) {
             $studentoptions[$student->id] = fullname($student);
         }
-        $mform->addElement('select', 'userid', get_string('student', 'mod_stage'), $studentoptions);
-        $mform->addRule('userid', null, 'required', null, 'client');
+
+        // Édition d'une saisie existante : l'étudiant concerné n'est plus modifiable. Un champ
+        // caché (plutôt qu'un select gelé avec une règle "required") évite le piège où le champ
+        // gelé disparaît du formulaire sans que Moodle ne retire sa règle, ce qui bloquait la
+        // soumission en demandant malgré tout de choisir un étudiant.
+        if (!empty($this->_customdata['lockstudent'])) {
+            $mform->addElement('static', 'useridstatic', get_string('student', 'mod_stage'),
+                $this->_customdata['studentname'] ?? '');
+            $mform->addElement('hidden', 'userid');
+            $mform->setType('userid', PARAM_INT);
+        } else {
+            $mform->addElement('select', 'userid', get_string('student', 'mod_stage'), $studentoptions);
+            $mform->addRule('userid', null, 'required', null, 'client');
+        }
 
         $themeoptions = [];
         foreach ($themes as $theme) {
@@ -66,10 +78,6 @@ class deve_entry_form extends \moodleform {
         $mform->addElement('text', 'declaredduration', get_string('declaredduration', 'mod_stage'));
         $mform->setType('declaredduration', PARAM_INT);
         $mform->addRule('declaredduration', null, 'required', null, 'client');
-
-        if (!empty($this->_customdata['lockstudent'])) {
-            $mform->freeze('userid');
-        }
 
         $this->add_action_buttons();
     }

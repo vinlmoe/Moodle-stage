@@ -47,27 +47,57 @@ class entry_form extends \moodleform {
             $options[$theme->id] = format_string($theme->name)
                 . ($theme->mandatory ? ' (' . get_string('mandatory', 'mod_stage') . ')' : '');
         }
-        $mform->addElement('select', 'themeid', get_string('theme', 'mod_stage'), $options);
-        $mform->addRule('themeid', null, 'required', null, 'client');
 
-        $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
-        $mform->setType('structure', PARAM_TEXT);
+        // Ces informations sont fixées par la DEVE : l'étudiant ne peut que consulter leur
+        // valeur (élément "static") pendant sa saisie, jamais les modifier. Geler ("freeze")
+        // ces champs plutôt que de les rendre en lecture seule casserait leur validation
+        // "required" côté client (le champ gelé disparaît du formulaire sans que Moodle ne
+        // retire la règle, ce qui bloquait la soumission en demandant malgré tout une valeur) ;
+        // un champ caché (jamais soumis à une règle "required") évite ce piège.
+        if ($locked) {
+            $mform->addElement('static', 'themeidstatic', get_string('theme', 'mod_stage'),
+                $this->_customdata['themename'] ?? '');
+            $mform->addElement('hidden', 'themeid');
+            $mform->setType('themeid', PARAM_INT);
 
-        $mform->addElement('date_selector', 'datestart', get_string('datestart', 'mod_stage'));
-        $mform->addElement('date_selector', 'dateend', get_string('dateend', 'mod_stage'));
+            $mform->addElement('static', 'structurestatic', get_string('structure', 'mod_stage'),
+                s($this->_customdata['structure'] ?? ''));
+            $mform->addElement('hidden', 'structure');
+            $mform->setType('structure', PARAM_TEXT);
 
-        $mform->addElement('text', 'declaredduration', get_string('declaredduration', 'mod_stage'));
-        $mform->setType('declaredduration', PARAM_INT);
-        $mform->addRule('declaredduration', null, 'required', null, 'client');
+            $mform->addElement('static', 'datestartstatic', get_string('datestart', 'mod_stage'),
+                !empty($this->_customdata['datestart']) ? userdate($this->_customdata['datestart'],
+                    get_string('strftimedate', 'langconfig')) : '-');
+            $mform->addElement('hidden', 'datestart');
+            $mform->setType('datestart', PARAM_INT);
+
+            $mform->addElement('static', 'dateendstatic', get_string('dateend', 'mod_stage'),
+                !empty($this->_customdata['dateend']) ? userdate($this->_customdata['dateend'],
+                    get_string('strftimedate', 'langconfig')) : '-');
+            $mform->addElement('hidden', 'dateend');
+            $mform->setType('dateend', PARAM_INT);
+
+            $mform->addElement('static', 'declareddurationstatic', get_string('declaredduration', 'mod_stage'),
+                $this->_customdata['declaredduration'] ?? 0);
+            $mform->addElement('hidden', 'declaredduration');
+            $mform->setType('declaredduration', PARAM_INT);
+        } else {
+            $mform->addElement('select', 'themeid', get_string('theme', 'mod_stage'), $options);
+            $mform->addRule('themeid', null, 'required', null, 'client');
+
+            $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
+            $mform->setType('structure', PARAM_TEXT);
+
+            $mform->addElement('date_selector', 'datestart', get_string('datestart', 'mod_stage'));
+            $mform->addElement('date_selector', 'dateend', get_string('dateend', 'mod_stage'));
+
+            $mform->addElement('text', 'declaredduration', get_string('declaredduration', 'mod_stage'));
+            $mform->setType('declaredduration', PARAM_INT);
+            $mform->addRule('declaredduration', null, 'required', null, 'client');
+        }
 
         $mform->addElement('editor', 'studentselfeval', get_string('studentselfeval', 'mod_stage'));
         $mform->setType('studentselfeval', PARAM_RAW);
-
-        if ($locked) {
-            foreach (['themeid', 'structure', 'datestart', 'dateend', 'declaredduration'] as $el) {
-                $mform->freeze($el);
-            }
-        }
 
         $this->add_action_buttons();
     }
