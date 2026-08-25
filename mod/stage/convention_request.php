@@ -58,7 +58,8 @@ $PAGE->set_context($context);
 
 $viewurl = new moodle_url('/mod/stage/view.php', ['id' => $cm->id]);
 
-if ((int) $entry->conventionstatus !== STAGE_CONVENTION_NONE) {
+$requeststatus = (int) $entry->conventionstatus;
+if ($requeststatus !== STAGE_CONVENTION_NONE && $requeststatus !== STAGE_CONVENTION_REJECTED) {
     redirect($viewurl, get_string('conventionalreadyrequested', 'mod_stage'), null,
         \core\output\notification::NOTIFY_INFO);
 }
@@ -72,8 +73,27 @@ if (empty($templates)) {
     exit;
 }
 
-$mform = new convention_request_form($baseurl, ['templates' => $templates]);
-$mform->set_data((object) ['id' => $cm->id, 'entryid' => $entryid]);
+$referentteachers = stage_get_student_teachers($stage->id, $entry->userid);
+if (empty($referentteachers)) {
+    echo $OUTPUT->header();
+    echo $OUTPUT->notification(get_string('noreferentteacheryet', 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
+    echo html_writer::link($viewurl, get_string('back'));
+    echo $OUTPUT->footer();
+    exit;
+}
+
+$mform = new convention_request_form($baseurl, ['templates' => $templates, 'referentteachers' => $referentteachers]);
+
+$formdata = (object) ['id' => $cm->id, 'entryid' => $entryid];
+$existingdetail = stage_get_convention_detail($entry->id);
+if ($existingdetail) {
+    foreach ($existingdetail as $field => $value) {
+        if (!in_array($field, ['id', 'entryid', 'timecreated', 'timemodified'], true)) {
+            $formdata->$field = $value;
+        }
+    }
+}
+$mform->set_data($formdata);
 
 if ($mform->is_cancelled()) {
     redirect($viewurl);
@@ -81,6 +101,7 @@ if ($mform->is_cancelled()) {
     stage_request_convention($entry, $data->conventiontemplateid);
 
     $detail = new stdClass();
+    $detail->referentteacherid = $data->referentteacherid;
     $detail->yearsituation = $data->yearsituation;
     $detail->stagetype = $data->stagetype;
     $detail->studentbirthdate = $data->studentbirthdate ?: null;
@@ -114,6 +135,13 @@ if ($mform->is_cancelled()) {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('requestconvention', 'mod_stage'));
 echo html_writer::link($viewurl, get_string('back'));
+
+if ($requeststatus === STAGE_CONVENTION_REJECTED && !empty($entry->conventionrejectcomment)) {
+    echo $OUTPUT->notification(
+        get_string('conventionrejectedexplain', 'mod_stage', $entry->conventionrejectcomment),
+        \core\output\notification::NOTIFY_WARNING
+    );
+}
 
 echo $OUTPUT->box(get_string('requestconvention_help', 'mod_stage'), 'generalbox mb-3');
 

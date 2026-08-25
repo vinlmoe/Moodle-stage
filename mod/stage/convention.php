@@ -86,7 +86,6 @@ require_once($fpdiautoload);
 // export.php).
 $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
 $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
-$referentteachers = stage_get_student_teachers($stage->id, $entry->userid);
 $detail = stage_get_convention_detail($entry->id);
 if (!$detail) {
     // Ne devrait pas arriver (convention_request.php enregistre toujours ces informations en
@@ -97,10 +96,22 @@ if (!$detail) {
         'hostaddress', 'hostrepresentative', 'hostrepresentativetitle', 'hostservice', 'hostphone',
         'hostemail', 'hostlocation', 'tutorname', 'tutorfunction', 'tutorphone', 'tutoremail',
         'nightpresence', 'sundaypresence', 'holidaypresence', 'homebased', 'othermodality',
-        'hasleave', 'leavedays', 'leavemodalities', 'gratificationamount',
+        'hasleave', 'leavedays', 'leavemodalities', 'gratificationamount', 'referentteacherid',
     ], null);
     $detail->yearsituation = 'normal';
     $detail->stagetype = 'obligatoire';
+}
+
+// Enseignant.e référent.e choisi.e par l'étudiant lors de la demande : le courriel est toujours
+// chargé depuis son compte, jamais saisi à la main. Si la demande a été créée avant l'ajout de ce
+// champ (aucun choisi), on retombe sur le premier enseignant attribué à l'étudiant.
+$referentteacher = null;
+if (!empty($detail->referentteacherid)) {
+    $referentteacher = $DB->get_record('user', ['id' => $detail->referentteacherid]);
+}
+if (!$referentteacher) {
+    $studentteachers = stage_get_student_teachers($stage->id, $entry->userid);
+    $referentteacher = $studentteachers ? reset($studentteachers) : null;
 }
 
 // Les libellés (statut, année d'étude...) sont dans la langue du gabarit choisi par l'étudiant,
@@ -140,7 +151,10 @@ $stagedata = [
         'retained' => $entry->retainedduration,
     ],
     'statuslabel' => stage_status_label($entry->status, $conventionlang),
-    'referentteachers' => array_map('fullname', $referentteachers),
+    'referentteacher' => [
+        'name' => $referentteacher ? fullname($referentteacher) : '-',
+        'email' => $referentteacher ? $referentteacher->email : '-',
+    ],
     'tutor' => [
         'name' => (string) $detail->tutorname,
         'function' => (string) $detail->tutorfunction,

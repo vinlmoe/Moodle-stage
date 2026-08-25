@@ -34,9 +34,13 @@ define('STAGE_STATUS_EVAL_ENSEIGNANT', 2);
 define('STAGE_STATUS_VALIDE_DEVE', 3);
 /** Rejeté (par l'enseignant référent ou la DEVE) : nécessite une réinitialisation par la DEVE. */
 define('STAGE_STATUS_NON_VALIDE', -1);
+/** Annulé par la DEVE, à tout moment : état terminal, la saisie est conservée telle quelle. */
+define('STAGE_STATUS_ANNULE', -2);
 /** Nombre de lignes par page pour les listes paginées (DEVE / enseignant référent). */
 define('STAGE_LIST_PERPAGE', 40);
 
+/** Convention de stage : refusée par la DEVE avec commentaire, à corriger par l'étudiant. */
+define('STAGE_CONVENTION_REJECTED', -1);
 /** Convention de stage : pas encore demandée par l'étudiant. */
 define('STAGE_CONVENTION_NONE', 0);
 /** Convention de stage : demandée par l'étudiant (gabarit choisi), en attente de la DEVE. */

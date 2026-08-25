@@ -47,15 +47,11 @@ $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('conventions',
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-// Fait avancer une convention d'une étape (demandée -> éditée -> signée).
+// Fait avancer une convention d'une étape (demandée -> éditée, via convention_review.php ;
+// éditée -> signée, ci-dessous).
 if ($entryid && confirm_sesskey()) {
     $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
 
-    if (optional_param('markedited', 0, PARAM_INT) && (int) $entry->conventionstatus === STAGE_CONVENTION_REQUESTED) {
-        stage_convention_mark_edited($entry, $USER->id);
-        redirect($baseurl, get_string('conventionmarkededited', 'mod_stage'), null,
-            \core\output\notification::NOTIFY_SUCCESS);
-    }
     if (optional_param('marksigned', 0, PARAM_INT) && (int) $entry->conventionstatus === STAGE_CONVENTION_EDITED) {
         stage_convention_mark_signed($entry, $USER->id);
         redirect($baseurl, get_string('conventionmarkedsigned', 'mod_stage'), null,
@@ -101,9 +97,14 @@ if (empty($allentries)) {
         $status = (int) $entry->conventionstatus;
         if ($status === STAGE_CONVENTION_REQUESTED) {
             $actions[] = html_writer::link(
-                new moodle_url('/mod/stage/conventions.php',
-                    ['id' => $cm->id, 'entryid' => $entry->id, 'markedited' => 1, 'sesskey' => sesskey()]),
-                get_string('conventionmarkedited', 'mod_stage')
+                new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                get_string('conventionreview', 'mod_stage')
+            );
+        }
+        if ($status === STAGE_CONVENTION_REJECTED && !empty($entry->conventionrejectcomment)) {
+            $actions[] = html_writer::span(
+                get_string('conventionrejectedwithcomment', 'mod_stage', format_string($entry->conventionrejectcomment)),
+                'text-muted'
             );
         }
         if ($status === STAGE_CONVENTION_EDITED) {
@@ -113,7 +114,7 @@ if (empty($allentries)) {
                 get_string('conventionmarksigned', 'mod_stage')
             );
         }
-        if ($status >= STAGE_CONVENTION_REQUESTED) {
+        if ($status >= STAGE_CONVENTION_EDITED) {
             $actions[] = html_writer::link(
                 new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                 get_string('generateconvention', 'mod_stage')

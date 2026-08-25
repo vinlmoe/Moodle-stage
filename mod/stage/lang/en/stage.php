@@ -112,6 +112,7 @@ $string['status_evaletudiant'] = 'Self-assessed by student';
 $string['status_evalenseignant'] = 'Evaluated by teacher';
 $string['status_validedeve'] = 'Validated';
 $string['status_nonvalide'] = 'Not validated';
+$string['status_annule'] = 'Cancelled';
 $string['themedone'] = 'Completed';
 $string['themetodo'] = 'To complete';
 
@@ -162,6 +163,11 @@ $string['entrynoteditable'] = 'This entry has already been evaluated and can no 
 $string['resetentry'] = 'Reset (allow a new submission)';
 $string['entryreset'] = 'The entry has been reset: a new self-assessment is now possible.';
 $string['confirmresetentry'] = 'Reset this entry? The student and the referent teacher will be able to edit it again.';
+$string['cancelentry'] = 'Cancel this internship';
+$string['confirmcancelentry'] = 'Cancel this internship? The entry will be kept as-is, but its status will '
+    . 'permanently change to "Cancelled". Please give a reason below.';
+$string['cancelcomment'] = 'Reason for cancellation';
+$string['stagecancelled'] = 'The internship has been cancelled.';
 $string['onlyunassigned'] = 'Students without a referent only';
 $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review - {$a}';
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
@@ -196,12 +202,31 @@ $string['conventionstatus_none'] = 'Not requested';
 $string['conventionstatus_requested'] = 'Requested';
 $string['conventionstatus_edited'] = 'Edited';
 $string['conventionstatus_signed'] = 'Signed';
+$string['conventionstatus_rejected'] = 'Rejected';
 $string['conventionmarkedited'] = 'Mark as edited';
 $string['conventionmarkededited'] = 'The agreement has been marked as edited.';
 $string['conventionmarksigned'] = 'Mark as signed';
 $string['conventionmarkedsigned'] = 'The agreement has been marked as signed: the student and the referent '
     . 'teacher can now proceed with the evaluations.';
 $string['noconventionrequests'] = 'No agreement requests yet.';
+$string['conventionreview'] = 'Generate the agreement';
+$string['conventionreviewfor'] = 'Agreement request from {$a}: check and complete the information below if '
+    . 'needed before validating, or reject the request with a comment so the student can correct it.';
+$string['conventionnotrequested'] = 'This agreement is not (or no longer) awaiting review.';
+$string['validateconvention'] = 'Validate';
+$string['rejectconvention'] = 'Reject';
+$string['conventionrejectcomment'] = 'Comment (sent to the student if rejected)';
+$string['conventionvalidatedgenerating'] = 'The request has been validated: the agreement is ready to be generated.';
+$string['conventionrejected'] = 'The agreement request has been rejected. The student has been notified by email.';
+$string['conventionrejectedwithcomment'] = 'Rejected: {$a}';
+$string['conventionrejectedexplain'] = 'Your agreement request was rejected by the DEVE, for the following '
+    . 'reason: "{$a}". Please correct your request below and submit it again.';
+$string['conventionrejectednotifsubject'] = 'Internship agreement rejected: {$a}';
+$string['conventionrejectednotifbody'] = "Your agreement request for the internship \"{\$a->stage}\" was rejected "
+    . "by the DEVE, for the following reason:\n\n{\$a->comment}\n\n"
+    . "Please correct your request and submit it again:\n{\$a->url}";
+$string['noreferentteacheryet'] = 'No referent teacher has been assigned to you yet for this internship. '
+    . 'Please contact the DEVE.';
 $string['conventiontemplates'] = 'Agreement templates';
 $string['addconventiontemplate'] = 'Add a template';
 $string['conventiontemplatename'] = 'Template name';
@@ -231,6 +256,10 @@ $string['conventionyearsituation_detteue'] = 'Outstanding credit (dette d\'UE)';
 $string['conventionstagetype'] = 'Internship type';
 $string['conventionstagetype_obligatoire'] = 'Mandatory internship';
 $string['conventionstagetype_complementaire'] = 'Additional internship (EP)';
+$string['conventionreferentteacher'] = 'Referent teacher';
+$string['conventionreferentteacherstatus'] = 'Status';
+$string['conventionreferentteacherstatusvalue'] = 'Teacher';
+$string['conventionreferentteacheremail'] = 'Email';
 $string['conventionbirthdate'] = 'Date of birth';
 $string['conventionstudentaddress'] = 'Address';
 $string['conventionstudentphone'] = 'Phone';

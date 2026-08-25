@@ -113,6 +113,7 @@ $string['status_evaletudiant'] = 'Évalué par l\'étudiant';
 $string['status_evalenseignant'] = "Évalué par l'enseignant";
 $string['status_validedeve'] = 'Validé DEVE';
 $string['status_nonvalide'] = 'Non validé';
+$string['status_annule'] = 'Annulé';
 $string['themedone'] = 'Complété';
 $string['themetodo'] = 'À compléter';
 
@@ -163,6 +164,11 @@ $string['entrynoteditable'] = "Cette saisie a déjà été évaluée et n'est pl
 $string['resetentry'] = 'Réinitialiser (autoriser une nouvelle saisie)';
 $string['entryreset'] = 'La saisie a été réinitialisée : une nouvelle auto-évaluation est possible.';
 $string['confirmresetentry'] = "Réinitialiser cette saisie ? L'étudiant et l'enseignant référent pourront à nouveau la modifier.";
+$string['cancelentry'] = 'Annuler ce stage';
+$string['confirmcancelentry'] = "Annuler ce stage ? La saisie sera conservée telle quelle, mais son statut passera "
+    . 'à "Annulé" de façon définitive. Merci de préciser le motif ci-dessous.';
+$string['cancelcomment'] = "Motif de l'annulation";
+$string['stagecancelled'] = 'Le stage a été annulé.';
 $string['onlyunassigned'] = 'Étudiants sans référent uniquement';
 $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}';
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
@@ -197,12 +203,32 @@ $string['conventionstatus_none'] = 'Non demandée';
 $string['conventionstatus_requested'] = 'Demandée';
 $string['conventionstatus_edited'] = 'Éditée';
 $string['conventionstatus_signed'] = 'Signée';
+$string['conventionstatus_rejected'] = 'Refusée';
 $string['conventionmarkedited'] = 'Marquer éditée';
 $string['conventionmarkededited'] = "La convention a été marquée comme éditée.";
 $string['conventionmarksigned'] = 'Marquer signée';
 $string['conventionmarkedsigned'] = "La convention a été marquée comme signée : l'étudiant et l'enseignant "
     . 'référent peuvent maintenant procéder aux évaluations.';
 $string['noconventionrequests'] = 'Aucune demande de convention pour le moment.';
+$string['conventionreview'] = 'Générer la convention';
+$string['conventionreviewfor'] = "Demande de convention de {\$a} : vérifiez et complétez si besoin les "
+    . 'informations ci-dessous avant de valider, ou refusez la demande avec un commentaire pour que '
+    . "l'étudiant puisse la corriger.";
+$string['conventionnotrequested'] = "Cette convention n'est pas (ou plus) en attente de revue.";
+$string['validateconvention'] = 'Valider';
+$string['rejectconvention'] = 'Refuser';
+$string['conventionrejectcomment'] = 'Commentaire (envoyé à l\'étudiant en cas de refus)';
+$string['conventionvalidatedgenerating'] = 'La demande a été validée : la convention est prête à être générée.';
+$string['conventionrejected'] = "La demande de convention a été refusée. L'étudiant en a été informé par courriel.";
+$string['conventionrejectedwithcomment'] = 'Refusée : {$a}';
+$string['conventionrejectedexplain'] = 'Votre demande de convention a été refusée par la DEVE, pour le motif suivant : '
+    . '"{$a}". Merci de corriger votre demande ci-dessous et de la soumettre à nouveau.';
+$string['conventionrejectednotifsubject'] = 'Convention de stage refusée : {$a}';
+$string['conventionrejectednotifbody'] = "Votre demande de convention pour le stage \"{\$a->stage}\" a été refusée "
+    . "par la DEVE, pour le motif suivant :\n\n{\$a->comment}\n\n"
+    . "Merci de corriger votre demande et de la soumettre à nouveau :\n{\$a->url}";
+$string['noreferentteacheryet'] = "Aucun enseignant référent ne vous a encore été attribué pour ce stage. "
+    . 'Contactez la DEVE.';
 $string['conventiontemplates'] = 'Gabarits de convention';
 $string['addconventiontemplate'] = 'Ajouter un gabarit';
 $string['conventiontemplatename'] = 'Nom du gabarit';
@@ -232,6 +258,10 @@ $string['conventionyearsituation_detteue'] = "Dette d'UE";
 $string['conventionstagetype'] = 'Type de stage';
 $string['conventionstagetype_obligatoire'] = 'Stage obligatoire';
 $string['conventionstagetype_complementaire'] = 'Stage complémentaire (EP)';
+$string['conventionreferentteacher'] = 'Enseignant.e référent.e';
+$string['conventionreferentteacherstatus'] = 'Statut';
+$string['conventionreferentteacherstatusvalue'] = 'Enseignant';
+$string['conventionreferentteacheremail'] = 'Courriel';
 $string['conventionbirthdate'] = 'Date de naissance';
 $string['conventionstudentaddress'] = 'Adresse';
 $string['conventionstudentphone'] = 'Téléphone';

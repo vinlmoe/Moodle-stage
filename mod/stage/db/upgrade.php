@@ -222,5 +222,52 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082408, 'stage');
     }
 
+    if ($oldversion < 2026082409) {
+        $entrytable = new xmldb_table('stage_entry');
+
+        $field = new xmldb_field('cancelledby', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'conventionsigntime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('canceltime', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'cancelledby');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('cancelcomment', XMLDB_TYPE_TEXT, null, null, null, null, null, 'canceltime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionrejectedby', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionstatus');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionrejecttime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionrejectedby');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('conventionrejectcomment', XMLDB_TYPE_TEXT, null, null, null, null, null,
+            'conventionrejecttime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        $key = new xmldb_key('cancelledby', XMLDB_KEY_FOREIGN, ['cancelledby'], 'user', ['id']);
+        $dbman->add_key($entrytable, $key);
+        $key = new xmldb_key('conventionrejectedby', XMLDB_KEY_FOREIGN, ['conventionrejectedby'], 'user', ['id']);
+        $dbman->add_key($entrytable, $key);
+
+        $detailtable = new xmldb_table('stage_convention_detail');
+        $field = new xmldb_field('referentteacherid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'entryid');
+        if (!$dbman->field_exists($detailtable, $field)) {
+            $dbman->add_field($detailtable, $field);
+        }
+        $key = new xmldb_key('referentteacherid', XMLDB_KEY_FOREIGN, ['referentteacherid'], 'user', ['id']);
+        $dbman->add_key($detailtable, $key);
+
+        upgrade_mod_savepoint(true, 2026082409, 'stage');
+    }
+
     return true;
 }

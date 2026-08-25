@@ -226,14 +226,20 @@ fatale.
 
 ### Étape 2 : demande par l'étudiant
 
-Sur sa page d'activité, pour chaque stage sans convention en cours,
+Sur sa page d'activité, pour chaque stage sans convention en cours (ou dont
+la précédente demande a été **refusée** par la DEVE, voir étape 3),
 l'étudiant a un lien **Demander la convention**. Le formulaire y rassemble
 toutes les informations de la page 1 de la convention que la DEVE ne
 connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
-à l'enregistrement du stage) :
+à l'enregistrement du stage). **Tous les champs sont obligatoires** :
 
 - langue de la convention (Français standard ou Anglais) et gabarit choisi
   parmi ceux proposés dans cette langue ;
+- enseignant.e référent.e : à choisir parmi ceux/celles qui lui ont été
+  attribué.e.s par la DEVE (combobox, un seul choix) ; le statut affiché
+  sur la convention est fixe (« Enseignant ») et le courriel est toujours
+  chargé automatiquement depuis le compte de l'enseignant.e choisi.e,
+  jamais saisi à la main (pas de numéro de téléphone pour ce rôle) ;
 - situation de l'étudiant (année normale, redoublant.e, dette d'UE) et type
   de stage (obligatoire ou complémentaire/EP) ;
 - coordonnées de l'étudiant : date de naissance, adresse, téléphone ;
@@ -241,27 +247,49 @@ connaît pas déjà (elle ne saisit que la thématique, les dates et la durée
   service, téléphone, courriel, lieu du stage si différent de l'adresse ;
 - tuteur / tutrice de stage : nom, fonction, téléphone, courriel ;
 - modalités particulières (présence de nuit / dimanche / jours fériés,
-  stage au domicile, autre) et montant de la gratification mensuelle ;
-- congés et autorisations d'absence (nombre de jours, modalités).
+  stage au domicile, autre — ces cases à cocher restent optionnelles) et
+  montant de la gratification mensuelle ;
+- congés et autorisations d'absence (case à cocher optionnelle ; si cochée,
+  le nombre de jours et les modalités deviennent visibles).
+
+Si l'étudiant n'a pas encore d'enseignant référent attribué, le formulaire
+n'est pas accessible : un message l'invite à contacter la DEVE.
 
 Une fois validé, le stage passe au statut de convention **Demandée**.
 
-### Étape 3 : suivi et validation (DEVE)
+### Étape 3 : revue et validation (DEVE)
 
 1. Ouvrir l'activité, puis le lien **Conventions** : la liste de toutes les
    demandes en cours s'affiche, avec le gabarit choisi et le statut.
-2. **Marquer éditée** : une fois la convention imprimée et prête à être
-   envoyée pour signature (utiliser **Générer la convention**, disponible
-   dès qu'un gabarit est choisi, pour télécharger/imprimer le PDF).
-3. **Marquer signée** : une fois le document effectivement signé (retour
-   papier). **Cette étape ouvre le droit à l'auto-évaluation de l'étudiant
-   et à l'évaluation de l'enseignant référent** — avant cela, la page
-   d'auto-évaluation de l'étudiant affiche un message l'invitant à
-   attendre la signature.
+2. Pour une demande au statut **Demandée**, cliquer sur **Générer la
+   convention** (depuis la page Conventions, ou depuis « Enregistrer des
+   stages ») ouvre une page de revue affichant le formulaire rempli par
+   l'étudiant, entièrement éditable par la DEVE. Deux actions possibles :
+   - **Valider** : enregistre les éventuelles corrections et fait passer
+     la convention au statut **Éditée** ; le PDF est alors prêt à être
+     généré (télécharger/imprimer depuis **Générer la convention**) ;
+   - **Refuser** (commentaire obligatoire) : fait passer la convention au
+     statut **Refusée** et envoie le commentaire par courriel à
+     l'étudiant, qui peut alors corriger sa demande et la soumettre à
+     nouveau depuis son tableau de bord.
+3. **Marquer signée** (une fois la convention au statut Éditée) : une fois
+   le document effectivement signé (retour papier). **Cette étape ouvre le
+   droit à l'auto-évaluation de l'étudiant et à l'évaluation de
+   l'enseignant référent** — avant cela, la page d'auto-évaluation de
+   l'étudiant affiche un message l'invitant à attendre la signature.
 
-Le lien **Générer la convention** reste disponible à tout moment depuis la
-page « Enregistrer des stages » et depuis la page « Conventions », pour
-tout stage ayant un gabarit choisi.
+Le lien **Générer la convention** (téléchargement direct du PDF) n'est
+proposé qu'une fois la convention au statut Éditée ou Signée ; tant
+qu'elle est au statut Demandée, ce même lien mène à la page de revue
+décrite ci-dessus.
+
+### Annulation d'un stage (DEVE)
+
+Depuis la page **Enregistrer des stages**, la DEVE peut à tout moment et
+quel que soit le statut actuel du stage cliquer sur **Annuler ce stage**.
+Un commentaire expliquant le motif est obligatoire. La saisie est
+conservée telle quelle (aucune donnée supprimée) : seul le statut passe
+définitivement à **Annulé**.
 
 ## 8. Export Excel de tous les stages (DEVE)
 

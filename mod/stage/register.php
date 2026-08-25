@@ -125,7 +125,11 @@ if ($mode === 'list') {
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
         $actions = html_writer::link($editurl, get_string('edit'));
-        if ((int) $entry->conventionstatus !== STAGE_CONVENTION_NONE) {
+        $conventionstatus = (int) $entry->conventionstatus;
+        if ($conventionstatus === STAGE_CONVENTION_REQUESTED) {
+            $reviewurl = new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+            $actions .= ' | ' . html_writer::link($reviewurl, get_string('conventionreview', 'mod_stage'));
+        } else if ($conventionstatus >= STAGE_CONVENTION_EDITED) {
             $conventionurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]);
             $actions .= ' | ' . html_writer::link($conventionurl, get_string('generateconvention', 'mod_stage'));
         }
@@ -134,6 +138,10 @@ if ($mode === 'list') {
                 ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]);
             $actions .= ' | ' . html_writer::link($reseturl, get_string('resetentry', 'mod_stage'),
                 ['onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');"]);
+        }
+        if ((int) $entry->status !== STAGE_STATUS_ANNULE) {
+            $cancelurl = new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+            $actions .= ' | ' . html_writer::link($cancelurl, get_string('cancelentry', 'mod_stage'));
         }
         $table->data[] = [
             $student ? fullname($student) : '-',

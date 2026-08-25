@@ -72,8 +72,8 @@ class convention_pdf extends \pdf {
      *                         host{address, representative, representativetitle, service,
      *                         phone, email, location}, student{fullname, email, birthdate,
      *                         address, phone}, theme{name}, dates{start, end},
-     *                         duration{declared, retained}, statuslabel, referentteachers
-     *                         (array de noms), tutor{name, function, phone, email},
+     *                         duration{declared, retained}, statuslabel, referentteacher
+     *                         {name, email}, tutor{name, function, phone, email},
      *                         modalities{night, sunday, holiday, homebased (bool), other
      *                         (texte)}, gratification (texte), leave{has (bool), days,
      *                         modalities (texte)}.
@@ -148,8 +148,11 @@ class convention_pdf extends \pdf {
         $this->Ln(3);
 
         $this->section_heading($this->str('conventionsupervision'));
-        $this->field_row($this->str('referentteachers'),
-            !empty($stagedata['referentteachers']) ? implode(', ', $stagedata['referentteachers']) : '-');
+        $this->field_row($this->str('conventionreferentteacher'),
+            !empty($stagedata['referentteacher']['name']) ? $stagedata['referentteacher']['name'] : '-');
+        $this->field_row($this->str('conventionreferentteacherstatus'), $this->str('conventionreferentteacherstatusvalue'));
+        $this->field_row($this->str('conventionreferentteacheremail'),
+            !empty($stagedata['referentteacher']['email']) ? $stagedata['referentteacher']['email'] : '-');
         $this->field_row($this->str('conventiontutorname'), $stagedata['tutor']['name']);
         $this->field_row($this->str('conventiontutorfunction'), $stagedata['tutor']['function']);
         $this->field_row($this->str('conventiontutorphone'), $stagedata['tutor']['phone']);

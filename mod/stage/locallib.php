@@ -34,6 +34,8 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
  */
 function stage_status_label($status, $lang = null) {
     switch ((int) $status) {
+        case STAGE_STATUS_ANNULE:
+            return get_string('status_annule', 'mod_stage', null, $lang);
         case STAGE_STATUS_NON_VALIDE:
             return get_string('status_nonvalide', 'mod_stage', null, $lang);
         case STAGE_STATUS_ENREGISTRE:
@@ -57,6 +59,8 @@ function stage_status_label($status, $lang = null) {
  */
 function stage_status_badgeclass($status) {
     switch ((int) $status) {
+        case STAGE_STATUS_ANNULE:
+            return 'badge-dark';
         case STAGE_STATUS_NON_VALIDE:
             return 'badge-danger';
         case STAGE_STATUS_ENREGISTRE:
@@ -80,6 +84,8 @@ function stage_status_badgeclass($status) {
  */
 function stage_convention_status_label($status) {
     switch ((int) $status) {
+        case STAGE_CONVENTION_REJECTED:
+            return get_string('conventionstatus_rejected', 'mod_stage');
         case STAGE_CONVENTION_REQUESTED:
             return get_string('conventionstatus_requested', 'mod_stage');
         case STAGE_CONVENTION_EDITED:
@@ -99,6 +105,8 @@ function stage_convention_status_label($status) {
  */
 function stage_convention_status_badgeclass($status) {
     switch ((int) $status) {
+        case STAGE_CONVENTION_REJECTED:
+            return 'badge-danger';
         case STAGE_CONVENTION_REQUESTED:
             return 'badge-info';
         case STAGE_CONVENTION_EDITED:
@@ -484,6 +492,27 @@ function stage_reset_entry(stdClass $entry) {
     global $DB;
 
     $entry->status = STAGE_STATUS_ENREGISTRE;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Annule un stage, à tout moment et quel que soit son statut actuel (la DEVE reste seule
+ * décisionnaire). La saisie est conservée telle quelle (aucune donnée supprimée) : seul le
+ * statut passe à "Annulé", avec un commentaire obligatoire expliquant le motif.
+ *
+ * @param stdClass $entry
+ * @param int $byuserid
+ * @param string $comment
+ * @return void
+ */
+function stage_cancel_entry(stdClass $entry, $byuserid, $comment) {
+    global $DB;
+
+    $entry->status = STAGE_STATUS_ANNULE;
+    $entry->cancelledby = $byuserid;
+    $entry->canceltime = time();
+    $entry->cancelcomment = $comment;
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
 }
@@ -1031,8 +1060,8 @@ function stage_render_list_filters(moodle_url $baseurl, array $themes, $search, 
 
     if ($showstatus) {
         $statusoptions = ['' => get_string('allstatuses', 'mod_stage')];
-        foreach ([STAGE_STATUS_NON_VALIDE, STAGE_STATUS_ENREGISTRE, STAGE_STATUS_EVAL_ETUDIANT, STAGE_STATUS_EVAL_ENSEIGNANT,
-                STAGE_STATUS_VALIDE_DEVE] as $statuscode) {
+        foreach ([STAGE_STATUS_ANNULE, STAGE_STATUS_NON_VALIDE, STAGE_STATUS_ENREGISTRE, STAGE_STATUS_EVAL_ETUDIANT,
+                STAGE_STATUS_EVAL_ENSEIGNANT, STAGE_STATUS_VALIDE_DEVE] as $statuscode) {
             $statusoptions[$statuscode] = stage_status_label($statuscode);
         }
         $out .= html_writer::select($statusoptions, 'status', $status, false, ['class' => 'form-control mr-2']);
@@ -1217,6 +1246,11 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $actions = [];
             if ($selfevallink) {
                 if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE) {
+                    $actions[] = html_writer::link(
+                        new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                        get_string('requestconvention', 'mod_stage')
+                    );
+                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
                     $actions[] = html_writer::link(
                         new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('requestconvention', 'mod_stage')
@@ -1427,6 +1461,55 @@ function stage_convention_mark_signed(stdClass $entry, $byuserid) {
     $entry->conventionsigntime = time();
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Refuse une demande de convention (DEVE), avec un commentaire obligatoire expliquant le motif.
+ * Le statut repasse à "refusée" : l'étudiant peut alors modifier et resoumettre sa demande
+ * depuis convention_request.php, qui la fait repasser à "demandée".
+ *
+ * @param stdClass $entry
+ * @param int $byuserid
+ * @param string $comment
+ * @return void
+ */
+function stage_reject_convention(stdClass $entry, $byuserid, $comment) {
+    global $DB;
+
+    $entry->conventionstatus = STAGE_CONVENTION_REJECTED;
+    $entry->conventionrejectedby = $byuserid;
+    $entry->conventionrejecttime = time();
+    $entry->conventionrejectcomment = $comment;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Envoie un e-mail à l'étudiant lorsque la DEVE refuse sa demande de convention, pour qu'il
+ * sache qu'une correction est attendue et pourquoi.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @param string $comment
+ * @return void
+ */
+function stage_notify_student_convention_rejected(stdClass $stage, stdClass $cm, stdClass $entry, $comment) {
+    global $DB;
+
+    $student = $DB->get_record('user', ['id' => $entry->userid]);
+    if (!$student) {
+        return;
+    }
+
+    $url = new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    $subject = get_string('conventionrejectednotifsubject', 'mod_stage', format_string($stage->name));
+    $body = get_string('conventionrejectednotifbody', 'mod_stage', (object) [
+        'stage' => format_string($stage->name),
+        'comment' => $comment,
+        'url' => $url->out(false),
+    ]);
+    email_to_user($student, core_user::get_noreply_user(), $subject, $body);
 }
 
 /**
