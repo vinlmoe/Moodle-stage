@@ -77,7 +77,7 @@
         <FIELD NAME="conventiontemplateid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Gabarit de convention choisi par l'étudiant à la demande"/>
         <FIELD NAME="conventionstatus" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
-            COMMENT="-1 refusee par la DEVE, 0 aucune, 1 demandee, 2 editee, 3 signee"/>
+            COMMENT="-1 refusee par la DEVE, 0 aucune, 1 demandee, 2 editee, 3 signee, 4 signee sur SignVet (enregistrement en masse)"/>
         <FIELD NAME="conventionrejectedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Utilisateur DEVE ayant refusé la convention"/>
         <FIELD NAME="conventionrejecttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>

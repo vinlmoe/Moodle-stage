@@ -61,7 +61,7 @@ $questions = stage_get_questions($entry->themeid, 'student');
 // convention_request.php / conventions.php), et n'est modifiable que tant qu'elle n'a pas
 // encore été soumise : une fois soumise (ou la saisie rejetée), seule la DEVE peut réinitialiser
 // la saisie pour la rouvrir.
-$conventionsigned = ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED);
+$conventionsigned = stage_convention_is_signed($entry->conventionstatus);
 $editable = $conventionsigned && ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
 
 // Traite la soumission du formulaire dynamique avant tout affichage, pour permettre la redirection.

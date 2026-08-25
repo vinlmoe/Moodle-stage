@@ -76,12 +76,21 @@ $string['importerrorunknownteacher'] = 'Line {$a->line}: no potential referent t
 $string['errorduplicateentry'] = 'This student already has an internship registered on this theme with these same dates.';
 $string['registerstage'] = 'Register an internship';
 $string['editstage'] = 'Edit an internship';
+$string['registerstageandconvention'] = 'Register an internship and its agreement';
+$string['registerstageandconvention_help'] = 'Register a new internship yourself and request its agreement in one '
+    . 'go. The DEVE will then process your agreement request (editing then signing); self-assessment will only '
+    . 'be possible once the agreement is signed.';
+$string['stageandconventionregistered'] = 'The internship has been registered and the agreement request sent to the DEVE.';
 $string['bulkregisterstages'] = 'Register internships in bulk';
 $string['bulkregisterselected'] = 'Register for checked students';
+$string['bulkregistersignvethelp'] = 'Internships registered in bulk are considered already signed on SignVet: '
+    . 'their agreement status automatically switches to "Signed (SignVet)", without going through this '
+    . "plugin's agreement management workflow (no template or PDF to generate or upload). The student's "
+    . 'self-assessment is immediately open.';
 $string['selectstudents'] = 'Select the students concerned';
 $string['selfeval'] = 'Self-assess my internship';
-$string['registeredbydeve'] = 'Internships are registered by the academic office. You can self-assess each of your '
-    . 'internships below.';
+$string['registeredbydeve'] = 'Internships are usually registered by the academic office; you can also register '
+    . 'one yourself and request its agreement below. You can self-assess each of your internships further down.';
 $string['allmystages'] = 'All my internships';
 $string['mandatorythemes'] = 'Mandatory themes';
 $string['actions'] = 'Actions';
@@ -202,6 +211,7 @@ $string['conventionstatus_none'] = 'Not requested';
 $string['conventionstatus_requested'] = 'Requested';
 $string['conventionstatus_edited'] = 'Edited';
 $string['conventionstatus_signed'] = 'Signed';
+$string['conventionstatus_signvet'] = 'Signed (SignVet)';
 $string['conventionstatus_rejected'] = 'Rejected';
 $string['conventionmarkedited'] = 'Mark as edited';
 $string['conventionmarkededited'] = 'The agreement has been marked as edited.';

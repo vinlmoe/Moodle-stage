@@ -251,7 +251,10 @@ if ($mode === 'bulk') {
                     ? fullname($studentsbyid[$studentid]) : "#$studentid";
                 continue;
             }
-            stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration);
+            // Les stages enregistrés en masse sont déjà signés sur SignVet au moment de leur
+            // enregistrement : pas de gestion de convention à faire dans ce plugin pour eux.
+            stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration,
+                STAGE_CONVENTION_SIGNVET);
             $existing[$key] = true;
             $bulkresults->created++;
         }
@@ -260,6 +263,7 @@ if ($mode === 'bulk') {
     echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('bulkregisterstages', 'mod_stage'));
     echo html_writer::link($baseurl, get_string('back'));
+    echo $OUTPUT->notification(get_string('bulkregistersignvethelp', 'mod_stage'), 'info');
 
     if ($bulkresults) {
         echo $OUTPUT->notification(get_string('bulkregistered', 'mod_stage', $bulkresults->created),

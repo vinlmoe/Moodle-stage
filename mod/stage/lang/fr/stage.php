@@ -77,12 +77,21 @@ $string['importerrorunknownteacher'] = 'Ligne {$a->line} : aucun enseignant réf
 $string['errorduplicateentry'] = 'Cet étudiant a déjà un stage enregistré sur cette thématique avec ces mêmes dates.';
 $string['registerstage'] = 'Enregistrer un stage';
 $string['editstage'] = 'Modifier un stage';
+$string['registerstageandconvention'] = 'Enregistrer un stage et sa convention';
+$string['registerstageandconvention_help'] = "Enregistrez vous-même un nouveau stage et demandez sa convention en "
+    . 'une seule fois. La DEVE traitera ensuite votre demande de convention (édition puis signature) ; '
+    . "l'auto-évaluation ne sera possible qu'une fois la convention signée.";
+$string['stageandconventionregistered'] = 'Le stage a été enregistré et la demande de convention envoyée à la DEVE.';
 $string['bulkregisterstages'] = 'Enregistrer des stages en masse';
 $string['bulkregisterselected'] = 'Enregistrer pour les étudiants cochés';
+$string['bulkregistersignvethelp'] = "Les stages enregistrés en masse sont considérés comme déjà signés sur "
+    . 'SignVet : leur statut de convention passe automatiquement à "Signée (SignVet)", sans passer par le '
+    . "circuit de gestion de convention de ce plugin (pas de gabarit ni de PDF à générer ou téléverser). "
+    . "L'auto-évaluation de l'étudiant est immédiatement ouverte.";
 $string['selectstudents'] = 'Sélectionner les étudiants concernés';
 $string['selfeval'] = "Auto-évaluer mon stage";
-$string['registeredbydeve'] = "Les stages sont enregistrés par la DEVE. Vous pouvez auto-évaluer chacun de vos stages "
-    . 'ci-dessous.';
+$string['registeredbydeve'] = "Les stages sont généralement enregistrés par la DEVE ; vous pouvez aussi enregistrer "
+    . 'vous-même un stage et demander sa convention ci-dessous. Vous pouvez auto-évaluer chacun de vos stages plus bas.';
 $string['allmystages'] = 'Tous mes stages';
 $string['mandatorythemes'] = 'Thématiques obligatoires';
 $string['actions'] = 'Actions';
@@ -203,6 +212,7 @@ $string['conventionstatus_none'] = 'Non demandée';
 $string['conventionstatus_requested'] = 'Demandée';
 $string['conventionstatus_edited'] = 'Éditée';
 $string['conventionstatus_signed'] = 'Signée';
+$string['conventionstatus_signvet'] = 'Signée (SignVet)';
 $string['conventionstatus_rejected'] = 'Refusée';
 $string['conventionmarkedited'] = 'Marquer éditée';
 $string['conventionmarkededited'] = "La convention a été marquée comme éditée.";

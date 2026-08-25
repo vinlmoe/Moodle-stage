@@ -92,9 +92,23 @@ function stage_convention_status_label($status) {
             return get_string('conventionstatus_edited', 'mod_stage');
         case STAGE_CONVENTION_SIGNED:
             return get_string('conventionstatus_signed', 'mod_stage');
+        case STAGE_CONVENTION_SIGNVET:
+            return get_string('conventionstatus_signvet', 'mod_stage');
         default:
             return get_string('conventionstatus_none', 'mod_stage');
     }
+}
+
+/**
+ * Indique si un statut de convention équivaut à "signée" (ouvre le droit à l'auto-évaluation et
+ * à l'évaluation) : signée via le circuit de gestion de convention de ce plugin, ou signée sur
+ * SignVet (stages enregistrés en masse par la DEVE, hors de ce circuit).
+ *
+ * @param int $status
+ * @return bool
+ */
+function stage_convention_is_signed($status) {
+    return in_array((int) $status, [STAGE_CONVENTION_SIGNED, STAGE_CONVENTION_SIGNVET], true);
 }
 
 /**
@@ -112,6 +126,8 @@ function stage_convention_status_badgeclass($status) {
         case STAGE_CONVENTION_EDITED:
             return 'badge-primary';
         case STAGE_CONVENTION_SIGNED:
+            return 'badge-success';
+        case STAGE_CONVENTION_SIGNVET:
             return 'badge-success';
         default:
             return 'badge-secondary';
@@ -319,7 +335,8 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
 }
 
 /**
- * Enregistre un stage pour un étudiant, à l'initiative de la DEVE.
+ * Enregistre un stage pour un étudiant, à l'initiative de la DEVE (ou de l'étudiant lui-même,
+ * voir student_register.php).
  *
  * @param int $stageid
  * @param int $studentid
@@ -328,9 +345,14 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
  * @param int $datestart
  * @param int $dateend
  * @param int $declaredduration
+ * @param int $conventionstatus Statut de convention initial : STAGE_CONVENTION_NONE par défaut,
+ *                               ou STAGE_CONVENTION_SIGNVET pour un enregistrement en masse
+ *                               (stages déjà signés sur SignVet, hors circuit de gestion de
+ *                               convention de ce plugin).
  * @return int Id de la saisie créée.
  */
-function stage_register_entry($stageid, $studentid, $themeid, $structure, $datestart, $dateend, $declaredduration) {
+function stage_register_entry($stageid, $studentid, $themeid, $structure, $datestart, $dateend, $declaredduration,
+        $conventionstatus = STAGE_CONVENTION_NONE) {
     global $DB;
 
     $record = new stdClass();
@@ -343,6 +365,7 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
     $record->declaredduration = $declaredduration;
     $record->retainedduration = 0;
     $record->status = STAGE_STATUS_ENREGISTRE;
+    $record->conventionstatus = $conventionstatus;
     $record->timecreated = time();
     $record->timemodified = time();
 
@@ -1255,15 +1278,20 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                         new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('requestconvention', 'mod_stage')
                     );
-                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED) {
+                } else if (stage_convention_is_signed($entry->conventionstatus)) {
                     $actions[] = html_writer::link(
                         new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('selfeval', 'mod_stage')
                     );
-                    $actions[] = html_writer::link(
-                        new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('downloadsignedconvention', 'mod_stage')
-                    );
+                    // Le PDF de la convention signée n'existe que pour le circuit de gestion de
+                    // convention de ce plugin (STAGE_CONVENTION_SIGNED) : les stages enregistrés
+                    // en masse (SignVet) n'en ont pas.
+                    if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED) {
+                        $actions[] = html_writer::link(
+                            new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                            get_string('downloadsignedconvention', 'mod_stage')
+                        );
+                    }
                 }
                 // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
                 // l'instant, le badge de statut ci-dessus suffit à le renseigner.

@@ -53,8 +53,12 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 echo html_writer::link(new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id]),
     get_string('conventiontemplates', 'mod_stage'), ['class' => 'btn btn-secondary d-block mt-2 mb-3', 'style' => 'width:fit-content']);
 
-$allentries = $DB->get_records_select('stage_entry', 'stageid = :stageid AND conventionstatus > :none',
-    ['stageid' => $stage->id, 'none' => STAGE_CONVENTION_NONE], 'conventionrequesttime ASC');
+// Les stages enregistrés en masse (statut "signée sur SignVet") n'apparaissent pas ici : ils sont
+// déjà signés hors du circuit de gestion de convention de ce plugin, rien à y traiter.
+$allentries = $DB->get_records_select('stage_entry',
+    'stageid = :stageid AND conventionstatus > :none AND conventionstatus != :signvet',
+    ['stageid' => $stage->id, 'none' => STAGE_CONVENTION_NONE, 'signvet' => STAGE_CONVENTION_SIGNVET],
+    'conventionrequesttime ASC');
 [$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $baseurl);
 
 if (empty($allentries)) {

@@ -49,6 +49,14 @@ define('STAGE_CONVENTION_REQUESTED', 1);
 define('STAGE_CONVENTION_EDITED', 2);
 /** Convention de stage : signée. Condition requise pour ouvrir l'auto-évaluation et l'évaluation. */
 define('STAGE_CONVENTION_SIGNED', 3);
+/**
+ * Convention de stage : signée électroniquement sur SignVet, hors du circuit de gestion de
+ * convention de ce plugin (pas de gabarit, de génération de PDF ni de PDF signé à téléverser).
+ * Statut attribué automatiquement aux stages enregistrés en masse par la DEVE (voir
+ * register.php, mode "bulk"), qui sont déjà signés sur SignVet au moment de leur enregistrement.
+ * Ouvre le droit à l'auto-évaluation et à l'évaluation au même titre que STAGE_CONVENTION_SIGNED.
+ */
+define('STAGE_CONVENTION_SIGNVET', 4);
 
 /**
  * Returns the list of features supported by this module.

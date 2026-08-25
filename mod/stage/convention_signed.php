@@ -17,7 +17,7 @@
 /**
  * Téléchargement de la convention de stage signée (PDF scanné, téléversé par la DEVE lors du
  * passage au statut "signée" depuis convention_sign.php), pour l'étudiant propriétaire de la
- * saisie ou la DEVE.
+ * saisie, la DEVE, ou l'enseignant référent auquel l'étudiant est attribué.
  *
  * @package   mod_stage
  * @copyright 2026 Vetbrain
@@ -42,7 +42,9 @@ $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->
 
 $isowner = ((int) $entry->userid === (int) $USER->id) && has_capability('mod/stage:submit', $context);
 $isdeve = has_capability('mod/stage:registerstages', $context);
-if (!$isowner && !$isdeve) {
+$isreferentteacher = has_capability('mod/stage:evaluateteacher', $context)
+    && array_key_exists($entry->userid, stage_get_assigned_students($stage->id, $USER->id));
+if (!$isowner && !$isdeve && !$isreferentteacher) {
     throw new moodle_exception('nopermissions', 'error', '', get_string('conventionsignedfile', 'mod_stage'));
 }
 

@@ -90,6 +90,9 @@ if (has_capability('mod/stage:submit', $context)) {
     echo $OUTPUT->heading(get_string('mystages', 'mod_stage'), 3);
     echo $OUTPUT->notification(get_string('registeredbydeve', 'mod_stage'), 'info');
 
+    echo html_writer::link(new moodle_url('/mod/stage/student_register.php', ['id' => $cm->id]),
+        get_string('registerstageandconvention', 'mod_stage'), ['class' => 'btn btn-primary d-block mb-3', 'style' => 'width:fit-content']);
+
     stage_print_student_dashboard($stage, $USER->id, $cm, true, false);
 }
 

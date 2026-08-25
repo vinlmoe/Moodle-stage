@@ -72,10 +72,12 @@ décochées.
      simultanément, puis **Enregistrer les modifications** (un seul
      formulaire pour toutes les lignes du tableau).
 
-## 5. Enregistrement des stages (DEVE)
+## 5. Enregistrement des stages (DEVE, ou par l'étudiant)
 
-C'est la DEVE qui crée les stages des étudiants — les étudiants ne peuvent
-pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistrés.
+Le plus souvent, c'est la DEVE qui crée les stages des étudiants. Un
+étudiant peut aussi enregistrer lui-même un stage (voir « Auto-enregistrement
+par l'étudiant » ci-dessous) ; dans tous les cas, il ne peut ensuite
+qu'auto-évaluer ses stages une fois enregistrés.
 
 1. Ouvrir l'activité, puis le lien **Enregistrer des stages** : la liste de
    tous les stages déjà enregistrés s'affiche, avec un lien « Modifier »
@@ -84,7 +86,9 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    choisir l'étudiant, la thématique, la structure d'accueil, les dates et
    la durée déclarée, puis Enregistrer. Si cet étudiant a déjà un stage sur
    cette thématique avec ces mêmes dates, le formulaire refuse
-   l'enregistrement et affiche une erreur sur le champ thématique.
+   l'enregistrement et affiche une erreur sur le champ thématique. Le statut
+   de convention reste **Non demandée** : c'est ensuite à l'étudiant de
+   demander sa convention (voir § 7).
 3. **Enregistrement en masse** : bouton « Enregistrer des stages en masse » →
    choisir une thématique, une structure/dates/durée communes, cocher tous
    les étudiants concernés, puis « Enregistrer pour les étudiants cochés » :
@@ -92,11 +96,29 @@ pas en créer eux-mêmes, ils ne font que les auto-évaluer une fois enregistré
    étudiant coché a déjà un stage enregistré sur cette même thématique avec
    les mêmes dates de début/fin, la ligne le concernant est ignorée (pas de
    doublon créé) et son nom est listé dans un avertissement à l'écran, avec
-   le nombre de stages effectivement créés.
+   le nombre de stages effectivement créés. **Ces stages sont considérés
+   comme déjà signés sur SignVet** (statut de convention **Signée
+   (SignVet)** attribué automatiquement) : ils n'apparaissent pas dans le
+   circuit de gestion de convention de ce plugin (page « Conventions »,
+   génération de PDF...), et l'auto-évaluation de l'étudiant est
+   immédiatement ouverte.
 4. **Modifier un stage déjà enregistré** : depuis la liste, lien « Modifier »
    sur la ligne concernée (thématique, structure, dates, durée déclarée
    restent modifiables par la DEVE à tout moment, y compris après
    auto-évaluation ou évaluation enseignant).
+
+### Auto-enregistrement par l'étudiant
+
+Sur son tableau de bord (page d'activité), l'étudiant dispose d'un bouton
+**Enregistrer un stage et sa convention**, qui combine en un seul
+formulaire l'enregistrement du stage (thématique, structure, dates, durée)
+et toutes les informations de demande de convention (voir § 7 pour le
+détail des champs). Il doit avoir au moins un enseignant référent attribué
+et au moins un gabarit de convention disponible pour y accéder, sinon un
+message l'invite à contacter la DEVE. À la validation, le stage est créé
+(statut **Enregistré**) et la demande de convention envoyée à la DEVE
+(statut **Demandée**), exactement comme s'il avait utilisé
+successivement les deux formulaires séparés.
 
 ### Questions d'évaluation personnalisées par thématique
 
@@ -272,11 +294,17 @@ Une fois validé, le stage passe au statut de convention **Demandée**.
      statut **Refusée** et envoie le commentaire par courriel à
      l'étudiant, qui peut alors corriger sa demande et la soumettre à
      nouveau depuis son tableau de bord.
-3. **Marquer signée** (une fois la convention au statut Éditée) : une fois
-   le document effectivement signé (retour papier). **Cette étape ouvre le
-   droit à l'auto-évaluation de l'étudiant et à l'évaluation de
-   l'enseignant référent** — avant cela, la page d'auto-évaluation de
-   l'étudiant affiche un message l'invitant à attendre la signature.
+3. **Marquer signée** (une fois la convention au statut Éditée) : ouvre une
+   page dédiée où la DEVE doit téléverser le PDF de la convention
+   effectivement signée (scan du document papier retourné) — impossible de
+   passer au statut Signée sans ce fichier. **Cette étape ouvre le droit à
+   l'auto-évaluation de l'étudiant et à l'évaluation de l'enseignant
+   référent** — avant cela, la page d'auto-évaluation de l'étudiant affiche
+   un message l'invitant à attendre la signature. Une fois signée, le PDF
+   téléversé devient téléchargeable (lien **Télécharger la convention
+   signée**) par l'étudiant depuis son tableau de bord, par l'enseignant
+   référent depuis sa page d'évaluation, et par la DEVE depuis les pages
+   « Conventions » et « Enregistrer des stages ».
 
 Le lien **Générer la convention** (téléchargement direct du PDF) n'est
 proposé qu'une fois la convention au statut Éditée ou Signée ; tant
