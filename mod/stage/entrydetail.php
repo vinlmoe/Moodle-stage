@@ -64,7 +64,8 @@ echo html_writer::link($backurl, get_string('back'));
 echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : '
     . ($theme ? format_string($theme->name) : '-'));
 if ($theme) {
-    echo html_writer::tag('p', get_string('studyyear', 'mod_stage') . ' : ' . stage_studyyear_label($theme->studyyear));
+    echo html_writer::tag('p', get_string('studyyear', 'mod_stage') . ' : '
+        . stage_studyyear_range_label($theme->minstudyyear, $theme->maxstudyyear));
 }
 echo html_writer::tag('p', get_string('structure', 'mod_stage') . ' : ' . s($entry->structure));
 $dateformat = get_string('strftimedate', 'langconfig');

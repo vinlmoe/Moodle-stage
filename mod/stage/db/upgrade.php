@@ -331,5 +331,29 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082412, 'stage');
     }
 
+    if ($oldversion < 2026082415) {
+        $table = new xmldb_table('stage_theme');
+
+        $minfield = new xmldb_field('minstudyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'requiredduration');
+        if (!$dbman->field_exists($table, $minfield)) {
+            $dbman->add_field($table, $minfield);
+        }
+        $maxfield = new xmldb_field('maxstudyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'minstudyyear');
+        if (!$dbman->field_exists($table, $maxfield)) {
+            $dbman->add_field($table, $maxfield);
+        }
+
+        // Fait migrer l'ancienne année d'étude unique vers la nouvelle plage min/max.
+        $oldfield = new xmldb_field('studyyear');
+        if ($dbman->field_exists($table, $oldfield)) {
+            $DB->execute('UPDATE {stage_theme} SET minstudyyear = studyyear, maxstudyyear = studyyear');
+            $dbman->drop_field($table, $oldfield);
+        }
+
+        upgrade_mod_savepoint(true, 2026082415, 'stage');
+    }
+
     return true;
 }

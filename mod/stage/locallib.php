@@ -182,7 +182,7 @@ function stage_get_themes($stageid, $onlyvisible = false) {
     if ($onlyvisible) {
         $where .= ' AND visible = 1';
     }
-    return $DB->get_records_select('stage_theme', $where, $params, 'studyyear ASC, sortorder ASC, name ASC');
+    return $DB->get_records_select('stage_theme', $where, $params, 'minstudyyear ASC, maxstudyyear ASC, sortorder ASC, name ASC');
 }
 
 /**
@@ -211,16 +211,35 @@ function stage_studyyear_label($studyyear, $lang = null) {
 }
 
 /**
- * Libellé d'une thématique pour une liste déroulante : nom, année d'étude (si précisée) et
- * mention "obligatoire" le cas échéant, pour aider la DEVE et les enseignants à s'y retrouver.
+ * Libellé lisible de la plage d'années d'étude d'une thématique (année minimum - année maximum).
+ * Si les deux bornes sont identiques ou que l'une d'elles n'est pas spécifiée, un libellé simple
+ * est renvoyé plutôt qu'une plage.
+ *
+ * @param int $minstudyyear
+ * @param int $maxstudyyear
+ * @param string|null $lang
+ * @return string
+ */
+function stage_studyyear_range_label($minstudyyear, $maxstudyyear, $lang = null) {
+    $minstudyyear = (int) $minstudyyear;
+    $maxstudyyear = (int) $maxstudyyear;
+    if ($minstudyyear == $maxstudyyear || empty($minstudyyear) || empty($maxstudyyear)) {
+        return stage_studyyear_label($minstudyyear ?: $maxstudyyear, $lang);
+    }
+    return stage_studyyear_label($minstudyyear, $lang) . ' - ' . stage_studyyear_label($maxstudyyear, $lang);
+}
+
+/**
+ * Libellé d'une thématique pour une liste déroulante : nom, plage d'années d'étude (si précisée)
+ * et mention "obligatoire" le cas échéant, pour aider la DEVE et les enseignants à s'y retrouver.
  *
  * @param stdClass $theme
  * @return string
  */
 function stage_theme_option_label(stdClass $theme) {
     $label = format_string($theme->name);
-    if (!empty($theme->studyyear)) {
-        $label .= ' - ' . stage_studyyear_label($theme->studyyear);
+    if (!empty($theme->minstudyyear) || !empty($theme->maxstudyyear)) {
+        $label .= ' - ' . stage_studyyear_range_label($theme->minstudyyear, $theme->maxstudyyear);
     }
     if (!empty($theme->mandatory)) {
         $label .= ' (' . get_string('mandatory', 'mod_stage') . ')';
@@ -1302,12 +1321,13 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         $currentyear = null;
         $table = null;
         foreach ($mandatorythemes as $t) {
-            if ($currentyear === null || $t->theme->studyyear != $currentyear) {
+            $themeyearkey = $t->theme->minstudyyear . '-' . $t->theme->maxstudyyear;
+            if ($currentyear === null || $themeyearkey != $currentyear) {
                 if ($table !== null) {
                     echo html_writer::table($table);
                 }
-                $currentyear = $t->theme->studyyear;
-                echo $OUTPUT->heading(stage_studyyear_label($currentyear), 5);
+                $currentyear = $themeyearkey;
+                echo $OUTPUT->heading(stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear), 5);
                 $table = new html_table();
                 $table->head = [
                     get_string('theme', 'mod_stage'),
@@ -1354,7 +1374,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
         $row = [
             $themename,
-            $theme ? stage_studyyear_label($theme->studyyear) : '-',
+            $theme ? stage_studyyear_range_label($theme->minstudyyear, $theme->maxstudyyear) : '-',
             $entry->structure,
             $entry->declaredduration,
             $entry->retainedduration,
@@ -1524,7 +1544,8 @@ function stage_import_themes($sourcestageid, $targetstageid) {
             'description' => $theme->description,
             'mandatory' => $theme->mandatory,
             'requiredduration' => $theme->requiredduration,
-            'studyyear' => $theme->studyyear,
+            'minstudyyear' => $theme->minstudyyear,
+            'maxstudyyear' => $theme->maxstudyyear,
             'sortorder' => $theme->sortorder,
             'visible' => $theme->visible,
             'timecreated' => time(),
@@ -2123,7 +2144,7 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
             'email' => $establishmentinfo->email,
         ],
         'hoststructure' => (string) $entry->structure,
-        'yearlabel' => $theme ? stage_convention_year_label($theme->studyyear, $detail->yearsituation, $conventionlang)
+        'yearlabel' => $theme ? stage_convention_year_label($theme->minstudyyear, $detail->yearsituation, $conventionlang)
             : '-',
         'stagetypelabel' => stage_convention_stagetype_options($conventionlang)[$detail->stagetype] ?? $detail->stagetype,
         'host' => [
