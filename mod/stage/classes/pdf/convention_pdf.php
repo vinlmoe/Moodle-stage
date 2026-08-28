@@ -197,39 +197,43 @@ class convention_pdf extends \pdf {
         }
 
         if ($withsignatures) {
-            $this->signature_block();
+            $this->signature_block($stagedata);
         }
     }
 
     /**
      * Cadre de signatures en bas de la page 1 : une case par signataire (stagiaire, maître de
-     * stage, responsable de l'organisme d'accueil, enseignant.e référent.e, établissement),
-     * réparties sur deux colonnes. Réservé aux conventions imprimées destinées à être signées à la
-     * main (voir generate_page1(), $withsignatures).
+     * stage, responsable de l'organisme d'accueil, enseignant.e référent.e, personne ayant
+     * délégation de signature du chef d'établissement), réparties sur deux colonnes, avec le nom
+     * déjà connu préaffiché quand il est disponible. Réservé aux conventions imprimées destinées à
+     * être signées à la main (voir generate_page1(), $withsignatures).
      *
+     * @param array $stagedata Voir generate_page1() : utilisé ici pour préremplir les noms déjà
+     *                         connus (stagiaire, tuteur, enseignant.e référent.e, signataire de
+     *                         l'établissement).
      * @return void
      */
-    protected function signature_block() {
+    protected function signature_block(array $stagedata) {
         $this->Ln(3);
         $this->section_heading($this->str('conventionsignatures'));
 
-        $labels = [
-            $this->str('conventionsignaturestudent'),
-            $this->str('conventionsignaturetutor'),
-            $this->str('conventionsignaturehostrepresentative'),
-            $this->str('conventionsignaturereferentteacher'),
-            $this->str('conventionsignatureestablishment'),
+        $boxes = [
+            [$this->str('conventionsignaturestudent'), $stagedata['student']['fullname'] ?? ''],
+            [$this->str('conventionsignaturetutor'), $stagedata['tutor']['name'] ?? ''],
+            [$this->str('conventionsignaturehostrepresentative'), $stagedata['host']['representative'] ?? ''],
+            [$this->str('conventionsignaturereferentteacher'), $stagedata['referentteacher']['name'] ?? ''],
+            [$this->str('conventionsignatureestablishment'), $stagedata['establishment']['signatory'] ?? ''],
         ];
 
         $cols = 2;
         $gap = 4;
-        $boxheight = 26;
+        $boxheight = 28;
         $left = $this->getMargins()['left'];
         $pagewidth = $this->getPageWidth() - $left - $this->getMargins()['right'];
         $boxwidth = ($pagewidth - $gap * ($cols - 1)) / $cols;
 
         $y = $this->GetY();
-        foreach ($labels as $i => $label) {
+        foreach ($boxes as $i => [$label, $name]) {
             $col = $i % $cols;
             if ($col === 0) {
                 $this->ensure_space($boxheight + 6);
@@ -239,9 +243,15 @@ class convention_pdf extends \pdf {
 
             $this->SetFont('freesans', 'B', 9);
             $this->MultiCell($boxwidth, 5, $label, 0, 'L', false, 0, $x, $y);
-            $this->Rect($x, $y + 6, $boxwidth, $boxheight - 6);
+            $namey = $y + 5;
+            if ($name !== '' && $name !== '-') {
+                $this->SetFont('freesans', '', 9);
+                $this->MultiCell($boxwidth, 5, $this->str('conventionsignaturename', $name), 0, 'L', false, 0, $x, $namey);
+                $namey += 5;
+            }
+            $this->Rect($x, $namey, $boxwidth, max($boxheight - ($namey - $y), 12));
 
-            if ($col === $cols - 1 || $i === count($labels) - 1) {
+            if ($col === $cols - 1 || $i === count($boxes) - 1) {
                 $this->SetY($y + $boxheight + 6);
             }
         }

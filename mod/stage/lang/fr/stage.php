@@ -284,6 +284,12 @@ $string['conventionsignaturetutor'] = 'Le maître de stage';
 $string['conventionsignaturehostrepresentative'] = "Le/la responsable de l'organisme d'accueil";
 $string['conventionsignaturereferentteacher'] = "L'enseignant.e référent.e";
 $string['conventionsignatureestablishment'] = "L'établissement d'enseignement";
+$string['conventionsignaturename'] = 'Nom : {$a}';
+$string['conventionestablishmentsignatory'] = 'Personne ayant délégation de signature';
+$string['conventionestablishmentsignatory_help'] = "Nom de la personne ayant délégation de signature du chef "
+    . "d'établissement (à défaut d'une signature par le chef d'établissement lui-même). Préaffiché dans le "
+    . "cadre de signatures de la convention imprimée, quand cette option est cochée lors de la génération "
+    . 'de la convention.';
 $string['conventiontitle'] = 'Convention de stage';
 $string['conventionestablishment'] = "Établissement d'enseignement";
 $string['conventionestablishmentname'] = 'Nom';

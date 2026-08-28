@@ -155,6 +155,7 @@ $establishmentform->set_data((object) [
     'establishmentrepresentativetitle' => $establishmentinfo->representativetitle,
     'establishmentphone' => $establishmentinfo->phone,
     'establishmentemail' => $establishmentinfo->email,
+    'establishmentsignatory' => $establishmentinfo->signatory,
 ]);
 
 if ($establishmentdata = $establishmentform->get_data()) {

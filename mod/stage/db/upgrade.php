@@ -552,5 +552,18 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082420, 'stage');
     }
 
+    if ($oldversion < 2026082421) {
+        // Nom de la personne ayant délégation de signature du chef d'établissement, affiché dans
+        // le cadre de signatures de la convention imprimée (voir generate_page1()).
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('establishmentsignatory', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+            'establishmentemail');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082421, 'stage');
+    }
+
     return true;
 }

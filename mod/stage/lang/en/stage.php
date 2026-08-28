@@ -279,6 +279,11 @@ $string['conventionsignaturetutor'] = 'The workplace supervisor';
 $string['conventionsignaturehostrepresentative'] = 'The host organisation representative';
 $string['conventionsignaturereferentteacher'] = 'The referent teacher';
 $string['conventionsignatureestablishment'] = 'The educational establishment';
+$string['conventionsignaturename'] = 'Name: {$a}';
+$string['conventionestablishmentsignatory'] = 'Person with signing delegation';
+$string['conventionestablishmentsignatory_help'] = 'Name of the person holding a signing delegation from the '
+    . 'head of establishment (in place of a signature by the head of establishment themselves). Pre-filled in '
+    . 'the signature block of the printed convention, when that option is ticked when generating the convention.';
 $string['conventiontitle'] = 'Internship agreement';
 $string['conventionestablishment'] = 'Educational establishment';
 $string['conventionestablishmentname'] = 'Name';

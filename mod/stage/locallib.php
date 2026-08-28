@@ -2260,7 +2260,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
  * défaut ("VetAgro Sup", pas d'autre coordonnée) est utilisée tant que la DEVE n'a rien renseigné.
  *
  * @param stdClass $stage
- * @return stdClass {name, address, representative, representativetitle, phone, email}
+ * @return stdClass {name, address, representative, representativetitle, phone, email, signatory}
  */
 function stage_get_establishment_info(stdClass $stage) {
     return (object) [
@@ -2270,6 +2270,7 @@ function stage_get_establishment_info(stdClass $stage) {
         'representativetitle' => $stage->establishmentrepresentativetitle ?? '',
         'phone' => $stage->establishmentphone ?? '',
         'email' => $stage->establishmentemail ?? '',
+        'signatory' => $stage->establishmentsignatory ?? '',
     ];
 }
 
@@ -2279,7 +2280,8 @@ function stage_get_establishment_info(stdClass $stage) {
  *
  * @param int $stageid
  * @param stdClass $data {establishmentname, establishmentaddress, establishmentrepresentative,
- *                        establishmentrepresentativetitle, establishmentphone, establishmentemail}
+ *                        establishmentrepresentativetitle, establishmentphone, establishmentemail,
+ *                        establishmentsignatory}
  * @return void
  */
 function stage_save_establishment_info($stageid, stdClass $data) {
@@ -2293,6 +2295,7 @@ function stage_save_establishment_info($stageid, stdClass $data) {
         'establishmentrepresentativetitle' => $data->establishmentrepresentativetitle,
         'establishmentphone' => $data->establishmentphone,
         'establishmentemail' => $data->establishmentemail,
+        'establishmentsignatory' => $data->establishmentsignatory,
         'timemodified' => time(),
     ]);
 }
@@ -3091,6 +3094,7 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
             'representativetitle' => $establishmentinfo->representativetitle,
             'phone' => $establishmentinfo->phone,
             'email' => $establishmentinfo->email,
+            'signatory' => $establishmentinfo->signatory,
         ],
         'hoststructure' => (string) $entry->structure,
         'yearlabel' => $theme ? stage_convention_year_label($theme->minstudyyear, $detail->yearsituation, $conventionlang)
