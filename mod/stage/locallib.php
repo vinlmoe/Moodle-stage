@@ -485,21 +485,29 @@ function stage_theme_final_year(stdClass $theme) {
  *
  * @param int $stageid
  * @param int $userid
- * @return array int => stdClass{studyyear, retained, required, totaldone, themes, done}
+ * @return array int => stdClass{studyyear, retained, required, totaldone, themes, abroad, done}
  *               'themes' est un tableau de stdClass{theme, required, retained, done}
- *               'done' est vrai seulement si la durée totale ET toutes les thématiques
- *               obligatoires dues cette année-là (celles ayant une durée requise > 0) sont
- *               validées.
+ *               'abroad' est absent, sauf à l'année avant laquelle la mobilité internationale
+ *               doit être satisfaite (stage->abroadbeforeyear) : stdClass{required, retained, done}
+ *               (voir stage_get_student_abroad_progress()).
+ *               'done' est vrai seulement si la durée totale, toutes les thématiques obligatoires
+ *               dues cette année-là (celles ayant une durée requise > 0) ET, à l'année concernée,
+ *               l'obligation de mobilité internationale sont validées.
  */
 function stage_get_student_year_progress($stageid, $userid) {
+    global $DB;
+
     $entries = stage_get_student_entries($stageid, $userid);
     $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
     $mandatorythemes = array_filter(stage_get_themes($stageid, true), function($theme) {
         return !empty($theme->mandatory);
     });
+    $abroadbeforeyear = (int) $DB->get_field('stage', 'abroadbeforeyear', ['id' => $stageid]);
+    $abroadprogress = $abroadbeforeyear > 0 ? stage_get_student_abroad_progress($stageid, $userid) : null;
 
     // Années à considérer : celles où l'étudiant a des saisies, celles où une durée totale est
-    // définie, et l'année finale de chaque thématique obligatoire bornée à une plage.
+    // définie, l'année finale de chaque thématique obligatoire bornée à une plage, et l'année
+    // avant laquelle la mobilité internationale doit être satisfaite, le cas échéant.
     $years = [];
     foreach ($entries as $entry) {
         $years[(int) $entry->studyyear] = true;
@@ -514,6 +522,9 @@ function stage_get_student_year_progress($stageid, $userid) {
         if ($finalyear !== null) {
             $years[$finalyear] = true;
         }
+    }
+    if ($abroadprogress !== null && $abroadprogress->required > 0) {
+        $years[$abroadbeforeyear] = true;
     }
 
     // Durées retenues (hors stages complémentaires), regroupées par année, par (thématique,
@@ -572,13 +583,23 @@ function stage_get_student_year_progress($stageid, $userid) {
             ];
         }
 
+        // Obligation de mobilité internationale, vérifiée à l'année avant laquelle elle doit
+        // être satisfaite (pas liée à une thématique, voir stage_get_student_abroad_progress()).
+        $abroad = null;
+        $abroaddone = true;
+        if ($abroadprogress !== null && $abroadprogress->required > 0 && $year == $abroadbeforeyear) {
+            $abroad = $abroadprogress;
+            $abroaddone = $abroadprogress->done;
+        }
+
         $byyear[$year] = (object) [
             'studyyear' => $year,
             'retained' => $retained,
             'required' => $required,
             'totaldone' => $totaldone,
             'themes' => $themerows,
-            'done' => $totaldone && $themesdone,
+            'abroad' => $abroad,
+            'done' => $totaldone && $themesdone && $abroaddone,
         ];
     }
 
@@ -1849,9 +1870,9 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
         }
 
         // Les objectifs sont complétés si, pour chaque année d'étude ayant un objectif défini
-        // (durée totale et/ou durée par thématique), la durée totale ET chaque thématique
-        // obligatoire de cette année sont validées (voir stage_get_student_year_progress()), ET
-        // que l'obligation de mobilité internationale (le cas échéant) est atteinte.
+        // (durée totale, durée par thématique et/ou mobilité internationale), tous les objectifs
+        // de cette année sont validés (voir stage_get_student_year_progress(), qui intègre déjà
+        // la mobilité internationale à l'année où elle est due).
         $yeartotal = count($yearprogress);
         $yeardone = count(array_filter($yearprogress, function($row) {
             return $row->done;
@@ -1866,7 +1887,7 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
             'pendingcount' => $pending,
             'mandatorytotal' => $mandatorytotal,
             'mandatorydone' => $mandatorydone,
-            'complete' => $yeartotal > 0 && $yeardone === $yeartotal && $abroadprogress->done,
+            'complete' => $yeartotal > 0 && $yeardone === $yeartotal,
         ];
     }
 
@@ -1978,8 +1999,9 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     }
 
     // Bilan des objectifs par année d'étude (hors stages complémentaires) : les objectifs d'une
-    // année sont atteints si sa durée totale ET la durée de chacune de ses thématiques
-    // obligatoires sont validées (voir stage_get_student_year_progress()).
+    // année sont atteints si sa durée totale, la durée de chacune de ses thématiques obligatoires
+    // ET, à l'année avant laquelle elle est due le cas échéant, l'obligation de mobilité
+    // internationale sont validées (voir stage_get_student_year_progress()).
     $yearprogress = stage_get_student_year_progress($stage->id, $userid);
     if (!empty($yearprogress)) {
         echo $OUTPUT->heading(get_string('yeartotals', 'mod_stage'), 4);
@@ -2014,6 +2036,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                     $themerow->required,
                     $themerow->retained,
                     $themerow->required > 0 ? $themestatus : '-',
+                ];
+            }
+            if ($row->abroad !== null) {
+                $abroadrowstatus = $row->abroad->done
+                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+                $yeartable->data[] = [
+                    html_writer::tag('strong', get_string('abroadtotal', 'mod_stage')),
+                    $row->abroad->required,
+                    $row->abroad->retained,
+                    $abroadrowstatus,
                 ];
             }
             echo html_writer::table($yeartable);
@@ -2056,6 +2089,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         get_string('theme', 'mod_stage'),
         get_string('studyyear', 'mod_stage'),
         get_string('structure', 'mod_stage'),
+        get_string('abroad', 'mod_stage'),
         get_string('declaredduration', 'mod_stage'),
         get_string('retainedduration', 'mod_stage'),
         get_string('status', 'mod_stage'),
@@ -2064,12 +2098,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     if ($cm && ($selfevallink || $detaillink)) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
+    // Une ligne sur fond distinct pour chaque stage à l'étranger, pour les repérer d'un coup
+    // d'œil dans la liste (voir aussi la colonne dédiée, avec le pays s'il est renseigné).
+    $table->rowclasses = [];
     foreach ($entries as $entry) {
         $theme = $themes[$entry->themeid] ?? null;
         $themename = $theme ? format_string($theme->name) : '-';
-        if (!empty($entry->abroad)) {
-            $themename .= ' ' . html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info');
-        }
+        $abroadcell = !empty($entry->abroad)
+            ? html_writer::span('🌍 ' . ($entry->country !== '' ? s($entry->country) : get_string('abroad', 'mod_stage')),
+                'badge badge-info')
+            : '-';
+        $table->rowclasses[] = !empty($entry->abroad) ? 'table-info' : '';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $conventionbadge = html_writer::span(stage_convention_status_label($entry->conventionstatus),
             'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
@@ -2077,6 +2116,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $themename,
             stage_studyyear_label($entry->studyyear),
             $entry->structure,
+            $abroadcell,
             $entry->declaredduration,
             $entry->retainedduration,
             $badge,
