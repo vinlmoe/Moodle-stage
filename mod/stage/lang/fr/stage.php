@@ -491,6 +491,7 @@ $string['retaineddaysonly'] = '{$a} jours';
 $string['remainingduration'] = 'Reste à faire (jours)';
 $string['objective'] = 'Objectif';
 $string['yeartotalobjective'] = "Durée totale de l'année";
+$string['completebyyear'] = 'À compléter au plus tard en';
 $string['numstages'] = '{$a} stage(s) déclaré(s)';
 
 // Headings.

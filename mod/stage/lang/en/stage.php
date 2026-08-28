@@ -480,6 +480,7 @@ $string['retaineddaysonly'] = '{$a} days';
 $string['remainingduration'] = 'Remaining (days)';
 $string['objective'] = 'Objective';
 $string['yeartotalobjective'] = 'Total duration for the year';
+$string['completebyyear'] = 'To be completed by';
 $string['numstages'] = '{$a} internship(s) declared';
 
 // Headings.

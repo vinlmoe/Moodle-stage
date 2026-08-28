@@ -2088,6 +2088,15 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     // ET, à l'année avant laquelle elle est due le cas échéant, l'obligation de mobilité
     // internationale sont validées (voir stage_get_student_year_progress()).
     $yearprogress = stage_get_student_year_progress($stage->id, $userid);
+    // Seules l'année d'étude courante et les précédentes sont présentées : les objectifs des
+    // années suivantes ne sont pas encore exigibles, les afficher comme « à compléter » ne ferait
+    // qu'alarmer inutilement l'étudiant. Tant que l'année courante n'est pas renseignée pour ce
+    // stage (voir mod_form.php), toutes les années restent affichées.
+    if (!empty($stage->currentstudyyear)) {
+        $yearprogress = array_filter($yearprogress, function($row) use ($stage) {
+            return $row->studyyear <= $stage->currentstudyyear;
+        });
+    }
     // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
     // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
     $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
@@ -2184,21 +2193,29 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
 
     // 3. Bilan par thématique obligatoire, toutes années confondues : complète le bilan par année
     // ci-dessus en montrant aussi les thématiques sur lesquelles rien n'a encore été saisi. Un
-    // seul tableau, avec la plage d'années en colonne plutôt qu'un titre par plage.
+    // seul tableau, avec la plage d'années en colonne plutôt qu'un titre par plage, et surtout
+    // l'année limite de validation : c'est l'échéance qui compte pour l'étudiant, une thématique
+    // bornée à une plage n'étant vérifiée qu'à sa dernière année (voir stage_theme_final_year()).
     echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
     if (empty($mandatorythemes)) {
         echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
     } else {
         $themetable = new html_table();
         $themetable->head = array_merge(
-            [get_string('theme', 'mod_stage'), get_string('studyyear', 'mod_stage')],
+            [
+                get_string('theme', 'mod_stage'),
+                get_string('studyyear', 'mod_stage'),
+                get_string('completebyyear', 'mod_stage'),
+            ],
             stage_progress_table_head()
         );
         foreach ($mandatorythemes as $t) {
+            $finalyear = stage_theme_final_year($t->theme);
             $themetable->data[] = array_merge(
                 [
                     format_string($t->theme->name),
                     stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear),
+                    $finalyear !== null ? stage_studyyear_label($finalyear) : '-',
                 ],
                 stage_render_progress_cells($t->retained, $t->requiredduration, $t->done)
             );
