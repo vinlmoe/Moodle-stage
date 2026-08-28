@@ -91,6 +91,7 @@ if ($theme) {
 stage_detail_row(get_string('structure', 'mod_stage'), s($entry->structure));
 if (!empty($entry->abroad)) {
     echo html_writer::tag('p', html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info'));
+    stage_detail_row(get_string('country', 'mod_stage'), s($entry->country));
 }
 stage_detail_row(get_string('datestart', 'mod_stage'), $entry->datestart ? userdate($entry->datestart, $dateformat) : null);
 stage_detail_row(get_string('dateend', 'mod_stage'), $entry->dateend ? userdate($entry->dateend, $dateformat) : null);
@@ -98,6 +99,13 @@ stage_detail_row(get_string('declaredduration', 'mod_stage'), $entry->declareddu
 stage_detail_row(get_string('retainedduration', 'mod_stage'), $entry->retainedduration);
 stage_detail_row(get_string('status', 'mod_stage'),
     html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status)));
+
+// Jours de stage effectifs sélectionnés par l'étudiant parmi les plages de la saisie, s'il y en a.
+$periods = stage_get_or_seed_entry_periods($entry);
+if (!empty($periods)) {
+    echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);
+    echo stage_render_workday_picker($periods, stage_get_entry_workdays($entry->id), false);
+}
 
 // Motif d'annulation, le cas échéant.
 if ((int) $entry->status === STAGE_STATUS_ANNULE) {

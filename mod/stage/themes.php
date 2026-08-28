@@ -108,6 +108,8 @@ if ($action === 'edit') {
         $record->requiredduration = $data->requiredduration;
         $record->minstudyyear = $data->minstudyyear;
         $record->maxstudyyear = $data->maxstudyyear;
+        $record->requiredabroaddays = $data->requiredabroaddays;
+        $record->abroadrule = $data->abroadrule;
         $record->sortorder = $data->sortorder;
         $record->visible = !empty($data->visible) ? 1 : 0;
         $record->timemodified = time();
@@ -171,6 +173,7 @@ if (empty($themes)) {
         get_string('maxstudyyear', 'mod_stage'),
         get_string('mandatory', 'mod_stage'),
         get_string('requiredduration', 'mod_stage'),
+        get_string('abroadtotal', 'mod_stage'),
         get_string('visible'),
         get_string('actions', 'mod_stage'),
     ];
@@ -179,6 +182,9 @@ if (empty($themes)) {
         $durationlabel = !empty($theme->requiredduration)
             ? $theme->requiredduration
             : html_writer::span(get_string('durationperyear', 'mod_stage'), 'text-muted');
+        $abroadlabel = !empty($theme->requiredabroaddays)
+            ? $theme->requiredabroaddays . ($theme->abroadrule ? ' *' : '')
+            : '-';
         $minstudyyearselect = html_writer::select(stage_studyyear_options(), 'minstudyyear_' . $theme->id,
             $theme->minstudyyear, false, ['class' => 'form-control']);
         $maxstudyyearselect = html_writer::select(stage_studyyear_options(), 'maxstudyyear_' . $theme->id,
@@ -205,7 +211,7 @@ if (empty($themes)) {
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
 
         $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
-            $durationlabel, $visible, $actions];
+            $durationlabel, $abroadlabel, $visible, $actions];
     }
     echo html_writer::table($table);
 
