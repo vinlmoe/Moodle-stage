@@ -347,6 +347,9 @@ $string['noreferentteacheryet'] = 'No referent teacher has been assigned to you 
 $string['conventionvalidatedpdferror'] = 'The request was validated, but PDF generation failed: {$a} You will be '
     . 'able to re-download the agreement from this list once the issue is resolved.';
 $string['conventionstatus_teacherpending'] = 'Awaiting referent teacher';
+$string['conventionstatus_exempt'] = 'No convention';
+$string['exemptfromconvention'] = 'Exempt from convention';
+$string['exemptfromconvention_help'] = 'If checked, this internship does not require any convention: its convention status is set directly to "No convention" and the student\'s self-evaluation is immediately opened, without waiting for a request or a signature.';
 $string['conventionrequireteachervalidation'] = 'Require referent teacher validation before sending to the DEVE';
 $string['conventionrequireteachervalidation_help'] = 'If enabled, an agreement request submitted by a student '
     . 'must first be validated by one of their referent teachers before it appears in the list of requests to '

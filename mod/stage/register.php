@@ -204,6 +204,7 @@ if ($mode === 'single') {
         $toform->structure = $entry->structure;
         $toform->abroad = $entry->abroad;
         $toform->country = $entry->country;
+        $toform->exemptfromconvention = (int) $entry->conventionstatus === STAGE_CONVENTION_EXEMPT ? 1 : 0;
         $toform->datestart = $entry->datestart;
         $toform->dateend = $entry->dateend;
         $toform->declaredduration = $entry->declaredduration;
@@ -216,9 +217,11 @@ if ($mode === 'single') {
         if ($entry) {
             stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
                 $data->declaredduration, $data->studyyear, $data->abroad, $data->country);
+            stage_set_entry_convention_exempt($entry, !empty($data->exemptfromconvention));
         } else {
+            $conventionstatus = !empty($data->exemptfromconvention) ? STAGE_CONVENTION_EXEMPT : STAGE_CONVENTION_NONE;
             stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure, $data->datestart,
-                $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE, $data->abroad,
+                $data->dateend, $data->declaredduration, $data->studyyear, $conventionstatus, $data->abroad,
                 $data->country);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);

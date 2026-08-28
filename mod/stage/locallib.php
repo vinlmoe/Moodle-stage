@@ -96,6 +96,8 @@ function stage_convention_status_label($status) {
             return get_string('conventionstatus_signvet', 'mod_stage');
         case STAGE_CONVENTION_TEACHERPENDING:
             return get_string('conventionstatus_teacherpending', 'mod_stage');
+        case STAGE_CONVENTION_EXEMPT:
+            return get_string('conventionstatus_exempt', 'mod_stage');
         default:
             return get_string('conventionstatus_none', 'mod_stage');
     }
@@ -103,14 +105,15 @@ function stage_convention_status_label($status) {
 
 /**
  * Indique si un statut de convention équivaut à "signée" (ouvre le droit à l'auto-évaluation et
- * à l'évaluation) : signée via le circuit de gestion de convention de ce plugin, ou signée sur
- * SignVet (stages enregistrés en masse par la DEVE, hors de ce circuit).
+ * à l'évaluation) : signée via le circuit de gestion de convention de ce plugin, signée sur
+ * SignVet (stages enregistrés en masse par la DEVE, hors de ce circuit), ou dispensée de
+ * convention par la DEVE lors de l'enregistrement du stage.
  *
  * @param int $status
  * @return bool
  */
 function stage_convention_is_signed($status) {
-    return in_array((int) $status, [STAGE_CONVENTION_SIGNED, STAGE_CONVENTION_SIGNVET], true);
+    return in_array((int) $status, [STAGE_CONVENTION_SIGNED, STAGE_CONVENTION_SIGNVET, STAGE_CONVENTION_EXEMPT], true);
 }
 
 /**
@@ -133,6 +136,8 @@ function stage_convention_status_badgeclass($status) {
             return 'badge-success';
         case STAGE_CONVENTION_TEACHERPENDING:
             return 'badge-warning';
+        case STAGE_CONVENTION_EXEMPT:
+            return 'badge-success';
         default:
             return 'badge-secondary';
     }
@@ -2583,6 +2588,36 @@ function stage_save_convention_detail($entryid, stdClass $data) {
         $data->timecreated = time();
         $DB->insert_record('stage_convention_detail', $data);
     }
+}
+
+/**
+ * Applique ou retire la dispense de convention d'une saisie de stage, à l'initiative de la DEVE
+ * lors de son enregistrement ou de son édition (voir register.php, case à cocher "Dispenser de
+ * convention"). N'a d'effet que si aucune demande de convention réelle n'est en cours ou aboutie
+ * (statut "aucune", "dispensée" ou "refusée") : ne touche pas au statut d'un stage dont la
+ * convention a déjà été demandée, éditée, signée ou signée sur SignVet, pour ne pas écraser
+ * silencieusement un circuit de convention en cours.
+ *
+ * @param stdClass $entry
+ * @param bool $exempt
+ * @return void
+ */
+function stage_set_entry_convention_exempt(stdClass $entry, $exempt) {
+    global $DB;
+
+    $status = (int) $entry->conventionstatus;
+    if (!in_array($status, [STAGE_CONVENTION_NONE, STAGE_CONVENTION_EXEMPT, STAGE_CONVENTION_REJECTED], true)) {
+        return;
+    }
+
+    $newstatus = $exempt ? STAGE_CONVENTION_EXEMPT : STAGE_CONVENTION_NONE;
+    if ($status === $newstatus) {
+        return;
+    }
+
+    $entry->conventionstatus = $newstatus;
+    $entry->timemodified = time();
+    $DB->update_record('stage_entry', $entry);
 }
 
 /**

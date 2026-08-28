@@ -88,6 +88,11 @@ class deve_entry_form extends \moodleform {
         $mform->setType('declaredduration', PARAM_INT);
         $mform->addRule('declaredduration', null, 'required', null, 'client');
 
+        // Dispense de convention : ouvre directement le droit à l'auto-évaluation, sans passer
+        // par le circuit de demande/signature de convention (voir STAGE_CONVENTION_EXEMPT).
+        $mform->addElement('advcheckbox', 'exemptfromconvention', get_string('exemptfromconvention', 'mod_stage'));
+        $mform->addHelpButton('exemptfromconvention', 'exemptfromconvention', 'mod_stage');
+
         $this->add_action_buttons();
     }
 

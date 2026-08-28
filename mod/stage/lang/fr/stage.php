@@ -356,6 +356,9 @@ $string['noreferentteacheryet'] = "Aucun enseignant référent ne vous a encore 
 $string['conventionvalidatedpdferror'] = 'La demande a été validée, mais la génération du PDF a échoué : {$a} '
     . 'Vous pourrez retélécharger la convention depuis cette liste une fois le problème résolu.';
 $string['conventionstatus_teacherpending'] = "En attente de l'enseignant référent";
+$string['conventionstatus_exempt'] = 'Sans convention';
+$string['exemptfromconvention'] = 'Dispenser de convention';
+$string['exemptfromconvention_help'] = "Si coché, ce stage ne nécessite aucune convention : son statut de convention passe directement à « Sans convention » et l'auto-évaluation de l'étudiant est immédiatement ouverte, sans attendre de demande ni de signature.";
 $string['conventionrequireteachervalidation'] = "Exiger la validation de l'enseignant.e référent.e avant transmission à la DEVE";
 $string['conventionrequireteachervalidation_help'] = "Si activé, une demande de convention soumise par un étudiant "
     . "doit d'abord être validée par l'un de ses enseignants référents avant d'apparaître dans la liste des "
