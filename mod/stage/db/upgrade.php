@@ -474,5 +474,55 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082418, 'stage');
     }
 
+    if ($oldversion < 2026082419) {
+        // Obligation de mobilité internationale par thématique (jours à l'étranger requis, tous
+        // stages confondus) et règle associée affichée à l'étudiant.
+        $themetable = new xmldb_table('stage_theme');
+        $field = new xmldb_field('requiredabroaddays', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0',
+            'maxstudyyear');
+        if (!$dbman->field_exists($themetable, $field)) {
+            $dbman->add_field($themetable, $field);
+        }
+        $field = new xmldb_field('abroadrule', XMLDB_TYPE_TEXT, null, null, null, null, null, 'requiredabroaddays');
+        if (!$dbman->field_exists($themetable, $field)) {
+            $dbman->add_field($themetable, $field);
+        }
+
+        // Pays du stage, renseigné quand la saisie est marquée "à l'étranger".
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('country', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'abroad');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        // Plages de dates multiples pour une saisie de stage.
+        $periodtable = new xmldb_table('stage_entry_period');
+        $periodtable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $periodtable->add_field('entryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $periodtable->add_field('datestart', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $periodtable->add_field('dateend', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $periodtable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $periodtable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $periodtable->add_key('entryid', XMLDB_KEY_FOREIGN, ['entryid'], 'stage_entry', ['id']);
+        if (!$dbman->table_exists($periodtable)) {
+            $dbman->create_table($periodtable);
+        }
+
+        // Jours de stage effectifs sélectionnés par l'étudiant parmi ces plages.
+        $workdaytable = new xmldb_table('stage_entry_workday');
+        $workdaytable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $workdaytable->add_field('entryid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $workdaytable->add_field('workdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $workdaytable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $workdaytable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $workdaytable->add_key('entryid', XMLDB_KEY_FOREIGN, ['entryid'], 'stage_entry', ['id']);
+        $workdaytable->add_index('entryid-workdate', XMLDB_INDEX_UNIQUE, ['entryid', 'workdate']);
+        if (!$dbman->table_exists($workdaytable)) {
+            $dbman->create_table($workdaytable);
+        }
+
+        upgrade_mod_savepoint(true, 2026082419, 'stage');
+    }
+
     return true;
 }

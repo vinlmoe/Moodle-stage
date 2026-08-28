@@ -248,6 +248,35 @@ function stage_theme_option_label(stdClass $theme) {
 }
 
 /**
+ * Affiche un encart rappelant les règles de mobilité internationale des thématiques qui en
+ * définissent une (stage_theme.abroadrule), pour que l'étudiant en prenne connaissance avant de
+ * choisir sa thématique et de déclarer un stage à l'étranger.
+ *
+ * @param array $themes Liste de stage_theme
+ * @return string HTML, chaîne vide si aucune thématique n'a de règle définie.
+ */
+function stage_render_abroad_rules(array $themes) {
+    $rows = [];
+    foreach ($themes as $theme) {
+        if (empty($theme->abroadrule)) {
+            continue;
+        }
+        $line = html_writer::tag('strong', format_string($theme->name)) . ' : '
+            . format_text($theme->abroadrule, FORMAT_PLAIN);
+        if (!empty($theme->requiredabroaddays)) {
+            $line .= ' (' . get_string('abroaddaysrequired', 'mod_stage') . ' : ' . $theme->requiredabroaddays . ')';
+        }
+        $rows[] = $line;
+    }
+    if (empty($rows)) {
+        return '';
+    }
+    return html_writer::tag('div',
+        html_writer::tag('p', html_writer::tag('strong', get_string('abroadrule', 'mod_stage'))) . html_writer::alist($rows),
+        ['class' => 'alert alert-info']);
+}
+
+/**
  * Retourne la durée obligatoire requise pour une thématique, pour une année d'étude donnée
  * (utilisée à l'année finale de la thématique pour une thématique à plage, voir
  * stage_theme_final_year()). Une thématique définit soit une durée unique pour l'ensemble de la
@@ -291,6 +320,29 @@ function stage_get_theme_durations($themeid) {
         $durations[(int) $record->studyyear] = (int) $record->requiredduration;
     }
     return $durations;
+}
+
+/**
+ * Retourne le nombre de jours de stage à l'étranger retenus pour un étudiant sur une thématique
+ * donnée, tous stages confondus (obligatoires ou complémentaires), pour vérifier l'obligation de
+ * mobilité internationale propre à cette thématique (stage_theme.requiredabroaddays). Contrairement
+ * au bilan des durées obligatoires, les stages complémentaires comptent ici.
+ *
+ * @param int $stageid
+ * @param int $userid
+ * @param int $themeid
+ * @return int
+ */
+function stage_get_student_theme_abroad_days($stageid, $userid, $themeid) {
+    global $DB;
+
+    return (int) $DB->get_field_sql(
+        'SELECT COALESCE(SUM(retainedduration), 0)
+           FROM {stage_entry}
+          WHERE stageid = :stageid AND userid = :userid AND themeid = :themeid
+                AND abroad = 1 AND status = :status',
+        ['stageid' => $stageid, 'userid' => $userid, 'themeid' => $themeid, 'status' => STAGE_STATUS_VALIDE_DEVE]
+    );
 }
 
 /**
@@ -516,11 +568,25 @@ function stage_get_student_year_progress($stageid, $userid) {
             if ($themerequired > 0 && !$themedone) {
                 $themesdone = false;
             }
+
+            // Obligation de mobilité internationale propre à la thématique (tous stages
+            // confondus, y compris complémentaires), vérifiée en même temps que sa durée.
+            $abroadrequired = (int) $theme->requiredabroaddays;
+            $abroadretained = $abroadrequired > 0
+                ? stage_get_student_theme_abroad_days($stageid, $userid, $theme->id) : 0;
+            $abroaddone = $abroadrequired <= 0 || $abroadretained >= $abroadrequired;
+            if ($abroadrequired > 0 && !$abroaddone) {
+                $themesdone = false;
+            }
+
             $themerows[] = (object) [
                 'theme' => $theme,
                 'required' => $themerequired,
                 'retained' => $themeretained,
                 'done' => $themedone,
+                'abroadrequired' => $abroadrequired,
+                'abroadretained' => $abroadretained,
+                'abroaddone' => $abroaddone,
             ];
         }
 
@@ -766,10 +832,11 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
  *                               (stages déjà signés sur SignVet, hors circuit de gestion de
  *                               convention de ce plugin).
  * @param int $abroad Stage effectué à l'étranger (0 ou 1).
+ * @param string $country Pays du stage, si $abroad.
  * @return int Id de la saisie créée.
  */
 function stage_register_entry($stageid, $studentid, $themeid, $structure, $datestart, $dateend, $declaredduration,
-        $studyyear = 0, $conventionstatus = STAGE_CONVENTION_NONE, $abroad = 0) {
+        $studyyear = 0, $conventionstatus = STAGE_CONVENTION_NONE, $abroad = 0, $country = '') {
     global $DB;
 
     $record = new stdClass();
@@ -779,6 +846,7 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
     $record->studyyear = $studyyear;
     $record->structure = $structure;
     $record->abroad = $abroad ? 1 : 0;
+    $record->country = $abroad ? $country : '';
     $record->datestart = $datestart;
     $record->dateend = $dateend;
     $record->declaredduration = $declaredduration;
@@ -803,14 +871,16 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
  * @param int $declaredduration
  * @param int $studyyear
  * @param int $abroad
+ * @param string $country
  * @return void
  */
 function stage_update_entry_details(stdClass $entry, $themeid, $structure, $datestart, $dateend, $declaredduration,
-        $studyyear = 0, $abroad = 0) {
+        $studyyear = 0, $abroad = 0, $country = '') {
     global $DB;
 
     $entry->themeid = $themeid;
     $entry->abroad = $abroad ? 1 : 0;
+    $entry->country = $abroad ? $country : '';
     $entry->studyyear = $studyyear;
     $entry->structure = $structure;
     $entry->datestart = $datestart;
@@ -818,6 +888,210 @@ function stage_update_entry_details(stdClass $entry, $themeid, $structure, $date
     $entry->declaredduration = $declaredduration;
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
+}
+
+/**
+ * Retourne les plages de dates définies pour une saisie de stage, triées chronologiquement.
+ *
+ * @param int $entryid
+ * @return array
+ */
+function stage_get_entry_periods($entryid) {
+    global $DB;
+
+    return $DB->get_records('stage_entry_period', ['entryid' => $entryid], 'datestart ASC');
+}
+
+/**
+ * Retourne les plages de dates d'une saisie, ou une plage unique reconstituée à partir de ses
+ * dates de début/fin (compatibilité avec les saisies existantes, créées avant l'introduction des
+ * plages multiples) si aucune plage n'a encore été définie explicitement.
+ *
+ * @param stdClass $entry
+ * @return array
+ */
+function stage_get_or_seed_entry_periods(stdClass $entry) {
+    $periods = stage_get_entry_periods($entry->id);
+    if (!empty($periods)) {
+        return $periods;
+    }
+    if (empty($entry->datestart) || empty($entry->dateend)) {
+        return [];
+    }
+    return [(object) [
+        'id' => 0,
+        'entryid' => $entry->id,
+        'datestart' => $entry->datestart,
+        'dateend' => $entry->dateend,
+    ]];
+}
+
+/**
+ * Remplace les plages de dates d'une saisie de stage par la liste fournie. Les plages invalides
+ * (dates manquantes ou fin antérieure au début) sont ignorées.
+ *
+ * @param int $entryid
+ * @param array $periods Liste de tableaux ['datestart' => int, 'dateend' => int]
+ * @return void
+ */
+function stage_save_entry_periods($entryid, array $periods) {
+    global $DB;
+
+    $DB->delete_records('stage_entry_period', ['entryid' => $entryid]);
+
+    $records = [];
+    foreach ($periods as $period) {
+        $start = $period['datestart'] ?? 0;
+        $end = $period['dateend'] ?? 0;
+        if (empty($start) || empty($end) || $start > $end) {
+            continue;
+        }
+        $records[] = (object) [
+            'entryid' => $entryid,
+            'datestart' => $start,
+            'dateend' => $end,
+            'timecreated' => time(),
+        ];
+    }
+    if ($records) {
+        $DB->insert_records('stage_entry_period', $records);
+    }
+}
+
+/**
+ * Retourne la liste des jours (timestamps à minuit, heure du serveur) compris dans une plage de
+ * dates, bornes incluses.
+ *
+ * @param stdClass $period
+ * @return array
+ */
+function stage_get_period_days(stdClass $period) {
+    $days = [];
+    $startinfo = usergetdate($period->datestart);
+    $endinfo = usergetdate($period->dateend);
+    $cursor = make_timestamp($startinfo['year'], $startinfo['mon'], $startinfo['mday'], 0, 0, 0);
+    $end = make_timestamp($endinfo['year'], $endinfo['mon'], $endinfo['mday'], 0, 0, 0);
+    while ($cursor <= $end) {
+        $days[] = $cursor;
+        $cursor += DAYSECS;
+    }
+    return $days;
+}
+
+/**
+ * Retourne les jours de stage effectifs sélectionnés pour une saisie (voir
+ * stage_set_entry_workdays()), triés chronologiquement.
+ *
+ * @param int $entryid
+ * @return array int[] Timestamps (minuit, heure du serveur)
+ */
+function stage_get_entry_workdays($entryid) {
+    global $DB;
+
+    $dates = $DB->get_fieldset_select('stage_entry_workday', 'workdate', 'entryid = :entryid', ['entryid' => $entryid]);
+    $dates = array_map('intval', $dates);
+    sort($dates);
+    return $dates;
+}
+
+/**
+ * Enregistre les jours de stage effectifs sélectionnés par l'étudiant parmi les plages de sa
+ * saisie (voir stage_get_or_seed_entry_periods()), visibles et modifiables par l'enseignant
+ * référent et la DEVE lors de la validation.
+ *
+ * @param int $entryid
+ * @param array $dates Timestamps (minuit, heure du serveur)
+ * @return void
+ */
+function stage_set_entry_workdays($entryid, array $dates) {
+    global $DB;
+
+    $DB->delete_records('stage_entry_workday', ['entryid' => $entryid]);
+
+    $records = [];
+    $now = time();
+    foreach (array_unique(array_map('intval', $dates)) as $date) {
+        if (empty($date)) {
+            continue;
+        }
+        $records[] = (object) ['entryid' => $entryid, 'workdate' => $date, 'timecreated' => $now];
+    }
+    if ($records) {
+        $DB->insert_records('stage_entry_workday', $records);
+    }
+}
+
+/**
+ * Vérifie si un ensemble de jours de stage sélectionnés enfreint la règle d'au moins un jour de
+ * repos par semaine : vrai si une fenêtre de 7 jours consécutifs est entièrement sélectionnée
+ * (aucun jour de repos). Vérification indicative uniquement (non bloquante), affichée en
+ * avertissement à l'étudiant, l'enseignant référent et la DEVE.
+ *
+ * @param array $dates Timestamps (minuit, heure du serveur)
+ * @return bool
+ */
+function stage_workdays_violate_restday_rule(array $dates) {
+    $set = array_flip($dates);
+    foreach ($dates as $date) {
+        $fullweek = true;
+        for ($i = 0; $i < 7; $i++) {
+            if (!isset($set[$date + $i * DAYSECS])) {
+                $fullweek = false;
+                break;
+            }
+        }
+        if ($fullweek) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Produit le HTML d'un sélecteur de jours de stage effectifs, groupé par plage de dates : cases à
+ * cocher si $editable, simples badges en lecture seule sinon. Inclut le rappel de la règle d'un
+ * jour de repos minimum par semaine. Utilisé par l'auto-évaluation de l'étudiant (entry.php) ainsi
+ * que par les pages d'évaluation enseignant (teacher.php) et de validation DEVE (deve.php), qui
+ * peuvent toutes deux consulter et modifier la sélection de l'étudiant.
+ *
+ * @param array $periods Liste de stage_entry_period (voir stage_get_or_seed_entry_periods())
+ * @param array $selected Timestamps sélectionnés
+ * @param bool $editable
+ * @param string $fieldname Nom du champ de formulaire (sans les crochets []) si $editable
+ * @return string
+ */
+function stage_render_workday_picker(array $periods, array $selected, $editable, $fieldname = 'workdays') {
+    if (empty($periods)) {
+        return html_writer::tag('p', get_string('noperiodsdefined', 'mod_stage'), ['class' => 'text-muted']);
+    }
+
+    $dateformat = get_string('strftimedateshort', 'langconfig');
+    $selectedset = array_flip($selected);
+
+    $out = html_writer::tag('p', get_string('restdayrule', 'mod_stage'), ['class' => 'alert alert-info']);
+    foreach ($periods as $period) {
+        $out .= html_writer::tag('p', html_writer::tag('strong',
+            userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat)));
+        $out .= html_writer::start_div('stage-workday-grid d-flex flex-wrap');
+        foreach (stage_get_period_days($period) as $day) {
+            $checked = isset($selectedset[$day]);
+            if ($editable) {
+                $out .= html_writer::tag('label',
+                    html_writer::checkbox($fieldname . '[]', $day, $checked, ' ' . userdate($day, '%d/%m')),
+                    ['class' => 'mr-3 mb-1']);
+            } else {
+                $out .= html_writer::span(userdate($day, '%d/%m'),
+                    'badge mr-1 mb-1 ' . ($checked ? 'badge-success' : 'badge-light'));
+            }
+        }
+        $out .= html_writer::end_div();
+    }
+
+    if (stage_workdays_violate_restday_rule($selected)) {
+        $out .= html_writer::div(get_string('restdaywarning', 'mod_stage'), 'alert alert-warning mt-2');
+    }
+
+    return $out;
 }
 
 /**
@@ -1769,6 +2043,26 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                     $themerow->retained,
                     $themerow->required > 0 ? $themestatus : '-',
                 ];
+                // Obligation de mobilité internationale propre à cette thématique, le cas échéant.
+                if ($themerow->abroadrequired > 0) {
+                    $abroadstatus = $themerow->abroaddone
+                        ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                        : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+                    $yeartable->data[] = [
+                        html_writer::tag('em', get_string('abroadtotal', 'mod_stage')
+                            . ' - ' . format_string($themerow->theme->name)),
+                        $themerow->abroadrequired,
+                        $themerow->abroadretained,
+                        $abroadstatus,
+                    ];
+                    if (!empty($themerow->theme->abroadrule)) {
+                        $yeartable->data[] = [
+                            html_writer::tag('small', format_text($themerow->theme->abroadrule, FORMAT_PLAIN),
+                                ['class' => 'text-muted']),
+                            '', '', '',
+                        ];
+                    }
+                }
             }
             echo html_writer::table($yeartable);
         }

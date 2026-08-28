@@ -71,6 +71,10 @@ class student_register_form extends \moodleform {
 
         $mform->addElement('advcheckbox', 'abroad', get_string('abroad', 'mod_stage'));
 
+        $mform->addElement('text', 'country', get_string('country', 'mod_stage'), ['size' => '32']);
+        $mform->setType('country', PARAM_TEXT);
+        $mform->hideIf('country', 'abroad', 'notchecked');
+
         $mform->addElement('date_selector', 'datestart', get_string('datestart', 'mod_stage'));
         $mform->addElement('date_selector', 'dateend', get_string('dateend', 'mod_stage'));
 

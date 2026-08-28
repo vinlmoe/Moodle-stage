@@ -129,7 +129,9 @@ if ($mode === 'list') {
         }
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
-        $actions = html_writer::link($editurl, get_string('edit'));
+        $periodsurl = new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+        $actions = html_writer::link($editurl, get_string('edit')) . ' | '
+            . html_writer::link($periodsurl, get_string('periods', 'mod_stage'));
         $conventionstatus = (int) $entry->conventionstatus;
         if ($conventionstatus === STAGE_CONVENTION_REQUESTED) {
             $reviewurl = new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]);
@@ -201,6 +203,7 @@ if ($mode === 'single') {
         $toform->studyyear = $entry->studyyear;
         $toform->structure = $entry->structure;
         $toform->abroad = $entry->abroad;
+        $toform->country = $entry->country;
         $toform->datestart = $entry->datestart;
         $toform->dateend = $entry->dateend;
         $toform->declaredduration = $entry->declaredduration;
@@ -212,10 +215,11 @@ if ($mode === 'single') {
     } else if ($data = $mform->get_data()) {
         if ($entry) {
             stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
-                $data->declaredduration, $data->studyyear, $data->abroad);
+                $data->declaredduration, $data->studyyear, $data->abroad, $data->country);
         } else {
             stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure, $data->datestart,
-                $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE, $data->abroad);
+                $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE, $data->abroad,
+                $data->country);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
@@ -223,6 +227,7 @@ if ($mode === 'single') {
     echo $OUTPUT->header();
     echo $OUTPUT->heading($entry ? get_string('editstage', 'mod_stage') : get_string('registerstage', 'mod_stage'));
     echo html_writer::link($baseurl, get_string('back'));
+    echo stage_render_abroad_rules($themes);
     $mform->display();
     echo $OUTPUT->footer();
     exit;
@@ -236,6 +241,7 @@ if ($mode === 'bulk') {
         $themeid = required_param('themeid', PARAM_INT);
         $studyyear = optional_param('studyyear', 0, PARAM_INT);
         $abroad = optional_param('abroad', 0, PARAM_INT);
+        $country = optional_param('country', '', PARAM_TEXT);
         $structure = optional_param('structure', '', PARAM_TEXT);
         $datestartraw = optional_param('datestart', '', PARAM_TEXT);
         $dateendraw = optional_param('dateend', '', PARAM_TEXT);
@@ -264,7 +270,7 @@ if ($mode === 'bulk') {
             // Les stages enregistrés en masse sont déjà signés sur SignVet au moment de leur
             // enregistrement : pas de gestion de convention à faire dans ce plugin pour eux.
             stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration,
-                $studyyear, STAGE_CONVENTION_SIGNVET, $abroad);
+                $studyyear, STAGE_CONVENTION_SIGNVET, $abroad, $country);
             $existing[$key] = true;
             $bulkresults->created++;
         }
@@ -305,8 +311,25 @@ if ($mode === 'bulk') {
     echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'structure', 'id' => 'structure', 'class' => 'form-control']);
 
     echo html_writer::start_tag('div', ['class' => 'form-check my-2']);
-    echo html_writer::checkbox('abroad', 1, false, ' ' . get_string('abroad', 'mod_stage'), ['class' => 'form-check-input']);
+    echo html_writer::checkbox('abroad', 1, false, ' ' . get_string('abroad', 'mod_stage'),
+        ['class' => 'form-check-input', 'id' => 'abroad']);
     echo html_writer::end_tag('div');
+
+    echo html_writer::start_tag('div', ['id' => 'countryfieldwrapper', 'style' => 'display:none']);
+    echo html_writer::tag('label', get_string('country', 'mod_stage'), ['for' => 'country']);
+    echo html_writer::empty_tag('input', [
+        'type' => 'text', 'name' => 'country', 'id' => 'country', 'class' => 'form-control',
+    ]);
+    echo html_writer::end_tag('div');
+    echo html_writer::script("
+        (function() {
+            var abroad = document.getElementById('abroad');
+            var wrapper = document.getElementById('countryfieldwrapper');
+            function toggle() { wrapper.style.display = abroad.checked ? '' : 'none'; }
+            abroad.addEventListener('change', toggle);
+            toggle();
+        })();
+    ");
 
     echo html_writer::tag('label', get_string('datestart', 'mod_stage'));
     echo html_writer::empty_tag('input', ['type' => 'date', 'name' => 'datestart', 'class' => 'form-control']);

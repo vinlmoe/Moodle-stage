@@ -92,7 +92,7 @@ if ($mform->is_cancelled()) {
 } else if ($data = $mform->get_data()) {
     $entryid = stage_register_entry($stage->id, $USER->id, $data->themeid, $data->structure,
         $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE,
-        $data->abroad);
+        $data->abroad, $data->country);
     $entry = $DB->get_record('stage_entry', ['id' => $entryid], '*', MUST_EXIST);
 
     $requireteachervalidation = stage_convention_requires_teacher_validation($stage);
@@ -140,6 +140,7 @@ echo $OUTPUT->heading(get_string('registerstageandconvention', 'mod_stage'));
 echo html_writer::link($viewurl, get_string('back'));
 
 echo $OUTPUT->box(get_string('registerstageandconvention_help', 'mod_stage'), 'generalbox mb-3');
+echo stage_render_abroad_rules($themes);
 
 $mform->display();
 

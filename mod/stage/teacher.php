@@ -63,6 +63,17 @@ if ($entryid) {
     // évaluée (ou rejetée), seule la DEVE peut réinitialiser la saisie pour la rouvrir.
     $editable = ((int) $entry->status === STAGE_STATUS_EVAL_ETUDIANT);
 
+    $periods = stage_get_or_seed_entry_periods($entry);
+
+    // Jours de stage effectifs sélectionnés par l'étudiant : visibles et modifiables ici par
+    // l'enseignant référent (formulaire distinct de l'évaluation, avec son propre bouton).
+    if ($editable && !empty($periods) && optional_param('saveworkdays', 0, PARAM_INT) && confirm_sesskey()) {
+        $workdays = optional_param_array('workdays', [], PARAM_INT);
+        stage_set_entry_workdays($entry->id, $workdays);
+        redirect(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entryid]),
+            get_string('workdayssaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+    }
+
     if ($editable && data_submitted() && confirm_sesskey()) {
         if (optional_param('rejectstage', '', PARAM_RAW) !== '') {
             $rejectcomment = optional_param('rejectcomment', '', PARAM_RAW);
@@ -97,6 +108,23 @@ if ($entryid) {
         echo stage_render_answers_readonly($studentquestions, stage_get_answers($entry->id));
     } else {
         echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
+    }
+
+    if (!empty($periods)) {
+        echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);
+        if ($editable) {
+            $workdaysformurl = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+            echo html_writer::start_tag('form', ['method' => 'post', 'action' => $workdaysformurl]);
+            echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+            echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'saveworkdays', 'value' => 1]);
+            echo stage_render_workday_picker($periods, stage_get_entry_workdays($entry->id), true);
+            echo html_writer::empty_tag('input', [
+                'type' => 'submit', 'value' => get_string('savechanges'), 'class' => 'btn btn-secondary mt-2',
+            ]);
+            echo html_writer::end_tag('form');
+        } else {
+            echo stage_render_workday_picker($periods, stage_get_entry_workdays($entry->id), false);
+        }
     }
 
     if (!$editable) {

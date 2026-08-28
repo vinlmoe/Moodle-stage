@@ -61,6 +61,18 @@ class theme_form extends \moodleform {
         $mform->addElement('select', 'maxstudyyear', get_string('maxstudyyear', 'mod_stage'), stage_studyyear_options());
         $mform->setDefault('maxstudyyear', 0);
 
+        // Obligation de mobilité internationale propre à cette thématique (année mini/maxi :
+        // voir les deux champs ci-dessus) : tous les stages comptent, obligatoires ou
+        // complémentaires (voir stage_get_student_theme_abroad_days()).
+        $mform->addElement('text', 'requiredabroaddays', get_string('requiredabroaddays', 'mod_stage'));
+        $mform->setType('requiredabroaddays', PARAM_INT);
+        $mform->setDefault('requiredabroaddays', 0);
+        $mform->addHelpButton('requiredabroaddays', 'themeabroaddays', 'mod_stage');
+
+        $mform->addElement('textarea', 'abroadrule', get_string('abroadrule', 'mod_stage'), ['rows' => 3, 'cols' => 60]);
+        $mform->setType('abroadrule', PARAM_TEXT);
+        $mform->addHelpButton('abroadrule', 'abroadrule', 'mod_stage');
+
         $mform->addElement('text', 'sortorder', get_string('sortorder', 'mod_stage'));
         $mform->setType('sortorder', PARAM_INT);
         $mform->setDefault('sortorder', 0);
