@@ -42,6 +42,7 @@ class student_register_form extends \moodleform {
         $themes = $this->_customdata['themes'];
         $templates = $this->_customdata['templates'];
         $referentteachers = $this->_customdata['referentteachers'];
+        $stage = $this->_customdata['stage'];
 
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
@@ -56,6 +57,12 @@ class student_register_form extends \moodleform {
         }
         $mform->addElement('select', 'themeid', get_string('theme', 'mod_stage'), $themeoptions);
         $mform->addRule('themeid', null, 'required', null, 'client');
+
+        // L'étudiant ne peut positionner son stage que sur l'année N (normale), N-1 (dette) ou
+        // N+1 (anticipation), par rapport à l'année d'étude courante définie pour ce cours.
+        $mform->addElement('select', 'studyyear', get_string('studyyear', 'mod_stage'),
+            stage_studyyear_selectable_options($stage));
+        $mform->addRule('studyyear', null, 'required', null, 'client');
 
         $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
         $mform->setType('structure', PARAM_TEXT);

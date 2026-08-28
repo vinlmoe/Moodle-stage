@@ -331,5 +331,116 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082412, 'stage');
     }
 
+    if ($oldversion < 2026082415) {
+        $table = new xmldb_table('stage_theme');
+
+        $minfield = new xmldb_field('minstudyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'requiredduration');
+        if (!$dbman->field_exists($table, $minfield)) {
+            $dbman->add_field($table, $minfield);
+        }
+        $maxfield = new xmldb_field('maxstudyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'minstudyyear');
+        if (!$dbman->field_exists($table, $maxfield)) {
+            $dbman->add_field($table, $maxfield);
+        }
+
+        // Fait migrer l'ancienne année d'étude unique vers la nouvelle plage min/max.
+        $oldfield = new xmldb_field('studyyear');
+        if ($dbman->field_exists($table, $oldfield)) {
+            $DB->execute('UPDATE {stage_theme} SET minstudyyear = studyyear, maxstudyyear = studyyear');
+            $dbman->drop_field($table, $oldfield);
+        }
+
+        upgrade_mod_savepoint(true, 2026082415, 'stage');
+    }
+
+    if ($oldversion < 2026082416) {
+        // Année d'étude courante des étudiants (référence N pour les conventions en N-1/N+1).
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('currentstudyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'conventionrequireteachervalidation');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        // Année d'étude à laquelle chaque saisie de stage est rattachée.
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('studyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'themeid');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        // Durée obligatoire requise par thématique, déclinée par année d'étude (remplace
+        // stage_theme.requiredduration, qui ne permettait qu'une seule valeur par thématique).
+        $durationtable = new xmldb_table('stage_theme_duration');
+        $durationtable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $durationtable->add_field('themeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $durationtable->add_field('studyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0');
+        $durationtable->add_field('requiredduration', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $durationtable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $durationtable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $durationtable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $durationtable->add_key('themeid', XMLDB_KEY_FOREIGN, ['themeid'], 'stage_theme', ['id']);
+        $durationtable->add_index('themeid-studyyear', XMLDB_INDEX_UNIQUE, ['themeid', 'studyyear']);
+        if (!$dbman->table_exists($durationtable)) {
+            $dbman->create_table($durationtable);
+        }
+
+        // Durée totale obligatoire requise par année d'étude, toutes thématiques confondues.
+        $yeartable = new xmldb_table('stage_year_requirement');
+        $yeartable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $yeartable->add_field('stageid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $yeartable->add_field('studyyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0');
+        $yeartable->add_field('requiredduration', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $yeartable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $yeartable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+        $yeartable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $yeartable->add_key('stageid', XMLDB_KEY_FOREIGN, ['stageid'], 'stage', ['id']);
+        $yeartable->add_index('stageid-studyyear', XMLDB_INDEX_UNIQUE, ['stageid', 'studyyear']);
+        if (!$dbman->table_exists($yeartable)) {
+            $dbman->create_table($yeartable);
+        }
+
+        // Migration des données existantes : l'ancienne durée requise unique de chaque thématique
+        // devient sa durée requise pour chacune des années de sa plage [minstudyyear, maxstudyyear]
+        // (ou pour l'année 0 si la thématique ne précise pas d'année). Les saisies existantes
+        // héritent de l'année minimale de leur thématique, faute de mieux.
+        $oldfield = new xmldb_field('requiredduration');
+        if ($dbman->field_exists(new xmldb_table('stage_theme'), $oldfield)) {
+            $themes = $DB->get_records('stage_theme', null, '', 'id, requiredduration, minstudyyear, maxstudyyear');
+            foreach ($themes as $theme) {
+                $minyear = (int) $theme->minstudyyear;
+                $maxyear = (int) $theme->maxstudyyear;
+                if (empty($minyear) && empty($maxyear)) {
+                    $years = [0];
+                } else {
+                    $minyear = $minyear ?: $maxyear;
+                    $maxyear = $maxyear ?: $minyear;
+                    $years = range(min($minyear, $maxyear), max($minyear, $maxyear));
+                }
+                foreach ($years as $year) {
+                    if (!$DB->record_exists('stage_theme_duration', ['themeid' => $theme->id, 'studyyear' => $year])) {
+                        $DB->insert_record('stage_theme_duration', (object) [
+                            'themeid' => $theme->id,
+                            'studyyear' => $year,
+                            'requiredduration' => $theme->requiredduration,
+                            'timecreated' => time(),
+                            'timemodified' => time(),
+                        ]);
+                    }
+                }
+            }
+
+            $DB->execute("UPDATE {stage_entry} e
+                             SET studyyear = COALESCE((SELECT t.minstudyyear FROM {stage_theme} t
+                                                         WHERE t.id = e.themeid), 0)");
+
+            $dbman->drop_field(new xmldb_table('stage_theme'), $oldfield);
+        }
+
+        upgrade_mod_savepoint(true, 2026082416, 'stage');
+    }
+
     return true;
 }

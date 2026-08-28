@@ -56,6 +56,8 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 $links = [];
 if ($canmanagethemes) {
     $links[] = [get_string('managethemes', 'mod_stage'), new moodle_url('/mod/stage/themes.php', ['id' => $cm->id])];
+    $links[] = [get_string('manageyearrequirements', 'mod_stage'),
+        new moodle_url('/mod/stage/year_requirements.php', ['id' => $cm->id])];
     $links[] = [get_string('conventiontemplates', 'mod_stage'),
         new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id])];
 }
