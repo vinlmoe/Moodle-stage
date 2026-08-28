@@ -130,10 +130,15 @@ if ($entryid) {
     $formurl = new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]);
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => $formurl]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+    // Le nombre de jours proposé par défaut est celui coché par l'étudiant lors de son
+    // auto-évaluation (jours de stage effectifs), s'il en a sélectionné ; sinon la durée déjà
+    // retenue ou, à défaut, déclarée. Reste modifiable par la DEVE avant validation.
+    $workdaycount = count(stage_get_entry_workdays($entry->id));
+    $proposedduration = $workdaycount > 0 ? $workdaycount : ($entry->retainedduration ?: $entry->declaredduration);
     echo html_writer::tag('label', get_string('retainedduration', 'mod_stage'), ['for' => 'retainedduration']);
     echo html_writer::empty_tag('input', [
         'type' => 'number', 'name' => 'retainedduration', 'id' => 'retainedduration',
-        'value' => $entry->retainedduration ?: $entry->declaredduration, 'class' => 'form-control', 'min' => 0,
+        'value' => $proposedduration, 'class' => 'form-control', 'min' => 0,
     ]);
     echo html_writer::tag('label', get_string('devecomment', 'mod_stage'), ['for' => 'devecomment']);
     echo html_writer::tag('textarea', s($entry->devecomment),

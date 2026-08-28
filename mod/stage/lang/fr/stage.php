@@ -459,6 +459,8 @@ $string['noassignedstudents'] = "Aucun étudiant ne vous est attribué pour l'in
 $string['nopendingstages'] = 'Aucun stage en attente de validation.';
 $string['confirmdeletetheme'] = 'Supprimer cette thématique ?';
 $string['totalretained'] = 'Durée totale retenue : {$a} jours';
+$string['totalcomplementary'] = 'Dont stages complémentaires (EP) : {$a} jours (hors décompte)';
+$string['complementarystages'] = 'Stages complémentaires (EP)';
 $string['numstages'] = '{$a} stage(s) déclaré(s)';
 
 // Headings.

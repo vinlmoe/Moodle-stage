@@ -485,11 +485,15 @@ function stage_theme_final_year(stdClass $theme) {
  *
  * @param int $stageid
  * @param int $userid
- * @return array int => stdClass{studyyear, retained, required, totaldone, themes, abroad, done}
+ * @return array int => stdClass{studyyear, retained, required, totaldone, themes, abroad,
+ *               complementary, done}
  *               'themes' est un tableau de stdClass{theme, required, retained, done}
  *               'abroad' est absent, sauf à l'année avant laquelle la mobilité internationale
  *               doit être satisfaite (stage->abroadbeforeyear) : stdClass{required, retained, done}
  *               (voir stage_get_student_abroad_progress()).
+ *               'complementary' est la durée retenue des stages complémentaires (EP) de l'année,
+ *               à titre informatif uniquement (voir stage_get_student_complementary_days()) : ne
+ *               compte dans aucune des conditions ci-dessous.
  *               'done' est vrai seulement si la durée totale, toutes les thématiques obligatoires
  *               dues cette année-là (celles ayant une durée requise > 0) ET, à l'année concernée,
  *               l'obligation de mobilité internationale sont validées.
@@ -525,6 +529,10 @@ function stage_get_student_year_progress($stageid, $userid) {
     }
     if ($abroadprogress !== null && $abroadprogress->required > 0) {
         $years[$abroadbeforeyear] = true;
+    }
+    $complementary = stage_get_student_complementary_days($stageid, $userid);
+    foreach ($complementary->byyear as $year => $days) {
+        $years[$year] = true;
     }
 
     // Durées retenues (hors stages complémentaires), regroupées par année, par (thématique,
@@ -599,6 +607,9 @@ function stage_get_student_year_progress($stageid, $userid) {
             'totaldone' => $totaldone,
             'themes' => $themerows,
             'abroad' => $abroad,
+            // Stages complémentaires (EP) de cette année, à titre informatif uniquement : ne
+            // comptent pas dans le décompte des stages obligatoires ni dans 'done'.
+            'complementary' => $complementary->byyear[$year] ?? 0,
             'done' => $totaldone && $themesdone && $abroaddone,
         ];
     }
@@ -2049,6 +2060,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                     $abroadrowstatus,
                 ];
             }
+            // Stages complémentaires (EP) de l'année : ligne à part, purement informative, ne
+            // comptant pas dans le décompte des stages obligatoires (voir
+            // stage_get_student_complementary_days()).
+            if ($row->complementary > 0) {
+                $yeartable->data[] = [
+                    html_writer::tag('em', get_string('complementarystages', 'mod_stage')),
+                    '-',
+                    $row->complementary,
+                    '-',
+                ];
+            }
             echo html_writer::table($yeartable);
         }
     }
@@ -2172,6 +2194,12 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     }
 
     echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
+
+    // Total des stages complémentaires (EP), à part, ne comptant pas dans le total ci-dessus.
+    $complementary = stage_get_student_complementary_days($stage->id, $userid);
+    if ($complementary->total > 0) {
+        echo $OUTPUT->heading(get_string('totalcomplementary', 'mod_stage', $complementary->total), 5);
+    }
 }
 
 /**
@@ -2567,6 +2595,39 @@ function stage_convention_stagetype_options($lang = null) {
 }
 
 /**
+ * Définit le type (obligatoire ou complémentaire) d'une saisie de stage, à l'initiative de la
+ * DEVE lors de son enregistrement ou de son édition (voir register.php). Crée un enregistrement
+ * minimal dans stage_convention_detail si la saisie n'en a pas encore (cas courant d'un stage créé
+ * directement par la DEVE, sans demande de convention par l'étudiant), sans toucher aux autres
+ * champs s'il en existe déjà un.
+ *
+ * @param int $entryid
+ * @param string $stagetype 'obligatoire' ou 'complementaire'
+ * @return void
+ */
+function stage_set_entry_stagetype($entryid, $stagetype) {
+    global $DB;
+
+    $existing = stage_get_convention_detail($entryid);
+    if ($existing) {
+        if ($existing->stagetype === $stagetype) {
+            return;
+        }
+        $existing->stagetype = $stagetype;
+        $existing->timemodified = time();
+        $DB->update_record('stage_convention_detail', $existing);
+    } else {
+        $DB->insert_record('stage_convention_detail', (object) [
+            'entryid' => $entryid,
+            'stagetype' => $stagetype,
+            'yearsituation' => 'normal',
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+    }
+}
+
+/**
  * Récupère les informations complémentaires de convention d'une saisie (coordonnées,
  * organisme d'accueil, tuteur, modalités, gratification, congés).
  *
@@ -2604,6 +2665,37 @@ function stage_get_entry_stagetypes(array $entryids) {
         $stagetypes[$detail->entryid] = $detail->stagetype;
     }
     return $stagetypes;
+}
+
+/**
+ * Calcule, pour un étudiant, la durée retenue (validée DEVE) des stages complémentaires (EP),
+ * globale et par année d'étude. Les stages complémentaires ne comptent pas dans le bilan des
+ * durées obligatoires (voir stage_get_student_year_progress()), mais sont affichés à part, à
+ * titre informatif, dans le bilan par année et le total final de l'étudiant.
+ *
+ * @param int $stageid
+ * @param int $userid
+ * @return stdClass {total, byyear} 'byyear' est un tableau année => jours
+ */
+function stage_get_student_complementary_days($stageid, $userid) {
+    $entries = stage_get_student_entries($stageid, $userid);
+    $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
+
+    $total = 0;
+    $byyear = [];
+    foreach ($entries as $entry) {
+        if (($stagetypes[$entry->id] ?? 'obligatoire') !== 'complementaire') {
+            continue;
+        }
+        if ($entry->status != STAGE_STATUS_VALIDE_DEVE) {
+            continue;
+        }
+        $year = (int) $entry->studyyear;
+        $byyear[$year] = ($byyear[$year] ?? 0) + $entry->retainedduration;
+        $total += $entry->retainedduration;
+    }
+
+    return (object) ['total' => $total, 'byyear' => $byyear];
 }
 
 /**

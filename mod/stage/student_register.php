@@ -131,7 +131,12 @@ if ($mform->is_cancelled()) {
         stage_notify_teacher_convention_pending($stage, $cm, $entry);
     }
 
-    redirect($viewurl, get_string('stageandconventionregistered', 'mod_stage'), null,
+    // Redirige vers la gestion des plages de dates plutôt que directement vers la page de
+    // l'étudiant, pour lui proposer d'en ajouter plusieurs (non contiguës) dès la création,
+    // au lieu de la seule plage saisie ci-dessus.
+    $periodsurl = new moodle_url('/mod/stage/entry_periods.php',
+        ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $viewurl->out_as_local_url(false)]);
+    redirect($periodsurl, get_string('stageandconventionregistered', 'mod_stage'), null,
         \core\output\notification::NOTIFY_SUCCESS);
 }
 

@@ -75,6 +75,12 @@ class deve_entry_form extends \moodleform {
         $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
         $mform->setType('structure', PARAM_TEXT);
 
+        // Un stage complémentaire (EP) ne compte pas dans le décompte des stages obligatoires de
+        // l'année (voir stage_get_student_year_progress()), mais est affiché à part.
+        $mform->addElement('select', 'stagetype', get_string('conventionstagetype', 'mod_stage'),
+            stage_convention_stagetype_options());
+        $mform->setDefault('stagetype', 'obligatoire');
+
         $mform->addElement('advcheckbox', 'abroad', get_string('abroad', 'mod_stage'));
 
         $mform->addElement('text', 'country', get_string('country', 'mod_stage'), ['size' => '32']);
