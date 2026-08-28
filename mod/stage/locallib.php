@@ -2089,6 +2089,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         get_string('theme', 'mod_stage'),
         get_string('studyyear', 'mod_stage'),
         get_string('structure', 'mod_stage'),
+        get_string('abroad', 'mod_stage'),
         get_string('declaredduration', 'mod_stage'),
         get_string('retainedduration', 'mod_stage'),
         get_string('status', 'mod_stage'),
@@ -2097,12 +2098,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     if ($cm && ($selfevallink || $detaillink)) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
+    // Une ligne sur fond distinct pour chaque stage à l'étranger, pour les repérer d'un coup
+    // d'œil dans la liste (voir aussi la colonne dédiée, avec le pays s'il est renseigné).
+    $table->rowclasses = [];
     foreach ($entries as $entry) {
         $theme = $themes[$entry->themeid] ?? null;
         $themename = $theme ? format_string($theme->name) : '-';
-        if (!empty($entry->abroad)) {
-            $themename .= ' ' . html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info');
-        }
+        $abroadcell = !empty($entry->abroad)
+            ? html_writer::span('🌍 ' . ($entry->country !== '' ? s($entry->country) : get_string('abroad', 'mod_stage')),
+                'badge badge-info')
+            : '-';
+        $table->rowclasses[] = !empty($entry->abroad) ? 'table-info' : '';
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $conventionbadge = html_writer::span(stage_convention_status_label($entry->conventionstatus),
             'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
@@ -2110,6 +2116,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $themename,
             stage_studyyear_label($entry->studyyear),
             $entry->structure,
+            $abroadcell,
             $entry->declaredduration,
             $entry->retainedduration,
             $badge,
