@@ -248,6 +248,195 @@ function stage_theme_option_label(stdClass $theme) {
 }
 
 /**
+ * Retourne la durée obligatoire requise pour une thématique, pour une année d'étude donnée. Se
+ * rabat sur la durée définie pour l'année 0 (non spécifiée) si aucune valeur n'existe pour cette
+ * année précise, puis sur 0.
+ *
+ * @param int $themeid
+ * @param int $studyyear
+ * @return int
+ */
+function stage_get_theme_duration($themeid, $studyyear) {
+    global $DB;
+
+    $duration = $DB->get_field('stage_theme_duration', 'requiredduration',
+        ['themeid' => $themeid, 'studyyear' => (int) $studyyear]);
+    if ($duration === false && !empty($studyyear)) {
+        $duration = $DB->get_field('stage_theme_duration', 'requiredduration', ['themeid' => $themeid, 'studyyear' => 0]);
+    }
+    return $duration !== false ? (int) $duration : 0;
+}
+
+/**
+ * Retourne les durées obligatoires requises pour une thématique, indexées par année d'étude
+ * (0 = non spécifiée), pour affichage/édition dans la page de gestion des durées.
+ *
+ * @param int $themeid
+ * @return array int => int
+ */
+function stage_get_theme_durations($themeid) {
+    global $DB;
+
+    $durations = [];
+    foreach ($DB->get_records('stage_theme_duration', ['themeid' => $themeid]) as $record) {
+        $durations[(int) $record->studyyear] = (int) $record->requiredduration;
+    }
+    return $durations;
+}
+
+/**
+ * Définit (crée ou met à jour) la durée obligatoire requise pour une thématique et une année
+ * d'étude donnée.
+ *
+ * @param int $themeid
+ * @param int $studyyear
+ * @param int $requiredduration
+ * @return void
+ */
+function stage_set_theme_duration($themeid, $studyyear, $requiredduration) {
+    global $DB;
+
+    $existing = $DB->get_record('stage_theme_duration', ['themeid' => $themeid, 'studyyear' => (int) $studyyear]);
+    if ($existing) {
+        $existing->requiredduration = $requiredduration;
+        $existing->timemodified = time();
+        $DB->update_record('stage_theme_duration', $existing);
+    } else {
+        $DB->insert_record('stage_theme_duration', (object) [
+            'themeid' => $themeid,
+            'studyyear' => (int) $studyyear,
+            'requiredduration' => $requiredduration,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+    }
+}
+
+/**
+ * Retourne la durée totale obligatoire requise pour une année d'étude, toutes thématiques
+ * confondues (hors stages complémentaires).
+ *
+ * @param int $stageid
+ * @param int $studyyear
+ * @return int
+ */
+function stage_get_year_requirement($stageid, $studyyear) {
+    global $DB;
+
+    $duration = $DB->get_field('stage_year_requirement', 'requiredduration',
+        ['stageid' => $stageid, 'studyyear' => (int) $studyyear]);
+    return $duration !== false ? (int) $duration : 0;
+}
+
+/**
+ * Retourne les durées totales obligatoires requises par année d'étude pour ce stage, indexées par
+ * année (0 = non spécifiée).
+ *
+ * @param int $stageid
+ * @return array int => int
+ */
+function stage_get_year_requirements($stageid) {
+    global $DB;
+
+    $requirements = [];
+    foreach ($DB->get_records('stage_year_requirement', ['stageid' => $stageid]) as $record) {
+        $requirements[(int) $record->studyyear] = (int) $record->requiredduration;
+    }
+    return $requirements;
+}
+
+/**
+ * Définit (crée ou met à jour) la durée totale obligatoire requise pour une année d'étude donnée.
+ *
+ * @param int $stageid
+ * @param int $studyyear
+ * @param int $requiredduration
+ * @return void
+ */
+function stage_set_year_requirement($stageid, $studyyear, $requiredduration) {
+    global $DB;
+
+    $existing = $DB->get_record('stage_year_requirement', ['stageid' => $stageid, 'studyyear' => (int) $studyyear]);
+    if ($existing) {
+        $existing->requiredduration = $requiredduration;
+        $existing->timemodified = time();
+        $DB->update_record('stage_year_requirement', $existing);
+    } else {
+        $DB->insert_record('stage_year_requirement', (object) [
+            'stageid' => $stageid,
+            'studyyear' => (int) $studyyear,
+            'requiredduration' => $requiredduration,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+    }
+}
+
+/**
+ * Retourne les années d'étude sur lesquelles un étudiant peut positionner un stage : l'année
+ * courante des étudiants (N, voir stage->currentstudyyear), l'année précédente (N-1, en cas de
+ * dette) et l'année suivante (N+1, pour anticiper). Si aucune année courante n'est définie pour ce
+ * stage, toutes les années sont proposées (aucune restriction possible).
+ *
+ * @param stdClass $stage
+ * @return array int => libellé, pour un select
+ */
+function stage_studyyear_selectable_options(stdClass $stage) {
+    $currentyear = (int) $stage->currentstudyyear;
+    if (empty($currentyear)) {
+        return stage_studyyear_options();
+    }
+    $alloptions = stage_studyyear_options();
+    $options = [];
+    foreach ([$currentyear - 1, $currentyear, $currentyear + 1] as $year) {
+        if (isset($alloptions[$year])) {
+            $options[$year] = $alloptions[$year];
+        }
+    }
+    return $options;
+}
+
+/**
+ * Calcule, pour un étudiant, la durée retenue (validée DEVE) au regard de la durée totale
+ * obligatoire requise pour chaque année d'étude sur laquelle il a des saisies (hors stages
+ * complémentaires).
+ *
+ * @param int $stageid
+ * @param int $userid
+ * @return array int => stdClass{studyyear, retained, required, done}
+ */
+function stage_get_student_year_progress($stageid, $userid) {
+    $entries = stage_get_student_entries($stageid, $userid);
+    $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
+
+    $byyear = [];
+    foreach ($entries as $entry) {
+        if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
+            continue;
+        }
+        $year = (int) $entry->studyyear;
+        if (!isset($byyear[$year])) {
+            $byyear[$year] = (object) [
+                'studyyear' => $year,
+                'retained' => 0,
+                'required' => stage_get_year_requirement($stageid, $year),
+                'done' => false,
+            ];
+        }
+        if ($entry->status == STAGE_STATUS_VALIDE_DEVE) {
+            $byyear[$year]->retained += $entry->retainedduration;
+        }
+    }
+
+    foreach ($byyear as $year => $row) {
+        $byyear[$year]->done = $row->required > 0 && $row->retained >= $row->required;
+    }
+
+    ksort($byyear);
+    return $byyear;
+}
+
+/**
  * Récupère les stages d'un étudiant, indexés par thématique.
  *
  * @param int $stageid
@@ -268,10 +457,9 @@ function stage_get_student_entries($stageid, $userid) {
  * @return stdClass
  */
 function stage_get_student_progress($stageid, $userid) {
-    global $DB;
-
     $themes = stage_get_themes($stageid, true);
     $entries = stage_get_student_entries($stageid, $userid);
+    $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
 
     $progress = new stdClass();
     $progress->themes = [];
@@ -284,27 +472,47 @@ function stage_get_student_progress($stageid, $userid) {
         $t->entries = [];
         $t->retained = 0;
         $t->declared = 0;
+        $t->requiredduration = 0;
+        $t->requiredyears = [];
         $t->done = false;
         $progress->themes[$theme->id] = $t;
     }
 
+    // Les stages complémentaires (EP) ne comptent pas dans le bilan des durées obligatoires.
     foreach ($entries as $entry) {
+        if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
+            continue;
+        }
         $progress->totaldeclared += $entry->declaredduration;
         if ($entry->status == STAGE_STATUS_VALIDE_DEVE) {
             $progress->totalretained += $entry->retainedduration;
         }
         if (isset($progress->themes[$entry->themeid])) {
-            $progress->themes[$entry->themeid]->entries[] = $entry;
-            $progress->themes[$entry->themeid]->declared += $entry->declaredduration;
+            $t = $progress->themes[$entry->themeid];
+            $t->entries[] = $entry;
+            $t->declared += $entry->declaredduration;
             if ($entry->status == STAGE_STATUS_VALIDE_DEVE) {
-                $progress->themes[$entry->themeid]->retained += $entry->retainedduration;
+                $t->retained += $entry->retainedduration;
+            }
+            // La durée requise pour la thématique est la somme des durées requises pour chacune
+            // des années d'étude sur lesquelles l'étudiant y a des saisies (un stage compte
+            // normalement une fois par thématique, mais rien n'empêche une redite en N-1/N+1).
+            if (!in_array((int) $entry->studyyear, $t->requiredyears, true)) {
+                $t->requiredyears[] = (int) $entry->studyyear;
+                $t->requiredduration += stage_get_theme_duration($entry->themeid, $entry->studyyear);
             }
         }
     }
 
     foreach ($progress->themes as $themeid => $t) {
         if ($t->theme->mandatory) {
-            $progress->themes[$themeid]->done = ($t->retained >= $t->theme->requiredduration) && $t->theme->requiredduration > 0;
+            if (empty($t->requiredyears)) {
+                // Pas encore de saisie sur cette thématique : on affiche la durée requise pour
+                // l'année minimale de sa plage, à titre indicatif.
+                $t->requiredduration = stage_get_theme_duration($themeid, $t->theme->minstudyyear ?: $t->theme->maxstudyyear);
+            }
+            $progress->themes[$themeid]->requiredduration = $t->requiredduration;
+            $progress->themes[$themeid]->done = ($t->retained >= $t->requiredduration) && $t->requiredduration > 0;
         }
     }
 
@@ -415,6 +623,7 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
  * @param int $datestart
  * @param int $dateend
  * @param int $declaredduration
+ * @param int $studyyear Année d'étude à laquelle ce stage est rattaché (N, N-1 ou N+1).
  * @param int $conventionstatus Statut de convention initial : STAGE_CONVENTION_NONE par défaut,
  *                               ou STAGE_CONVENTION_SIGNVET pour un enregistrement en masse
  *                               (stages déjà signés sur SignVet, hors circuit de gestion de
@@ -422,13 +631,14 @@ function stage_set_student_teachers($stageid, $studentid, array $teacherids) {
  * @return int Id de la saisie créée.
  */
 function stage_register_entry($stageid, $studentid, $themeid, $structure, $datestart, $dateend, $declaredduration,
-        $conventionstatus = STAGE_CONVENTION_NONE) {
+        $studyyear = 0, $conventionstatus = STAGE_CONVENTION_NONE) {
     global $DB;
 
     $record = new stdClass();
     $record->stageid = $stageid;
     $record->userid = $studentid;
     $record->themeid = $themeid;
+    $record->studyyear = $studyyear;
     $record->structure = $structure;
     $record->datestart = $datestart;
     $record->dateend = $dateend;
@@ -443,8 +653,8 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
 }
 
 /**
- * Met à jour les données de fond (thématique, structure, dates, durée) d'une saisie de stage,
- * à l'initiative de la DEVE.
+ * Met à jour les données de fond (thématique, année d'étude, structure, dates, durée) d'une
+ * saisie de stage, à l'initiative de la DEVE.
  *
  * @param stdClass $entry
  * @param int $themeid
@@ -452,12 +662,15 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
  * @param int $datestart
  * @param int $dateend
  * @param int $declaredduration
+ * @param int $studyyear
  * @return void
  */
-function stage_update_entry_details(stdClass $entry, $themeid, $structure, $datestart, $dateend, $declaredduration) {
+function stage_update_entry_details(stdClass $entry, $themeid, $structure, $datestart, $dateend, $declaredduration,
+        $studyyear = 0) {
     global $DB;
 
     $entry->themeid = $themeid;
+    $entry->studyyear = $studyyear;
     $entry->structure = $structure;
     $entry->datestart = $datestart;
     $entry->dateend = $dateend;
@@ -1341,12 +1554,37 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                 : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
             $table->data[] = [
                 format_string($t->theme->name),
-                $t->theme->requiredduration,
+                $t->requiredduration,
                 $t->retained,
                 $status,
             ];
         }
         echo html_writer::table($table);
+    }
+
+    // Bilan des durées totales obligatoires par année d'étude (hors stages complémentaires).
+    $yearprogress = stage_get_student_year_progress($stage->id, $userid);
+    if (!empty($yearprogress)) {
+        echo $OUTPUT->heading(get_string('yeartotals', 'mod_stage'), 4);
+        $yeartable = new html_table();
+        $yeartable->head = [
+            get_string('studyyear', 'mod_stage'),
+            get_string('totalrequiredduration', 'mod_stage'),
+            get_string('retainedduration', 'mod_stage'),
+            get_string('status', 'mod_stage'),
+        ];
+        foreach ($yearprogress as $row) {
+            $status = $row->done
+                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+            $yeartable->data[] = [
+                stage_studyyear_label($row->studyyear),
+                $row->required,
+                $row->retained,
+                $row->required > 0 ? $status : '-',
+            ];
+        }
+        echo html_writer::table($yeartable);
     }
 
     echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);
@@ -1374,7 +1612,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
         $row = [
             $themename,
-            $theme ? stage_studyyear_range_label($theme->minstudyyear, $theme->maxstudyyear) : '-',
+            stage_studyyear_label($entry->studyyear),
             $entry->structure,
             $entry->declaredduration,
             $entry->retainedduration,
@@ -1538,12 +1776,11 @@ function stage_import_themes($sourcestageid, $targetstageid) {
 
     $themes = stage_get_themes($sourcestageid);
     foreach ($themes as $theme) {
-        $DB->insert_record('stage_theme', (object) [
+        $newthemeid = $DB->insert_record('stage_theme', (object) [
             'stageid' => $targetstageid,
             'name' => $theme->name,
             'description' => $theme->description,
             'mandatory' => $theme->mandatory,
-            'requiredduration' => $theme->requiredduration,
             'minstudyyear' => $theme->minstudyyear,
             'maxstudyyear' => $theme->maxstudyyear,
             'sortorder' => $theme->sortorder,
@@ -1551,6 +1788,9 @@ function stage_import_themes($sourcestageid, $targetstageid) {
             'timecreated' => time(),
             'timemodified' => time(),
         ]);
+        foreach (stage_get_theme_durations($theme->id) as $studyyear => $requiredduration) {
+            stage_set_theme_duration($newthemeid, $studyyear, $requiredduration);
+        }
     }
     return count($themes);
 }
@@ -1833,6 +2073,33 @@ function stage_get_convention_detail($entryid) {
     global $DB;
 
     return $DB->get_record('stage_convention_detail', ['entryid' => $entryid]);
+}
+
+/**
+ * Retourne le type (obligatoire ou complementaire) de chaque saisie, indexé par id de saisie.
+ * Une saisie sans information de convention (par exemple enregistrée directement par la DEVE) est
+ * considérée obligatoire par défaut. Les stages complémentaires ne comptent pas dans le bilan des
+ * durées obligatoires (par thématique et par année).
+ *
+ * @param array $entryids
+ * @return array int => 'obligatoire'|'complementaire'
+ */
+function stage_get_entry_stagetypes(array $entryids) {
+    global $DB;
+
+    $stagetypes = [];
+    foreach ($entryids as $entryid) {
+        $stagetypes[$entryid] = 'obligatoire';
+    }
+    if (empty($entryids)) {
+        return $stagetypes;
+    }
+    [$insql, $inparams] = $DB->get_in_or_equal($entryids);
+    $details = $DB->get_records_select('stage_convention_detail', "entryid $insql", $inparams, '', 'entryid, stagetype');
+    foreach ($details as $detail) {
+        $stagetypes[$detail->entryid] = $detail->stagetype;
+    }
+    return $stagetypes;
 }
 
 /**

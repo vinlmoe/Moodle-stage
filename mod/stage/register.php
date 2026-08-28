@@ -195,6 +195,7 @@ if ($mode === 'single') {
     if ($entry) {
         $toform->userid = $entry->userid;
         $toform->themeid = $entry->themeid;
+        $toform->studyyear = $entry->studyyear;
         $toform->structure = $entry->structure;
         $toform->datestart = $entry->datestart;
         $toform->dateend = $entry->dateend;
@@ -207,10 +208,10 @@ if ($mode === 'single') {
     } else if ($data = $mform->get_data()) {
         if ($entry) {
             stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
-                $data->declaredduration);
+                $data->declaredduration, $data->studyyear);
         } else {
             stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure, $data->datestart,
-                $data->dateend, $data->declaredduration);
+                $data->dateend, $data->declaredduration, $data->studyyear);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
@@ -229,6 +230,7 @@ if ($mode === 'bulk') {
 
     if (data_submitted() && confirm_sesskey() && optional_param('bulkregister', 0, PARAM_INT)) {
         $themeid = required_param('themeid', PARAM_INT);
+        $studyyear = optional_param('studyyear', 0, PARAM_INT);
         $structure = optional_param('structure', '', PARAM_TEXT);
         $datestartraw = optional_param('datestart', '', PARAM_TEXT);
         $dateendraw = optional_param('dateend', '', PARAM_TEXT);
@@ -257,7 +259,7 @@ if ($mode === 'bulk') {
             // Les stages enregistrés en masse sont déjà signés sur SignVet au moment de leur
             // enregistrement : pas de gestion de convention à faire dans ce plugin pour eux.
             stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration,
-                STAGE_CONVENTION_SIGNVET);
+                $studyyear, STAGE_CONVENTION_SIGNVET);
             $existing[$key] = true;
             $bulkresults->created++;
         }
@@ -289,6 +291,10 @@ if ($mode === 'bulk') {
     }
     echo html_writer::tag('label', get_string('theme', 'mod_stage'), ['for' => 'themeid']);
     echo html_writer::select($themeoptions, 'themeid', '', false, ['id' => 'themeid', 'required' => 'required']);
+
+    echo html_writer::tag('label', get_string('studyyear', 'mod_stage'), ['for' => 'studyyear']);
+    echo html_writer::select(stage_studyyear_options(), 'studyyear', '', false,
+        ['id' => 'studyyear', 'required' => 'required']);
 
     echo html_writer::tag('label', get_string('structure', 'mod_stage'), ['for' => 'structure']);
     echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'structure', 'id' => 'structure', 'class' => 'form-control']);

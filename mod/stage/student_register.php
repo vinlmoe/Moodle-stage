@@ -83,6 +83,7 @@ $mform = new student_register_form($baseurl, [
     'referentteachers' => $referentteachers,
     'stageid' => $stage->id,
     'userid' => $USER->id,
+    'stage' => $stage,
 ]);
 $mform->set_data((object) ['id' => $cm->id]);
 
@@ -90,7 +91,7 @@ if ($mform->is_cancelled()) {
     redirect($viewurl);
 } else if ($data = $mform->get_data()) {
     $entryid = stage_register_entry($stage->id, $USER->id, $data->themeid, $data->structure,
-        $data->datestart, $data->dateend, $data->declaredduration);
+        $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear);
     $entry = $DB->get_record('stage_entry', ['id' => $entryid], '*', MUST_EXIST);
 
     $requireteachervalidation = stage_convention_requires_teacher_validation($stage);

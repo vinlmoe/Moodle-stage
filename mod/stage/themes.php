@@ -105,7 +105,6 @@ if ($action === 'edit') {
         $record->name = $data->name;
         $record->description = $data->description;
         $record->mandatory = !empty($data->mandatory) ? 1 : 0;
-        $record->requiredduration = $data->requiredduration;
         $record->minstudyyear = $data->minstudyyear;
         $record->maxstudyyear = $data->maxstudyyear;
         $record->sortorder = $data->sortorder;
@@ -134,11 +133,9 @@ if ($action === 'bulksave' && data_submitted() && confirm_sesskey()) {
     $themes = stage_get_themes($stage->id);
     foreach ($themes as $theme) {
         $mandatory = optional_param('mandatory_' . $theme->id, 0, PARAM_INT);
-        $duration = optional_param('duration_' . $theme->id, 0, PARAM_INT);
         $minstudyyear = optional_param('minstudyyear_' . $theme->id, 0, PARAM_INT);
         $maxstudyyear = optional_param('maxstudyyear_' . $theme->id, 0, PARAM_INT);
         $theme->mandatory = $mandatory ? 1 : 0;
-        $theme->requiredduration = $duration;
         $theme->minstudyyear = $minstudyyear;
         $theme->maxstudyyear = $maxstudyyear;
         $theme->timemodified = time();
@@ -172,20 +169,11 @@ if (empty($themes)) {
         get_string('minstudyyear', 'mod_stage'),
         get_string('maxstudyyear', 'mod_stage'),
         get_string('mandatory', 'mod_stage'),
-        get_string('requiredduration', 'mod_stage'),
         get_string('visible'),
         get_string('actions', 'mod_stage'),
     ];
     foreach ($themes as $theme) {
         $mandatorycb = html_writer::checkbox('mandatory_' . $theme->id, 1, (bool) $theme->mandatory, '');
-        $durationinput = html_writer::empty_tag('input', [
-            'type' => 'number',
-            'min' => 0,
-            'name' => 'duration_' . $theme->id,
-            'value' => $theme->requiredduration,
-            'class' => 'form-control',
-            'style' => 'width:6em',
-        ]);
         $minstudyyearselect = html_writer::select(stage_studyyear_options(), 'minstudyyear_' . $theme->id,
             $theme->minstudyyear, false, ['class' => 'form-control']);
         $maxstudyyearselect = html_writer::select(stage_studyyear_options(), 'maxstudyyear_' . $theme->id,
@@ -202,15 +190,17 @@ if (empty($themes)) {
         $deleteurl = new moodle_url('/mod/stage/themes.php',
             ['id' => $cm->id, 'action' => 'delete', 'themeid' => $theme->id, 'sesskey' => sesskey()]);
         $questionsurl = new moodle_url('/mod/stage/questions.php', ['id' => $cm->id, 'themeid' => $theme->id]);
+        $durationsurl = new moodle_url('/mod/stage/theme_durations.php', ['id' => $cm->id, 'themeid' => $theme->id]);
 
         $actions = html_writer::link($editurl, get_string('edit')) . ' | '
             . html_writer::link($toggleurl, get_string('toggle', 'mod_stage')) . ' | '
+            . html_writer::link($durationsurl, get_string('managethemedurations', 'mod_stage')) . ' | '
             . html_writer::link($questionsurl, get_string('evalquestions', 'mod_stage')) . ' | '
             . html_writer::link($deleteurl, get_string('delete'),
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
 
         $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
-            $durationinput, $visible, $actions];
+            $visible, $actions];
     }
     echo html_writer::table($table);
 

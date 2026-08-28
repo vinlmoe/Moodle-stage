@@ -68,6 +68,10 @@ class deve_entry_form extends \moodleform {
         $mform->addElement('select', 'themeid', get_string('theme', 'mod_stage'), $themeoptions);
         $mform->addRule('themeid', null, 'required', null, 'client');
 
+        // La DEVE peut rattacher un stage à n'importe quelle année d'étude.
+        $mform->addElement('select', 'studyyear', get_string('studyyear', 'mod_stage'), stage_studyyear_options());
+        $mform->addRule('studyyear', null, 'required', null, 'client');
+
         $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
         $mform->setType('structure', PARAM_TEXT);
 
