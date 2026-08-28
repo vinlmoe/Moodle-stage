@@ -112,6 +112,7 @@ if ($mode === 'list') {
         ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus], $tsort, $tdir);
     [$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $listurl);
     $students = stage_get_entry_users($entries);
+    $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
 
     $table = new html_table();
     $table->head = [
@@ -126,6 +127,10 @@ if ($mode === 'list') {
         $themename = isset($allthemes[$entry->themeid]) ? format_string($allthemes[$entry->themeid]->name) : '-';
         if (!empty($entry->abroad)) {
             $themename .= ' ' . html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info');
+        }
+        if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
+            $themename .= ' ' . html_writer::span(get_string('conventionstagetype_complementaire', 'mod_stage'),
+                'badge badge-secondary');
         }
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
@@ -202,12 +207,18 @@ if ($mode === 'single') {
         $toform->themeid = $entry->themeid;
         $toform->studyyear = $entry->studyyear;
         $toform->structure = $entry->structure;
+        $existingdetail = stage_get_convention_detail($entry->id);
+        $toform->stagetype = $existingdetail ? $existingdetail->stagetype : 'obligatoire';
         $toform->abroad = $entry->abroad;
         $toform->country = $entry->country;
         $toform->exemptfromconvention = (int) $entry->conventionstatus === STAGE_CONVENTION_EXEMPT ? 1 : 0;
         $toform->datestart = $entry->datestart;
         $toform->dateend = $entry->dateend;
-        $toform->declaredduration = $entry->declaredduration;
+        // Le nombre de jours proposé par défaut est celui coché par l'étudiant lors de son
+        // auto-évaluation (jours de stage effectifs), s'il en a déjà sélectionné ; sinon la durée
+        // déclarée existante. Reste modifiable par la DEVE avant enregistrement.
+        $workdaycount = count(stage_get_entry_workdays($entry->id));
+        $toform->declaredduration = $workdaycount > 0 ? $workdaycount : $entry->declaredduration;
     }
     $mform->set_data($toform);
 
@@ -218,11 +229,13 @@ if ($mode === 'single') {
             stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
                 $data->declaredduration, $data->studyyear, $data->abroad, $data->country);
             stage_set_entry_convention_exempt($entry, !empty($data->exemptfromconvention));
+            stage_set_entry_stagetype($entry->id, $data->stagetype);
         } else {
             $conventionstatus = !empty($data->exemptfromconvention) ? STAGE_CONVENTION_EXEMPT : STAGE_CONVENTION_NONE;
-            stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure, $data->datestart,
-                $data->dateend, $data->declaredduration, $data->studyyear, $conventionstatus, $data->abroad,
-                $data->country);
+            $newentryid = stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure,
+                $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear, $conventionstatus,
+                $data->abroad, $data->country);
+            stage_set_entry_stagetype($newentryid, $data->stagetype);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }

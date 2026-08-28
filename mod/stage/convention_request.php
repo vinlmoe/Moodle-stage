@@ -152,6 +152,11 @@ if ($requeststatus === STAGE_CONVENTION_REJECTED && !empty($entry->conventionrej
 
 echo $OUTPUT->box(get_string('requestconvention_help', 'mod_stage'), 'generalbox mb-3');
 
+$periodsurl = new moodle_url('/mod/stage/entry_periods.php',
+    ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $baseurl->out_as_local_url(false)]);
+echo html_writer::link($periodsurl, get_string('manageperiods', 'mod_stage'),
+    ['class' => 'btn btn-secondary d-block mb-3', 'style' => 'width:fit-content']);
+
 $mform->display();
 
 echo $OUTPUT->footer();

@@ -15,9 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Gestion, par la DEVE, des plages de dates d'une saisie de stage (un stage peut comporter
- * plusieurs plages non contiguës, voir stage_entry_period). L'étudiant choisira ensuite ses jours
- * de stage effectifs parmi ces plages lors de son auto-évaluation (entry.php).
+ * Gestion des plages de dates d'une saisie de stage (un stage peut comporter plusieurs plages non
+ * contiguës, voir stage_entry_period) : par la DEVE lors de l'enregistrement du stage, par
+ * l'étudiant lui-même lors de sa demande de convention, ou par l'enseignant référent lors de sa
+ * validation. L'étudiant choisira ensuite ses jours de stage effectifs parmi ces plages lors de
+ * son auto-évaluation (entry.php).
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
@@ -30,6 +32,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
+$returnurlparam = optional_param('returnurl', '', PARAM_LOCALURL);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -38,17 +41,32 @@ $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->
 
 require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
-require_capability('mod/stage:registerstages', $context);
+
+// Accessible à la DEVE, à l'étudiant propriétaire de la saisie, ou à son enseignant référent.
+$isdeve = has_capability('mod/stage:registerstages', $context);
+$isowner = $entry->userid == $USER->id && has_capability('mod/stage:submit', $context);
+$isassignedteacher = has_capability('mod/stage:evaluateteacher', $context)
+    && in_array($entry->userid, array_keys(stage_get_assigned_students($stage->id, $USER->id)));
+if (!$isdeve && !$isowner && !$isassignedteacher) {
+    throw new moodle_exception('nopermissions', 'error', '', get_string('manageperiods', 'mod_stage'));
+}
 
 $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
 
-$baseurl = new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+$baseurl = new moodle_url('/mod/stage/entry_periods.php',
+    ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $returnurlparam]);
 $PAGE->set_url($baseurl);
 $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('manageperiods', 'mod_stage'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-$returnurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id]);
+if ($returnurlparam !== '') {
+    $returnurl = new moodle_url($returnurlparam);
+} else if ($isdeve) {
+    $returnurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id]);
+} else {
+    $returnurl = new moodle_url('/mod/stage/view.php', ['id' => $cm->id]);
+}
 
 // Nombre de plages proposées : les plages existantes, plus quelques lignes vides pour en ajouter.
 $existing = array_values(stage_get_or_seed_entry_periods($entry));
