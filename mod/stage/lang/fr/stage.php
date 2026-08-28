@@ -275,6 +275,15 @@ $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}'
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
     . "Vous pouvez consulter et évaluer cette saisie ici : {\$a->url}";
 $string['generateconvention'] = 'Générer la convention';
+$string['includesignatureblock'] = "Ajouter un cadre de signatures (stagiaire, maître de stage, "
+    . "responsable de l'organisme d'accueil, enseignant.e référent.e, établissement) en bas de la "
+    . 'première page, pour une convention imprimée destinée à être signée à la main.';
+$string['conventionsignatures'] = 'Signatures';
+$string['conventionsignaturestudent'] = 'Le/la stagiaire';
+$string['conventionsignaturetutor'] = 'Le maître de stage';
+$string['conventionsignaturehostrepresentative'] = "Le/la responsable de l'organisme d'accueil";
+$string['conventionsignaturereferentteacher'] = "L'enseignant.e référent.e";
+$string['conventionsignatureestablishment'] = "L'établissement d'enseignement";
 $string['conventiontitle'] = 'Convention de stage';
 $string['conventionestablishment'] = "Établissement d'enseignement";
 $string['conventionestablishmentname'] = 'Nom';

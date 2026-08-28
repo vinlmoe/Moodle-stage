@@ -270,6 +270,15 @@ $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review -
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
     . 'You can view and evaluate this entry here: {$a->url}';
 $string['generateconvention'] = 'Generate the convention';
+$string['includesignatureblock'] = 'Add a signature block (student, workplace supervisor, host '
+    . 'organisation representative, referent teacher, establishment) at the bottom of the first '
+    . 'page, for a printed convention to be signed by hand.';
+$string['conventionsignatures'] = 'Signatures';
+$string['conventionsignaturestudent'] = 'The student';
+$string['conventionsignaturetutor'] = 'The workplace supervisor';
+$string['conventionsignaturehostrepresentative'] = 'The host organisation representative';
+$string['conventionsignaturereferentteacher'] = 'The referent teacher';
+$string['conventionsignatureestablishment'] = 'The educational establishment';
 $string['conventiontitle'] = 'Internship agreement';
 $string['conventionestablishment'] = 'Educational establishment';
 $string['conventionestablishmentname'] = 'Name';

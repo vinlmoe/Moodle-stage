@@ -3021,10 +3021,14 @@ function stage_stored_file_to_temp(\stored_file $file) {
  * @param stdClass $stage
  * @param stdClass $entry
  * @param context $context Contexte du module stage.
+ * @param bool $withsignatures Ajoute un cadre de signatures (stagiaire, maître de stage,
+ *                              responsable de l'organisme d'accueil, enseignant.e référent.e,
+ *                              établissement) en bas de la page 1, pour une convention imprimée
+ *                              destinée à être signée à la main.
  * @return array ['error' => string|null (clé de chaîne de langue mod_stage), 'pdf' => objet FPDI
  *               prêt pour Output(), ou null en cas d'erreur, 'filename' => string|null]
  */
-function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context) {
+function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context, $withsignatures = false) {
     global $DB, $CFG;
 
     if (empty($entry->conventiontemplateid)) {
@@ -3170,7 +3174,7 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
     // Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
     // pour être réimportée ci-dessous comme un PDF source parmi d'autres.
     $page1 = new \mod_stage\pdf\convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-    $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
+    $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang, $withsignatures);
     $page1pdf = $page1->Output('', 'S');
 
     // Assemblage final : la page 1 générée ci-dessus, suivie des pages du gabarit choisi par

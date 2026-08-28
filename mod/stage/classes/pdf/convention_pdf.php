@@ -76,9 +76,14 @@ class convention_pdf extends \pdf {
      * @param string|null $logoleftpath Chemin d'un fichier PNG (logo haut gauche), ou null.
      * @param string|null $logorightpath Chemin d'un fichier PNG (logo haut droit), ou null.
      * @param string $lang Langue de la convention ('fr' ou 'en'), celle du gabarit choisi.
+     * @param bool $withsignatures Ajoute en bas de page 1 un cadre de signatures (stagiaire,
+     *                             maître de stage, responsable de l'organisme d'accueil,
+     *                             enseignant.e référent.e, établissement), pour une convention
+     *                             imprimée et signée à la main.
      * @return void
      */
-    public function generate_page1(array $stagedata, $logoleftpath = null, $logorightpath = null, $lang = 'fr') {
+    public function generate_page1(array $stagedata, $logoleftpath = null, $logorightpath = null, $lang = 'fr',
+            $withsignatures = false) {
         $this->lang = $lang;
 
         $this->SetCreator('Moodle mod_stage');
@@ -188,6 +193,56 @@ class convention_pdf extends \pdf {
             $this->field_row($this->str('conventionleavedays'), $stagedata['leave']['days']);
             if (!empty($stagedata['leave']['modalities'])) {
                 $this->field_row($this->str('conventionleavemodalities'), $stagedata['leave']['modalities']);
+            }
+        }
+
+        if ($withsignatures) {
+            $this->signature_block();
+        }
+    }
+
+    /**
+     * Cadre de signatures en bas de la page 1 : une case par signataire (stagiaire, maître de
+     * stage, responsable de l'organisme d'accueil, enseignant.e référent.e, établissement),
+     * réparties sur deux colonnes. Réservé aux conventions imprimées destinées à être signées à la
+     * main (voir generate_page1(), $withsignatures).
+     *
+     * @return void
+     */
+    protected function signature_block() {
+        $this->Ln(3);
+        $this->section_heading($this->str('conventionsignatures'));
+
+        $labels = [
+            $this->str('conventionsignaturestudent'),
+            $this->str('conventionsignaturetutor'),
+            $this->str('conventionsignaturehostrepresentative'),
+            $this->str('conventionsignaturereferentteacher'),
+            $this->str('conventionsignatureestablishment'),
+        ];
+
+        $cols = 2;
+        $gap = 4;
+        $boxheight = 26;
+        $left = $this->getMargins()['left'];
+        $pagewidth = $this->getPageWidth() - $left - $this->getMargins()['right'];
+        $boxwidth = ($pagewidth - $gap * ($cols - 1)) / $cols;
+
+        $y = $this->GetY();
+        foreach ($labels as $i => $label) {
+            $col = $i % $cols;
+            if ($col === 0) {
+                $this->ensure_space($boxheight + 6);
+                $y = $this->GetY();
+            }
+            $x = $left + $col * ($boxwidth + $gap);
+
+            $this->SetFont('freesans', 'B', 9);
+            $this->MultiCell($boxwidth, 5, $label, 0, 'L', false, 0, $x, $y);
+            $this->Rect($x, $y + 6, $boxwidth, $boxheight - 6);
+
+            if ($col === $cols - 1 || $i === count($labels) - 1) {
+                $this->SetY($y + $boxheight + 6);
             }
         }
     }
