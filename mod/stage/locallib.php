@@ -397,37 +397,43 @@ function stage_studyyear_selectable_options(stdClass $stage) {
 }
 
 /**
- * Une thématique obligatoire s'applique-t-elle à une année d'étude donnée ? Une thématique sans
- * plage définie (minstudyyear = maxstudyyear = 0) s'applique à toutes les années.
+ * Année d'étude "finale" d'une thématique obligatoire, à laquelle sa durée requise est vérifiée
+ * (voir stage_get_student_year_progress()) : la dernière année de sa plage [minstudyyear,
+ * maxstudyyear]. Par exemple une thématique de A2 à A4 n'est vérifiée qu'en A4, de façon
+ * cumulative sur toute sa plage. Une thématique sans plage définie (minstudyyear = maxstudyyear =
+ * 0) n'a pas d'année finale : elle est vérifiée chaque année, sur les seules saisies de cette
+ * année (voir l'appelant).
  *
  * @param stdClass $theme
- * @param int $studyyear
- * @return bool
+ * @return int|null
  */
-function stage_theme_applies_to_year(stdClass $theme, $studyyear) {
+function stage_theme_final_year(stdClass $theme) {
     $min = (int) $theme->minstudyyear;
     $max = (int) $theme->maxstudyyear;
     if (empty($min) && empty($max)) {
-        return true;
+        return null;
     }
-    $min = $min ?: $max;
-    $max = $max ?: $min;
-    return $studyyear >= min($min, $max) && $studyyear <= max($min, $max);
+    return max($min ?: $max, $max ?: $min);
 }
 
 /**
  * Calcule, pour un étudiant et pour chaque année d'étude concernée, si les objectifs sont
  * atteints : la durée totale obligatoire requise pour l'année (toutes thématiques confondues) ET
- * la durée requise pour chaque thématique obligatoire applicable à cette année (hors stages
- * complémentaires dans les deux cas). Une année n'est retenue que si un objectif y est défini
- * (durée totale ou durée d'au moins une thématique) ou que l'étudiant y a des saisies.
+ * la durée requise pour chaque thématique obligatoire due cette année-là (hors stages
+ * complémentaires dans les deux cas). Une thématique bornée à une plage d'années (par exemple de
+ * A2 à A4) n'est vérifiée qu'à sa dernière année (A4), de façon cumulative sur l'ensemble de sa
+ * plage : les années intermédiaires (A2, A3) ne sont pas bloquées par elle. Une thématique sans
+ * plage définie est vérifiée chaque année, sur les seules saisies de cette année. Une année n'est
+ * retenue que si un objectif y est défini (durée totale ou durée d'au moins une thématique due
+ * cette année-là) ou que l'étudiant y a des saisies.
  *
  * @param int $stageid
  * @param int $userid
  * @return array int => stdClass{studyyear, retained, required, totaldone, themes, done}
  *               'themes' est un tableau de stdClass{theme, required, retained, done}
  *               'done' est vrai seulement si la durée totale ET toutes les thématiques
- *               obligatoires de l'année (celles ayant une durée requise > 0) sont validées.
+ *               obligatoires dues cette année-là (celles ayant une durée requise > 0) sont
+ *               validées.
  */
 function stage_get_student_year_progress($stageid, $userid) {
     $entries = stage_get_student_entries($stageid, $userid);
@@ -437,7 +443,7 @@ function stage_get_student_year_progress($stageid, $userid) {
     });
 
     // Années à considérer : celles où l'étudiant a des saisies, celles où une durée totale est
-    // définie, et celles couvertes par au moins une thématique obligatoire.
+    // définie, et l'année finale de chaque thématique obligatoire bornée à une plage.
     $years = [];
     foreach ($entries as $entry) {
         $years[(int) $entry->studyyear] = true;
@@ -448,19 +454,18 @@ function stage_get_student_year_progress($stageid, $userid) {
         }
     }
     foreach ($mandatorythemes as $theme) {
-        $min = (int) $theme->minstudyyear ?: (int) $theme->maxstudyyear;
-        $max = (int) $theme->maxstudyyear ?: (int) $theme->minstudyyear;
-        if (empty($min) && empty($max)) {
-            continue;
-        }
-        for ($year = min($min, $max); $year <= max($min, $max); $year++) {
-            $years[$year] = true;
+        $finalyear = stage_theme_final_year($theme);
+        if ($finalyear !== null) {
+            $years[$finalyear] = true;
         }
     }
 
-    // Durées retenues (hors stages complémentaires), regroupées par (année) et par (thématique, année).
+    // Durées retenues (hors stages complémentaires), regroupées par année, par (thématique,
+    // année) et cumulées par thématique (toutes années confondues, pour la vérification finale
+    // des thématiques bornées à une plage).
     $retainedbyyear = [];
     $retainedbythemeyear = [];
+    $retainedbytheme = [];
     foreach ($entries as $entry) {
         if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
             continue;
@@ -472,6 +477,7 @@ function stage_get_student_year_progress($stageid, $userid) {
         $retainedbyyear[$year] = ($retainedbyyear[$year] ?? 0) + $entry->retainedduration;
         $key = $entry->themeid . ':' . $year;
         $retainedbythemeyear[$key] = ($retainedbythemeyear[$key] ?? 0) + $entry->retainedduration;
+        $retainedbytheme[$entry->themeid] = ($retainedbytheme[$entry->themeid] ?? 0) + $entry->retainedduration;
     }
 
     $byyear = [];
@@ -483,11 +489,20 @@ function stage_get_student_year_progress($stageid, $userid) {
         $themerows = [];
         $themesdone = true;
         foreach ($mandatorythemes as $theme) {
-            if (!stage_theme_applies_to_year($theme, $year)) {
-                continue;
+            $finalyear = stage_theme_final_year($theme);
+            if ($finalyear !== null) {
+                // Thématique bornée à une plage : vérifiée uniquement à sa dernière année, de
+                // façon cumulative sur toute la plage (les années intermédiaires ne l'incluent pas).
+                if ($year != $finalyear) {
+                    continue;
+                }
+                $themerequired = stage_get_theme_duration($theme->id, $finalyear);
+                $themeretained = $retainedbytheme[$theme->id] ?? 0;
+            } else {
+                // Pas de plage définie : due chaque année, sur les seules saisies de cette année.
+                $themerequired = stage_get_theme_duration($theme->id, $year);
+                $themeretained = $retainedbythemeyear[$theme->id . ':' . $year] ?? 0;
             }
-            $themerequired = stage_get_theme_duration($theme->id, $year);
-            $themeretained = $retainedbythemeyear[$theme->id . ':' . $year] ?? 0;
             $themedone = $themerequired <= 0 || $themeretained >= $themerequired;
             if ($themerequired > 0 && !$themedone) {
                 $themesdone = false;
