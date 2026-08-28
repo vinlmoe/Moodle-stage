@@ -242,7 +242,10 @@ $string['cancelentry'] = 'Annuler ce stage';
 $string['confirmcancelentry'] = "Annuler ce stage ? La saisie sera conservée telle quelle, mais son statut passera "
     . 'à "Annulé" de façon définitive. Merci de préciser le motif ci-dessous.';
 $string['cancelcomment'] = "Motif de l'annulation";
+$string['cancelledby'] = 'Annulé par';
+$string['canceltime'] = "Date d'annulation";
 $string['stagecancelled'] = 'Le stage a été annulé.';
+$string['evaluatedby'] = 'Évalué par';
 $string['onlyunassigned'] = 'Étudiants sans référent uniquement';
 $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}';
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
@@ -314,6 +317,10 @@ $string['rejectconvention'] = 'Refuser';
 $string['conventionrejectcomment'] = 'Commentaire (envoyé à l\'étudiant en cas de refus)';
 $string['conventionrejected'] = "La demande de convention a été refusée. L'étudiant en a été informé par courriel.";
 $string['conventionrejectedwithcomment'] = 'Refusée : {$a}';
+$string['conventionrejectedby'] = 'Refusée par';
+$string['conventionvalidatedby'] = "Validée par l'enseignant.e référent.e";
+$string['conventioneditedby'] = 'Éditée par';
+$string['conventionsignedby'] = 'Signée par';
 $string['conventionrejectedexplain'] = 'Votre demande de convention a été refusée par la DEVE, pour le motif suivant : '
     . '"{$a}". Merci de corriger votre demande ci-dessous et de la soumettre à nouveau.';
 $string['conventionrejectednotifsubject'] = 'Convention de stage refusée : {$a}';

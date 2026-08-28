@@ -1260,6 +1260,21 @@ function stage_get_entry_users(array $entries) {
 }
 
 /**
+ * Affiche une paire libellé/valeur, ou rien si la valeur est vide. Utilisé par la page de détail
+ * d'une saisie (entrydetail.php) pour lister ses informations sans surcharger le HTML de tests.
+ *
+ * @param string $label
+ * @param string|null $value
+ * @return void
+ */
+function stage_detail_row($label, $value) {
+    if ($value === null || $value === '') {
+        return;
+    }
+    echo html_writer::tag('p', html_writer::tag('strong', $label . ' : ') . $value);
+}
+
+/**
  * Produit le HTML, en lecture seule, des questions d'un formulaire et des réponses
  * qui y ont été apportées. Utilisé pour montrer l'auto-évaluation de l'étudiant à
  * l'enseignant référent et à la DEVE.
