@@ -140,7 +140,7 @@ echo $OUTPUT->heading(get_string('registerstageandconvention', 'mod_stage'));
 echo html_writer::link($viewurl, get_string('back'));
 
 echo $OUTPUT->box(get_string('registerstageandconvention_help', 'mod_stage'), 'generalbox mb-3');
-echo stage_render_abroad_rules($themes);
+echo stage_render_abroad_rules($stage);
 
 $mform->display();
 

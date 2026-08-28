@@ -227,7 +227,7 @@ if ($mode === 'single') {
     echo $OUTPUT->header();
     echo $OUTPUT->heading($entry ? get_string('editstage', 'mod_stage') : get_string('registerstage', 'mod_stage'));
     echo html_writer::link($baseurl, get_string('back'));
-    echo stage_render_abroad_rules($themes);
+    echo stage_render_abroad_rules($stage);
     $mform->display();
     echo $OUTPUT->footer();
     exit;

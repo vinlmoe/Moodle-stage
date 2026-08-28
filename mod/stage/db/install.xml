@@ -23,7 +23,11 @@
         <FIELD NAME="currentstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
             COMMENT="Année d'étude courante des étudiants (0 = non spécifiée) : sert de référence N pour les stages en année N-1 (dette) et N+1 (anticipation)"/>
         <FIELD NAME="requiredabroaddays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"
-            COMMENT="Obligation de mobilité internationale : nombre de jours de stage à l'étranger requis (0 = aucune obligation)"/>
+            COMMENT="Obligation de mobilité internationale : nombre de jours de stage à l'étranger requis (0 = aucune obligation), tous stages confondus, quelle que soit la thématique"/>
+        <FIELD NAME="abroadbeforeyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
+            COMMENT="Année d'étude avant laquelle l'obligation de mobilité internationale doit être satisfaite (0 = non spécifiée)"/>
+        <FIELD NAME="abroadrule" TYPE="text" NOTNULL="false"
+            COMMENT="Consigne de mobilité internationale affichée aux étudiants"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -44,10 +48,6 @@
             COMMENT="Durée requise en jours pour l'ensemble de la thématique (0 = non utilisé, voir stage_theme_duration pour une durée par année à la place ; l'un ou l'autre, pas les deux)"/>
         <FIELD NAME="minstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="Année d'étude minimale concernée (0 = non spécifiée)"/>
         <FIELD NAME="maxstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="Année d'étude maximale concernée (0 = non spécifiée)"/>
-        <FIELD NAME="requiredabroaddays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"
-            COMMENT="Obligation de mobilité internationale pour cette thématique : nombre de jours à l'étranger requis (0 = aucune obligation). Tous les stages comptent (obligatoires ou complémentaires), évalué à l'année finale de la thématique."/>
-        <FIELD NAME="abroadrule" TYPE="text" NOTNULL="false"
-            COMMENT="Règle de mobilité internationale propre à cette thématique, affichée à l'étudiant (ex : pays éligibles, durée minimale continue...)"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>

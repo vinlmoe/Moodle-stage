@@ -248,31 +248,23 @@ function stage_theme_option_label(stdClass $theme) {
 }
 
 /**
- * Affiche un encart rappelant les règles de mobilité internationale des thématiques qui en
- * définissent une (stage_theme.abroadrule), pour que l'étudiant en prenne connaissance avant de
- * choisir sa thématique et de déclarer un stage à l'étranger.
+ * Affiche un encart rappelant la consigne de mobilité internationale de ce stage
+ * (stage->abroadrule), pour que l'étudiant en prenne connaissance avant de déclarer un stage à
+ * l'étranger. L'obligation n'est pas liée à une thématique : elle est commune à toutes.
  *
- * @param array $themes Liste de stage_theme
- * @return string HTML, chaîne vide si aucune thématique n'a de règle définie.
+ * @param stdClass $stage
+ * @return string HTML, chaîne vide si aucune consigne n'est définie.
  */
-function stage_render_abroad_rules(array $themes) {
-    $rows = [];
-    foreach ($themes as $theme) {
-        if (empty($theme->abroadrule)) {
-            continue;
-        }
-        $line = html_writer::tag('strong', format_string($theme->name)) . ' : '
-            . format_text($theme->abroadrule, FORMAT_PLAIN);
-        if (!empty($theme->requiredabroaddays)) {
-            $line .= ' (' . get_string('abroaddaysrequired', 'mod_stage') . ' : ' . $theme->requiredabroaddays . ')';
-        }
-        $rows[] = $line;
-    }
-    if (empty($rows)) {
+function stage_render_abroad_rules(stdClass $stage) {
+    if (empty($stage->abroadrule)) {
         return '';
     }
+    $text = format_text($stage->abroadrule, FORMAT_PLAIN);
+    if (!empty($stage->requiredabroaddays)) {
+        $text .= ' (' . get_string('abroaddaysrequired', 'mod_stage') . ' : ' . $stage->requiredabroaddays . ')';
+    }
     return html_writer::tag('div',
-        html_writer::tag('p', html_writer::tag('strong', get_string('abroadrule', 'mod_stage'))) . html_writer::alist($rows),
+        html_writer::tag('p', html_writer::tag('strong', get_string('abroadrule', 'mod_stage'))) . html_writer::tag('p', $text),
         ['class' => 'alert alert-info']);
 }
 
@@ -323,25 +315,23 @@ function stage_get_theme_durations($themeid) {
 }
 
 /**
- * Retourne le nombre de jours de stage à l'étranger retenus pour un étudiant sur une thématique
- * donnée, tous stages confondus (obligatoires ou complémentaires), pour vérifier l'obligation de
- * mobilité internationale propre à cette thématique (stage_theme.requiredabroaddays). Contrairement
+ * Retourne le nombre de jours de stage à l'étranger retenus pour un étudiant, tous stages
+ * confondus (obligatoires ou complémentaires) et quelle que soit la thématique, pour vérifier
+ * l'obligation de mobilité internationale de ce stage (stage->requiredabroaddays). Contrairement
  * au bilan des durées obligatoires, les stages complémentaires comptent ici.
  *
  * @param int $stageid
  * @param int $userid
- * @param int $themeid
  * @return int
  */
-function stage_get_student_theme_abroad_days($stageid, $userid, $themeid) {
+function stage_get_student_abroad_days($stageid, $userid) {
     global $DB;
 
     return (int) $DB->get_field_sql(
         'SELECT COALESCE(SUM(retainedduration), 0)
            FROM {stage_entry}
-          WHERE stageid = :stageid AND userid = :userid AND themeid = :themeid
-                AND abroad = 1 AND status = :status',
-        ['stageid' => $stageid, 'userid' => $userid, 'themeid' => $themeid, 'status' => STAGE_STATUS_VALIDE_DEVE]
+          WHERE stageid = :stageid AND userid = :userid AND abroad = 1 AND status = :status',
+        ['stageid' => $stageid, 'userid' => $userid, 'status' => STAGE_STATUS_VALIDE_DEVE]
     );
 }
 
@@ -569,24 +559,11 @@ function stage_get_student_year_progress($stageid, $userid) {
                 $themesdone = false;
             }
 
-            // Obligation de mobilité internationale propre à la thématique (tous stages
-            // confondus, y compris complémentaires), vérifiée en même temps que sa durée.
-            $abroadrequired = (int) $theme->requiredabroaddays;
-            $abroadretained = $abroadrequired > 0
-                ? stage_get_student_theme_abroad_days($stageid, $userid, $theme->id) : 0;
-            $abroaddone = $abroadrequired <= 0 || $abroadretained >= $abroadrequired;
-            if ($abroadrequired > 0 && !$abroaddone) {
-                $themesdone = false;
-            }
-
             $themerows[] = (object) [
                 'theme' => $theme,
                 'required' => $themerequired,
                 'retained' => $themeretained,
                 'done' => $themedone,
-                'abroadrequired' => $abroadrequired,
-                'abroadretained' => $abroadretained,
-                'abroaddone' => $abroaddone,
             ];
         }
 
@@ -605,37 +582,27 @@ function stage_get_student_year_progress($stageid, $userid) {
 }
 
 /**
- * Calcule, pour un étudiant, la durée retenue (validée DEVE, hors stages complémentaires) passée
- * à l'étranger, au regard de l'obligation de mobilité internationale définie pour ce stage
- * (stage->requiredabroaddays).
+ * Calcule, pour un étudiant, la durée retenue (validée DEVE) passée à l'étranger, tous stages
+ * confondus (obligatoires ou complémentaires) et quelle que soit la thématique, au regard de
+ * l'obligation de mobilité internationale définie pour ce stage (stage->requiredabroaddays,
+ * gérée depuis la page « Durées de stage par année », voir year_requirements.php).
  *
  * @param int $stageid
  * @param int $userid
- * @return stdClass {required, retained, done}
+ * @return stdClass {required, retained, done, beforeyear}
  */
 function stage_get_student_abroad_progress($stageid, $userid) {
     global $DB;
 
-    $required = (int) $DB->get_field('stage', 'requiredabroaddays', ['id' => $stageid]);
-
-    $entries = stage_get_student_entries($stageid, $userid);
-    $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
-
-    $retained = 0;
-    foreach ($entries as $entry) {
-        if (empty($entry->abroad) || $entry->status != STAGE_STATUS_VALIDE_DEVE) {
-            continue;
-        }
-        if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
-            continue;
-        }
-        $retained += $entry->retainedduration;
-    }
+    $stage = $DB->get_record('stage', ['id' => $stageid], 'requiredabroaddays, abroadbeforeyear', MUST_EXIST);
+    $required = (int) $stage->requiredabroaddays;
+    $retained = stage_get_student_abroad_days($stageid, $userid);
 
     return (object) [
         'required' => $required,
         'retained' => $retained,
         'done' => $required <= 0 || $retained >= $required,
+        'beforeyear' => (int) $stage->abroadbeforeyear,
     ];
 }
 
@@ -2043,35 +2010,19 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                     $themerow->retained,
                     $themerow->required > 0 ? $themestatus : '-',
                 ];
-                // Obligation de mobilité internationale propre à cette thématique, le cas échéant.
-                if ($themerow->abroadrequired > 0) {
-                    $abroadstatus = $themerow->abroaddone
-                        ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                        : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-                    $yeartable->data[] = [
-                        html_writer::tag('em', get_string('abroadtotal', 'mod_stage')
-                            . ' - ' . format_string($themerow->theme->name)),
-                        $themerow->abroadrequired,
-                        $themerow->abroadretained,
-                        $abroadstatus,
-                    ];
-                    if (!empty($themerow->theme->abroadrule)) {
-                        $yeartable->data[] = [
-                            html_writer::tag('small', format_text($themerow->theme->abroadrule, FORMAT_PLAIN),
-                                ['class' => 'text-muted']),
-                            '', '', '',
-                        ];
-                    }
-                }
             }
             echo html_writer::table($yeartable);
         }
     }
 
-    // Bilan de l'obligation de mobilité internationale (hors stages complémentaires).
+    // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
+    // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
     $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
     if ($abroadprogress->required > 0) {
         echo $OUTPUT->heading(get_string('abroadtotal', 'mod_stage'), 4);
+        if (!empty($stage->abroadrule)) {
+            echo html_writer::tag('p', format_text($stage->abroadrule, FORMAT_PLAIN), ['class' => 'text-muted']);
+        }
         $abroadstatus = $abroadprogress->done
             ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
             : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
@@ -2079,9 +2030,15 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         $abroadtable->head = [
             get_string('abroaddaysrequired', 'mod_stage'),
             get_string('abroaddaysretained', 'mod_stage'),
+            get_string('abroadbeforeyear', 'mod_stage'),
             get_string('status', 'mod_stage'),
         ];
-        $abroadtable->data[] = [$abroadprogress->required, $abroadprogress->retained, $abroadstatus];
+        $abroadtable->data[] = [
+            $abroadprogress->required,
+            $abroadprogress->retained,
+            $abroadprogress->beforeyear > 0 ? stage_studyyear_label($abroadprogress->beforeyear) : '-',
+            $abroadstatus,
+        ];
         echo html_writer::table($abroadtable);
     }
 

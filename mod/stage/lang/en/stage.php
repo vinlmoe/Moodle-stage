@@ -153,6 +153,7 @@ $string['abroad'] = 'Internship abroad';
 $string['requiredabroaddays'] = 'Required international mobility days';
 $string['requiredabroaddays_help'] = 'Total number of days abroad each student must accumulate across all their internships (0 = no requirement). Only internships marked "Internship abroad" and mandatory internships (excluding complementary ones) count towards this total.';
 $string['abroadtotal'] = 'International mobility';
+$string['abroadbeforeyear'] = 'Study year before which mobility is required';
 $string['abroaddaysrequired'] = 'Days abroad required';
 $string['abroaddaysretained'] = 'Days abroad retained';
 $string['themeabroaddays_help'] = 'Number of days abroad required for this theme (0 = no requirement), accumulated across all internships done on this theme (both mandatory AND complementary, unlike the required duration above which excludes complementary internships). For a theme bound to a range of years, checked at its last year like the required duration.';

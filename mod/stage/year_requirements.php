@@ -17,7 +17,11 @@
 /**
  * Gestion, par la DEVE, de la durée totale de stage obligatoire requise pour chaque année
  * d'étude, toutes thématiques confondues (les stages complémentaires ne comptent pas dans ce
- * bilan, voir stage_get_student_year_progress()).
+ * bilan, voir stage_get_student_year_progress()), ainsi que de l'obligation de mobilité
+ * internationale de ce stage (nombre de jours à l'étranger requis, année avant laquelle elle doit
+ * être satisfaite, et consigne affichée aux étudiants) : elle n'est pas liée à une thématique,
+ * tous les stages comptent ici, obligatoires ou complémentaires (voir
+ * stage_get_student_abroad_progress()).
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
@@ -51,6 +55,13 @@ if (data_submitted() && confirm_sesskey()) {
         $duration = optional_param('duration_' . $year, 0, PARAM_INT);
         stage_set_year_requirement($stage->id, $year, $duration);
     }
+
+    $stage->requiredabroaddays = optional_param('requiredabroaddays', 0, PARAM_INT);
+    $stage->abroadbeforeyear = optional_param('abroadbeforeyear', 0, PARAM_INT);
+    $stage->abroadrule = optional_param('abroadrule', '', PARAM_TEXT);
+    $stage->timemodified = time();
+    $DB->update_record('stage', $stage);
+
     redirect($baseurl, get_string('yearrequirementssaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
@@ -78,6 +89,25 @@ foreach ($years as $year) {
     $table->data[] = [stage_studyyear_label($year), $input];
 }
 echo html_writer::table($table);
+
+// Obligation de mobilité internationale : pas liée à une thématique, commune à tous les stages.
+echo $OUTPUT->heading(get_string('abroadtotal', 'mod_stage'), 4);
+
+echo html_writer::tag('label', get_string('requiredabroaddays', 'mod_stage'), ['for' => 'requiredabroaddays']);
+echo html_writer::empty_tag('input', [
+    'type' => 'number', 'min' => 0, 'name' => 'requiredabroaddays', 'id' => 'requiredabroaddays',
+    'value' => $stage->requiredabroaddays, 'class' => 'form-control', 'style' => 'width:8em',
+]);
+echo $OUTPUT->render(new \help_icon('requiredabroaddays', 'mod_stage'));
+
+echo html_writer::tag('label', get_string('abroadbeforeyear', 'mod_stage'), ['for' => 'abroadbeforeyear']);
+echo html_writer::select(stage_studyyear_options(), 'abroadbeforeyear', $stage->abroadbeforeyear, false,
+    ['id' => 'abroadbeforeyear', 'class' => 'form-control', 'style' => 'width:auto']);
+
+echo html_writer::tag('label', get_string('abroadrule', 'mod_stage'), ['for' => 'abroadrule']);
+echo html_writer::tag('textarea', s($stage->abroadrule),
+    ['name' => 'abroadrule', 'id' => 'abroadrule', 'rows' => 3, 'class' => 'form-control']);
+echo $OUTPUT->render(new \help_icon('abroadrule', 'mod_stage'));
 
 echo html_writer::empty_tag('input', [
     'type' => 'submit', 'value' => get_string('savechanges'), 'class' => 'btn btn-primary mt-2',

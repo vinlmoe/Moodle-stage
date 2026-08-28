@@ -524,5 +524,33 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082419, 'stage');
     }
 
+    if ($oldversion < 2026082420) {
+        // L'obligation de mobilité internationale n'est pas liée à une thématique : ses
+        // paramètres, gérés depuis la page "Durées de stage par année" (year_requirements.php),
+        // migrent de stage_theme vers stage, avec une année limite et une consigne en plus.
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('abroadbeforeyear', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0',
+            'requiredabroaddays');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+        $field = new xmldb_field('abroadrule', XMLDB_TYPE_TEXT, null, null, null, null, null, 'abroadbeforeyear');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        $themetable = new xmldb_table('stage_theme');
+        $field = new xmldb_field('requiredabroaddays');
+        if ($dbman->field_exists($themetable, $field)) {
+            $dbman->drop_field($themetable, $field);
+        }
+        $field = new xmldb_field('abroadrule');
+        if ($dbman->field_exists($themetable, $field)) {
+            $dbman->drop_field($themetable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082420, 'stage');
+    }
+
     return true;
 }

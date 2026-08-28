@@ -196,12 +196,10 @@ if (empty($themes)) {
             ['id' => $cm->id, 'action' => 'delete', 'themeid' => $theme->id, 'sesskey' => sesskey()]);
         $questionsurl = new moodle_url('/mod/stage/questions.php', ['id' => $cm->id, 'themeid' => $theme->id]);
         $durationsurl = new moodle_url('/mod/stage/theme_durations.php', ['id' => $cm->id, 'themeid' => $theme->id]);
-        $abroadurl = new moodle_url('/mod/stage/theme_abroad.php', ['id' => $cm->id, 'themeid' => $theme->id]);
 
         $actions = html_writer::link($editurl, get_string('edit')) . ' | '
             . html_writer::link($toggleurl, get_string('toggle', 'mod_stage')) . ' | '
             . html_writer::link($durationsurl, get_string('managethemedurations', 'mod_stage')) . ' | '
-            . html_writer::link($abroadurl, get_string('abroadtotal', 'mod_stage')) . ' | '
             . html_writer::link($questionsurl, get_string('evalquestions', 'mod_stage')) . ' | '
             . html_writer::link($deleteurl, get_string('delete'),
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
