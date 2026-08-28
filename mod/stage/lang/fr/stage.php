@@ -169,6 +169,7 @@ $string['manageyearrequirements'] = 'Durées totales requises par année';
 $string['yearrequirementssaved'] = 'Durées totales enregistrées.';
 $string['yearrequirements_help'] = "Durée totale de stage obligatoire requise pour chaque année d'étude, toutes thématiques confondues. Les stages complémentaires ne comptent pas dans ce bilan.";
 $string['yeartotals'] = "Bilan par année d'étude";
+$string['validatedyears'] = 'Validées : {$a}';
 $string['status'] = 'Statut';
 $string['mandatory'] = 'Obligatoire';
 $string['sortorder'] = 'Ordre';

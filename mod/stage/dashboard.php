@@ -145,9 +145,24 @@ if (empty($rows)) {
         $progresslabel = $row->mandatorytotal > 0
             ? "{$row->mandatorydone} / {$row->mandatorytotal}"
             : get_string('nomandatorythemes', 'mod_stage');
-        $globalstatus = $row->complete
-            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+        if ($row->complete) {
+            $globalstatus = html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success');
+        } else {
+            // Plutôt qu'un simple "à compléter", indique quelles années sont déjà validées
+            // (voir stage_get_student_year_progress()), pour situer l'avancement en un coup d'œil.
+            $validatedyears = array_filter($row->yearprogress, function($yearrow) {
+                return $yearrow->done;
+            });
+            if (!empty($validatedyears)) {
+                $labels = array_map(function($yearrow) {
+                    return stage_studyyear_label($yearrow->studyyear);
+                }, $validatedyears);
+                $globalstatus = html_writer::span(get_string('validatedyears', 'mod_stage', implode(', ', $labels)),
+                    'badge badge-success');
+            } else {
+                $globalstatus = html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+            }
+        }
         $detailurl = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id, 'studentid' => $row->user->id]);
 
         $table->data[] = [

@@ -164,6 +164,7 @@ $string['manageyearrequirements'] = 'Total required durations per year';
 $string['yearrequirementssaved'] = 'Total durations saved.';
 $string['yearrequirements_help'] = 'Total mandatory internship duration required for each study year, across all themes. Complementary internships do not count towards this total.';
 $string['yeartotals'] = 'Study year summary';
+$string['validatedyears'] = 'Validated: {$a}';
 $string['status'] = 'Status';
 $string['mandatory'] = 'Mandatory';
 $string['sortorder'] = 'Order';
