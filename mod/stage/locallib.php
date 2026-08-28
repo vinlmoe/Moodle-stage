@@ -397,39 +397,117 @@ function stage_studyyear_selectable_options(stdClass $stage) {
 }
 
 /**
- * Calcule, pour un étudiant, la durée retenue (validée DEVE) au regard de la durée totale
- * obligatoire requise pour chaque année d'étude sur laquelle il a des saisies (hors stages
- * complémentaires).
+ * Une thématique obligatoire s'applique-t-elle à une année d'étude donnée ? Une thématique sans
+ * plage définie (minstudyyear = maxstudyyear = 0) s'applique à toutes les années.
+ *
+ * @param stdClass $theme
+ * @param int $studyyear
+ * @return bool
+ */
+function stage_theme_applies_to_year(stdClass $theme, $studyyear) {
+    $min = (int) $theme->minstudyyear;
+    $max = (int) $theme->maxstudyyear;
+    if (empty($min) && empty($max)) {
+        return true;
+    }
+    $min = $min ?: $max;
+    $max = $max ?: $min;
+    return $studyyear >= min($min, $max) && $studyyear <= max($min, $max);
+}
+
+/**
+ * Calcule, pour un étudiant et pour chaque année d'étude concernée, si les objectifs sont
+ * atteints : la durée totale obligatoire requise pour l'année (toutes thématiques confondues) ET
+ * la durée requise pour chaque thématique obligatoire applicable à cette année (hors stages
+ * complémentaires dans les deux cas). Une année n'est retenue que si un objectif y est défini
+ * (durée totale ou durée d'au moins une thématique) ou que l'étudiant y a des saisies.
  *
  * @param int $stageid
  * @param int $userid
- * @return array int => stdClass{studyyear, retained, required, done}
+ * @return array int => stdClass{studyyear, retained, required, totaldone, themes, done}
+ *               'themes' est un tableau de stdClass{theme, required, retained, done}
+ *               'done' est vrai seulement si la durée totale ET toutes les thématiques
+ *               obligatoires de l'année (celles ayant une durée requise > 0) sont validées.
  */
 function stage_get_student_year_progress($stageid, $userid) {
     $entries = stage_get_student_entries($stageid, $userid);
     $stagetypes = stage_get_entry_stagetypes(array_keys($entries));
+    $mandatorythemes = array_filter(stage_get_themes($stageid, true), function($theme) {
+        return !empty($theme->mandatory);
+    });
 
-    $byyear = [];
+    // Années à considérer : celles où l'étudiant a des saisies, celles où une durée totale est
+    // définie, et celles couvertes par au moins une thématique obligatoire.
+    $years = [];
+    foreach ($entries as $entry) {
+        $years[(int) $entry->studyyear] = true;
+    }
+    foreach (stage_get_year_requirements($stageid) as $year => $required) {
+        if ($required > 0) {
+            $years[$year] = true;
+        }
+    }
+    foreach ($mandatorythemes as $theme) {
+        $min = (int) $theme->minstudyyear ?: (int) $theme->maxstudyyear;
+        $max = (int) $theme->maxstudyyear ?: (int) $theme->minstudyyear;
+        if (empty($min) && empty($max)) {
+            continue;
+        }
+        for ($year = min($min, $max); $year <= max($min, $max); $year++) {
+            $years[$year] = true;
+        }
+    }
+
+    // Durées retenues (hors stages complémentaires), regroupées par (année) et par (thématique, année).
+    $retainedbyyear = [];
+    $retainedbythemeyear = [];
     foreach ($entries as $entry) {
         if (($stagetypes[$entry->id] ?? 'obligatoire') === 'complementaire') {
             continue;
         }
+        if ($entry->status != STAGE_STATUS_VALIDE_DEVE) {
+            continue;
+        }
         $year = (int) $entry->studyyear;
-        if (!isset($byyear[$year])) {
-            $byyear[$year] = (object) [
-                'studyyear' => $year,
-                'retained' => 0,
-                'required' => stage_get_year_requirement($stageid, $year),
-                'done' => false,
-            ];
-        }
-        if ($entry->status == STAGE_STATUS_VALIDE_DEVE) {
-            $byyear[$year]->retained += $entry->retainedduration;
-        }
+        $retainedbyyear[$year] = ($retainedbyyear[$year] ?? 0) + $entry->retainedduration;
+        $key = $entry->themeid . ':' . $year;
+        $retainedbythemeyear[$key] = ($retainedbythemeyear[$key] ?? 0) + $entry->retainedduration;
     }
 
-    foreach ($byyear as $year => $row) {
-        $byyear[$year]->done = $row->required > 0 && $row->retained >= $row->required;
+    $byyear = [];
+    foreach (array_keys($years) as $year) {
+        $required = stage_get_year_requirement($stageid, $year);
+        $retained = $retainedbyyear[$year] ?? 0;
+        $totaldone = $required <= 0 || $retained >= $required;
+
+        $themerows = [];
+        $themesdone = true;
+        foreach ($mandatorythemes as $theme) {
+            if (!stage_theme_applies_to_year($theme, $year)) {
+                continue;
+            }
+            $themerequired = stage_get_theme_duration($theme->id, $year);
+            $themeretained = $retainedbythemeyear[$theme->id . ':' . $year] ?? 0;
+            $themedone = $themerequired <= 0 || $themeretained >= $themerequired;
+            if ($themerequired > 0 && !$themedone) {
+                $themesdone = false;
+            }
+            $themerows[] = (object) [
+                'theme' => $theme,
+                'required' => $themerequired,
+                'retained' => $themeretained,
+                'done' => $themedone,
+            ];
+        }
+
+        $byyear[$year] = (object) [
+            'studyyear' => $year,
+            'retained' => $retained,
+            'required' => $required,
+            'totaldone' => $totaldone,
+            'themes' => $themerows,
+            'done' => $totaldone && $themesdone,
+        ];
     }
 
     ksort($byyear);
@@ -1425,6 +1503,7 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
     foreach ($students as $student) {
         $progress = stage_get_student_progress($stageid, $student->id);
         $entries = stage_get_student_entries($stageid, $student->id);
+        $yearprogress = stage_get_student_year_progress($stageid, $student->id);
 
         $pending = 0;
         foreach ($entries as $entry) {
@@ -1444,14 +1523,23 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
             }
         }
 
+        // Les objectifs sont complétés si, pour chaque année d'étude ayant un objectif défini
+        // (durée totale et/ou durée par thématique), la durée totale ET chaque thématique
+        // obligatoire de cette année sont validées (voir stage_get_student_year_progress()).
+        $yeartotal = count($yearprogress);
+        $yeardone = count(array_filter($yearprogress, function($row) {
+            return $row->done;
+        }));
+
         $rows[] = (object) [
             'user' => $student,
             'progress' => $progress,
+            'yearprogress' => $yearprogress,
             'entrycount' => count($entries),
             'pendingcount' => $pending,
             'mandatorytotal' => $mandatorytotal,
             'mandatorydone' => $mandatorydone,
-            'complete' => $mandatorytotal > 0 && $mandatorydone === $mandatorytotal,
+            'complete' => $yeartotal > 0 && $yeardone === $yeartotal,
         ];
     }
 
@@ -1562,29 +1650,47 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         echo html_writer::table($table);
     }
 
-    // Bilan des durées totales obligatoires par année d'étude (hors stages complémentaires).
+    // Bilan des objectifs par année d'étude (hors stages complémentaires) : les objectifs d'une
+    // année sont atteints si sa durée totale ET la durée de chacune de ses thématiques
+    // obligatoires sont validées (voir stage_get_student_year_progress()).
     $yearprogress = stage_get_student_year_progress($stage->id, $userid);
     if (!empty($yearprogress)) {
         echo $OUTPUT->heading(get_string('yeartotals', 'mod_stage'), 4);
-        $yeartable = new html_table();
-        $yeartable->head = [
-            get_string('studyyear', 'mod_stage'),
-            get_string('totalrequiredduration', 'mod_stage'),
-            get_string('retainedduration', 'mod_stage'),
-            get_string('status', 'mod_stage'),
-        ];
         foreach ($yearprogress as $row) {
             $status = $row->done
                 ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
                 : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+            echo $OUTPUT->heading(stage_studyyear_label($row->studyyear) . ' ' . $status, 5);
+
+            $yeartable = new html_table();
+            $yeartable->head = [
+                get_string('theme', 'mod_stage'),
+                get_string('requiredduration', 'mod_stage'),
+                get_string('retainedduration', 'mod_stage'),
+                get_string('status', 'mod_stage'),
+            ];
+            $totalstatus = $row->totaldone
+                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
             $yeartable->data[] = [
-                stage_studyyear_label($row->studyyear),
+                html_writer::tag('strong', get_string('totalrequiredduration', 'mod_stage')),
                 $row->required,
                 $row->retained,
-                $row->required > 0 ? $status : '-',
+                $row->required > 0 ? $totalstatus : '-',
             ];
+            foreach ($row->themes as $themerow) {
+                $themestatus = $themerow->done
+                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+                $yeartable->data[] = [
+                    format_string($themerow->theme->name),
+                    $themerow->required,
+                    $themerow->retained,
+                    $themerow->required > 0 ? $themestatus : '-',
+                ];
+            }
+            echo html_writer::table($yeartable);
         }
-        echo html_writer::table($yeartable);
     }
 
     echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);

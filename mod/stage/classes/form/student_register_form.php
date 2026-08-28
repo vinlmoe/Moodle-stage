@@ -63,6 +63,7 @@ class student_register_form extends \moodleform {
         $mform->addElement('select', 'studyyear', get_string('studyyear', 'mod_stage'),
             stage_studyyear_selectable_options($stage));
         $mform->addRule('studyyear', null, 'required', null, 'client');
+        $mform->setDefault('studyyear', $stage->currentstudyyear);
 
         $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
         $mform->setType('structure', PARAM_TEXT);
