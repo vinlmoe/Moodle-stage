@@ -158,6 +158,7 @@ $string['abroaddaysretained'] = 'Days abroad retained';
 $string['themeabroaddays_help'] = 'Number of days abroad required for this theme (0 = no requirement), accumulated across all internships done on this theme (both mandatory AND complementary, unlike the required duration above which excludes complementary internships). For a theme bound to a range of years, checked at its last year like the required duration.';
 $string['abroadrule'] = 'International mobility rule (shown to students)';
 $string['abroadrule_help'] = 'Free text describing the international mobility conditions for this theme (e.g. eligible countries, minimum continuous duration, partner organisations...). Shown to students when registering an internship on this theme and in their summary.';
+$string['themeabroadsaved'] = 'The international mobility settings have been saved.';
 $string['country'] = 'Country';
 $string['workdays'] = 'Actual internship days';
 $string['workdays_help'] = 'Among this internship\'s date ranges, tick the days actually worked. Reminder: regulations require at least one rest day per week.';

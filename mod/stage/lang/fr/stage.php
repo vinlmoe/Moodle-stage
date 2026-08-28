@@ -163,6 +163,7 @@ $string['abroaddaysretained'] = "Jours à l'étranger retenus";
 $string['themeabroaddays_help'] = "Nombre de jours de stage à l'étranger requis pour cette thématique (0 = aucune obligation), cumulés sur l'ensemble des stages effectués sur cette thématique (obligatoires ET complémentaires, contrairement à la durée requise ci-dessus qui exclut les stages complémentaires). Pour une thématique bornée à une plage d'années, vérifié à sa dernière année comme la durée requise.";
 $string['abroadrule'] = 'Règle de mobilité internationale (affichée aux étudiants)';
 $string['abroadrule_help'] = "Texte libre précisant les conditions de mobilité internationale pour cette thématique (ex : pays éligibles, durée minimale continue, organismes partenaires...). Affiché aux étudiants lors de l'enregistrement d'un stage sur cette thématique et dans leur bilan.";
+$string['themeabroadsaved'] = 'Les paramètres de mobilité internationale ont été enregistrés.';
 $string['country'] = 'Pays';
 $string['workdays'] = 'Jours de stage effectifs';
 $string['workdays_help'] = "Cochez, parmi les plages de dates de ce stage, les jours effectivement travaillés. Rappel : la réglementation impose au moins un jour de repos par semaine.";
