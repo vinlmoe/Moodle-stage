@@ -72,6 +72,13 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('managethemedurations', 'mod_stage') . ' : ' . format_string($theme->name));
 echo html_writer::link(new moodle_url('/mod/stage/themes.php', ['id' => $cm->id]), get_string('back'));
 
+// Une durée unique définie sur la thématique (voir sa fiche) prime toujours sur les durées par
+// année ci-dessous : autant prévenir la DEVE plutôt que de la laisser modifier des valeurs
+// ignorées (l'un ou l'autre, pas les deux, voir stage_get_theme_duration()).
+if (!empty($theme->requiredduration)) {
+    echo $OUTPUT->notification(get_string('durationflatignored', 'mod_stage', $theme->requiredduration), 'warning');
+}
+
 echo html_writer::start_tag('form', ['method' => 'post', 'action' => $baseurl]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 

@@ -105,6 +105,7 @@ if ($action === 'edit') {
         $record->name = $data->name;
         $record->description = $data->description;
         $record->mandatory = !empty($data->mandatory) ? 1 : 0;
+        $record->requiredduration = $data->requiredduration;
         $record->minstudyyear = $data->minstudyyear;
         $record->maxstudyyear = $data->maxstudyyear;
         $record->sortorder = $data->sortorder;
@@ -169,11 +170,15 @@ if (empty($themes)) {
         get_string('minstudyyear', 'mod_stage'),
         get_string('maxstudyyear', 'mod_stage'),
         get_string('mandatory', 'mod_stage'),
+        get_string('requiredduration', 'mod_stage'),
         get_string('visible'),
         get_string('actions', 'mod_stage'),
     ];
     foreach ($themes as $theme) {
         $mandatorycb = html_writer::checkbox('mandatory_' . $theme->id, 1, (bool) $theme->mandatory, '');
+        $durationlabel = !empty($theme->requiredduration)
+            ? $theme->requiredduration
+            : html_writer::span(get_string('durationperyear', 'mod_stage'), 'text-muted');
         $minstudyyearselect = html_writer::select(stage_studyyear_options(), 'minstudyyear_' . $theme->id,
             $theme->minstudyyear, false, ['class' => 'form-control']);
         $maxstudyyearselect = html_writer::select(stage_studyyear_options(), 'maxstudyyear_' . $theme->id,
@@ -200,7 +205,7 @@ if (empty($themes)) {
                 ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
 
         $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
-            $visible, $actions];
+            $durationlabel, $visible, $actions];
     }
     echo html_writer::table($table);
 

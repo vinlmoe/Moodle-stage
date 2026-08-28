@@ -461,5 +461,18 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082417, 'stage');
     }
 
+    if ($oldversion < 2026082418) {
+        // Réintroduit une durée requise unique pour une thématique, en alternative à une durée
+        // par année (stage_theme_duration) : l'un ou l'autre, pas les deux.
+        $table = new xmldb_table('stage_theme');
+        $field = new xmldb_field('requiredduration', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0',
+            'mandatory');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082418, 'stage');
+    }
+
     return true;
 }
