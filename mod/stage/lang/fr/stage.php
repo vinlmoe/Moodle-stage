@@ -158,6 +158,7 @@ $string['abroad'] = "Stage à l'étranger";
 $string['requiredabroaddays'] = "Jours de mobilité internationale requis";
 $string['requiredabroaddays_help'] = "Nombre de jours de stage à l'étranger que chaque étudiant doit cumuler au total sur l'ensemble de ses stages (0 = aucune obligation). Seuls les stages marqués « Stage à l'étranger » et les stages obligatoires (hors stages complémentaires) comptent dans ce bilan.";
 $string['abroadtotal'] = 'Mobilité internationale';
+$string['abroadbeforeyear'] = "Année avant laquelle la mobilité est requise";
 $string['abroaddaysrequired'] = 'Jours à l\'étranger requis';
 $string['abroaddaysretained'] = "Jours à l'étranger retenus";
 $string['themeabroaddays_help'] = "Nombre de jours de stage à l'étranger requis pour cette thématique (0 = aucune obligation), cumulés sur l'ensemble des stages effectués sur cette thématique (obligatoires ET complémentaires, contrairement à la durée requise ci-dessus qui exclut les stages complémentaires). Pour une thématique bornée à une plage d'années, vérifié à sa dernière année comme la durée requise.";
@@ -355,6 +356,9 @@ $string['noreferentteacheryet'] = "Aucun enseignant référent ne vous a encore 
 $string['conventionvalidatedpdferror'] = 'La demande a été validée, mais la génération du PDF a échoué : {$a} '
     . 'Vous pourrez retélécharger la convention depuis cette liste une fois le problème résolu.';
 $string['conventionstatus_teacherpending'] = "En attente de l'enseignant référent";
+$string['conventionstatus_exempt'] = 'Sans convention';
+$string['exemptfromconvention'] = 'Dispenser de convention';
+$string['exemptfromconvention_help'] = "Si coché, ce stage ne nécessite aucune convention : son statut de convention passe directement à « Sans convention » et l'auto-évaluation de l'étudiant est immédiatement ouverte, sans attendre de demande ni de signature.";
 $string['conventionrequireteachervalidation'] = "Exiger la validation de l'enseignant.e référent.e avant transmission à la DEVE";
 $string['conventionrequireteachervalidation_help'] = "Si activé, une demande de convention soumise par un étudiant "
     . "doit d'abord être validée par l'un de ses enseignants référents avant d'apparaître dans la liste des "

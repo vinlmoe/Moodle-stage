@@ -52,11 +52,6 @@ class mod_stage_mod_form extends moodleform_mod {
         $mform->addHelpButton('currentstudyyear', 'currentstudyyear', 'mod_stage');
         $mform->setDefault('currentstudyyear', 0);
 
-        $mform->addElement('text', 'requiredabroaddays', get_string('requiredabroaddays', 'mod_stage'));
-        $mform->setType('requiredabroaddays', PARAM_INT);
-        $mform->addHelpButton('requiredabroaddays', 'requiredabroaddays', 'mod_stage');
-        $mform->setDefault('requiredabroaddays', 0);
-
         $this->standard_coursemodule_elements();
 
         $this->add_action_buttons();
