@@ -963,6 +963,58 @@ function stage_save_entry_periods($entryid, array $periods) {
 }
 
 /**
+ * Extrait les plages de dates soumises par un champ répété "perioddatestart"/"perioddateend"
+ * (voir stage_add_period_fields()), en ignorant les lignes vides ou incomplètes (option
+ * "optional" du date_selector : valeur 0 quand la ligne n'est pas activée).
+ *
+ * @param stdClass $data Données soumises d'un formulaire utilisant stage_add_period_fields()
+ * @return array Liste de tableaux ['datestart' => int, 'dateend' => int], prête pour
+ *               stage_save_entry_periods()
+ */
+function stage_extract_submitted_periods(stdClass $data) {
+    $periods = [];
+    if (empty($data->perioddatestart) || !is_array($data->perioddatestart)) {
+        return $periods;
+    }
+    foreach ($data->perioddatestart as $i => $start) {
+        $end = $data->perioddateend[$i] ?? 0;
+        if (empty($start) || empty($end)) {
+            continue;
+        }
+        $periods[] = ['datestart' => $start, 'dateend' => $end];
+    }
+    return $periods;
+}
+
+/**
+ * Ajoute à un formulaire les champs répétés (avec bouton "Ajouter une plage") permettant de
+ * saisir plusieurs plages de dates pour un stage, directement sur la même page que les autres
+ * informations de convention (voir student_register_form, convention_request_form,
+ * convention_review_form). Les valeurs soumises sont récupérées avec
+ * stage_extract_submitted_periods() puis enregistrées avec stage_save_entry_periods().
+ *
+ * @param \moodleform $form Le formulaire, pour appeler sa méthode repeat_elements().
+ * @param \MoodleQuickForm $mform Son $this->_form (propriété protégée, à passer depuis la classe
+ *                                appelante : ce helper ne peut pas y accéder directement).
+ * @param int $initialcount Nombre de lignes affichées initialement (au moins 1).
+ * @return void
+ */
+function stage_add_period_fields(\moodleform $form, $mform, $initialcount = 1) {
+    $mform->addElement('header', 'periodsheader', get_string('periods', 'mod_stage'));
+    $mform->setExpanded('periodsheader');
+    $mform->addElement('static', 'periodshelp', '', get_string('periods_help', 'mod_stage'));
+
+    $repeatarray = [
+        $mform->createElement('date_selector', 'perioddatestart', get_string('periodstart', 'mod_stage'),
+            ['optional' => true]),
+        $mform->createElement('date_selector', 'perioddateend', get_string('periodend', 'mod_stage'),
+            ['optional' => true]),
+    ];
+    $form->repeat_elements($repeatarray, max((int) $initialcount, 1), [], 'periodrepeats', 'periodaddfields', 1,
+        get_string('addperiod', 'mod_stage'), true);
+}
+
+/**
  * Retourne la liste des jours (timestamps à minuit, heure du serveur) compris dans une plage de
  * dates, bornes incluses.
  *
@@ -3063,6 +3115,9 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
             'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
             'end' => $entry->dateend ? userdate($entry->dateend, $dateformat) : '-',
         ],
+        'periods' => array_map(function($period) use ($dateformat) {
+            return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
+        }, stage_get_or_seed_entry_periods($entry)),
         'duration' => [
             'declared' => $entry->declaredduration,
             'retained' => $entry->retainedduration,

@@ -84,7 +84,10 @@ if (empty($referentteachers)) {
     exit;
 }
 
-$mform = new convention_request_form($baseurl, ['templates' => $templates, 'referentteachers' => $referentteachers]);
+$periods = array_values(stage_get_or_seed_entry_periods($entry));
+$mform = new convention_request_form($baseurl, [
+    'templates' => $templates, 'referentteachers' => $referentteachers, 'periods' => $periods,
+]);
 
 $formdata = (object) ['id' => $cm->id, 'entryid' => $entryid];
 $existingdetail = stage_get_convention_detail($entry->id);
@@ -95,6 +98,12 @@ if ($existingdetail) {
         }
     }
 }
+$formdata->perioddatestart = array_map(function($period) {
+    return $period->datestart;
+}, $periods);
+$formdata->perioddateend = array_map(function($period) {
+    return $period->dateend;
+}, $periods);
 $mform->set_data($formdata);
 
 if ($mform->is_cancelled()) {
@@ -131,6 +140,7 @@ if ($mform->is_cancelled()) {
     $detail->leavemodalities = $detail->hasleave ? $data->leavemodalities : '';
     $detail->gratificationamount = $data->gratificationamount;
     stage_save_convention_detail($entry->id, $detail);
+    stage_save_entry_periods($entry->id, stage_extract_submitted_periods($data));
 
     if ($requireteachervalidation) {
         stage_notify_teacher_convention_pending($stage, $cm, $entry);
@@ -151,11 +161,6 @@ if ($requeststatus === STAGE_CONVENTION_REJECTED && !empty($entry->conventionrej
 }
 
 echo $OUTPUT->box(get_string('requestconvention_help', 'mod_stage'), 'generalbox mb-3');
-
-$periodsurl = new moodle_url('/mod/stage/entry_periods.php',
-    ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $baseurl->out_as_local_url(false)]);
-echo html_writer::link($periodsurl, get_string('manageperiods', 'mod_stage'),
-    ['class' => 'btn btn-secondary d-block mb-3', 'style' => 'width:fit-content']);
 
 $mform->display();
 

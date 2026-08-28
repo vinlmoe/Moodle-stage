@@ -82,6 +82,12 @@ class student_register_form extends \moodleform {
         $mform->setType('declaredduration', PARAM_INT);
         $mform->addRule('declaredduration', null, 'required', null, 'client');
 
+        // Plages de dates détaillées (facultatif, en plus des dates ci-dessus) : un stage peut
+        // comporter plusieurs plages non contiguës (ex : deux séjours séparés), voir
+        // stage_add_period_fields(). L'étudiant en choisira ses jours de stage effectifs lors de
+        // son auto-évaluation.
+        stage_add_period_fields($this, $mform);
+
         // Langue et gabarit de la convention.
         $mform->addElement('select', 'conventionlang', get_string('conventionlang', 'mod_stage'),
             stage_convention_lang_options(), ['id' => 'id_conventionlang']);

@@ -148,6 +148,9 @@ class convention_pdf extends \pdf {
         $this->field_row($this->str('theme'), $stagedata['theme']['name']);
         $this->field_row($this->str('datestart'), $stagedata['dates']['start']);
         $this->field_row($this->str('dateend'), $stagedata['dates']['end']);
+        if (!empty($stagedata['periods']) && count($stagedata['periods']) > 1) {
+            $this->field_row($this->str('periods'), implode("\n", $stagedata['periods']));
+        }
         $this->field_row($this->str('declaredduration'), $stagedata['duration']['declared']);
         $this->field_row($this->str('retainedduration'), $stagedata['duration']['retained']);
         $this->field_row($this->str('status'), $stagedata['statuslabel']);

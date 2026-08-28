@@ -68,6 +68,10 @@ class convention_review_form extends \moodleform {
         $mform->addElement('select', 'stagetype', get_string('conventionstagetype', 'mod_stage'),
             stage_convention_stagetype_options());
 
+        // Plages de dates du stage (plusieurs plages non contiguës possibles), consultables et
+        // modifiables ici par la DEVE et l'enseignant référent (voir stage_add_period_fields()).
+        stage_add_period_fields($this, $mform, count($this->_customdata['periods'] ?? []));
+
         $mform->addElement('header', 'studentheader', get_string('conventionstudent', 'mod_stage'));
         $mform->setExpanded('studentheader');
         $mform->addElement('date_selector', 'studentbirthdate', get_string('conventionbirthdate', 'mod_stage'));
