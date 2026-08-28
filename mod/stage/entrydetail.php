@@ -67,6 +67,9 @@ if ($theme) {
     echo html_writer::tag('p', get_string('studyyear', 'mod_stage') . ' : ' . stage_studyyear_label($entry->studyyear));
 }
 echo html_writer::tag('p', get_string('structure', 'mod_stage') . ' : ' . s($entry->structure));
+if (!empty($entry->abroad)) {
+    echo html_writer::tag('p', html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info'));
+}
 $dateformat = get_string('strftimedate', 'langconfig');
 if ($entry->datestart) {
     echo html_writer::tag('p', get_string('datestart', 'mod_stage') . ' : ' . userdate($entry->datestart, $dateformat));

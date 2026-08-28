@@ -124,6 +124,9 @@ if ($mode === 'list') {
     foreach ($entries as $entry) {
         $student = $students[$entry->userid] ?? null;
         $themename = isset($allthemes[$entry->themeid]) ? format_string($allthemes[$entry->themeid]->name) : '-';
+        if (!empty($entry->abroad)) {
+            $themename .= ' ' . html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info');
+        }
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
         $actions = html_writer::link($editurl, get_string('edit'));
@@ -197,6 +200,7 @@ if ($mode === 'single') {
         $toform->themeid = $entry->themeid;
         $toform->studyyear = $entry->studyyear;
         $toform->structure = $entry->structure;
+        $toform->abroad = $entry->abroad;
         $toform->datestart = $entry->datestart;
         $toform->dateend = $entry->dateend;
         $toform->declaredduration = $entry->declaredduration;
@@ -208,10 +212,10 @@ if ($mode === 'single') {
     } else if ($data = $mform->get_data()) {
         if ($entry) {
             stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
-                $data->declaredduration, $data->studyyear);
+                $data->declaredduration, $data->studyyear, $data->abroad);
         } else {
             stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure, $data->datestart,
-                $data->dateend, $data->declaredduration, $data->studyyear);
+                $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE, $data->abroad);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
@@ -231,6 +235,7 @@ if ($mode === 'bulk') {
     if (data_submitted() && confirm_sesskey() && optional_param('bulkregister', 0, PARAM_INT)) {
         $themeid = required_param('themeid', PARAM_INT);
         $studyyear = optional_param('studyyear', 0, PARAM_INT);
+        $abroad = optional_param('abroad', 0, PARAM_INT);
         $structure = optional_param('structure', '', PARAM_TEXT);
         $datestartraw = optional_param('datestart', '', PARAM_TEXT);
         $dateendraw = optional_param('dateend', '', PARAM_TEXT);
@@ -259,7 +264,7 @@ if ($mode === 'bulk') {
             // Les stages enregistrés en masse sont déjà signés sur SignVet au moment de leur
             // enregistrement : pas de gestion de convention à faire dans ce plugin pour eux.
             stage_register_entry($stage->id, $studentid, $themeid, $structure, $start, $end, $declaredduration,
-                $studyyear, STAGE_CONVENTION_SIGNVET);
+                $studyyear, STAGE_CONVENTION_SIGNVET, $abroad);
             $existing[$key] = true;
             $bulkresults->created++;
         }
@@ -298,6 +303,10 @@ if ($mode === 'bulk') {
 
     echo html_writer::tag('label', get_string('structure', 'mod_stage'), ['for' => 'structure']);
     echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'structure', 'id' => 'structure', 'class' => 'form-control']);
+
+    echo html_writer::start_tag('div', ['class' => 'form-check my-2']);
+    echo html_writer::checkbox('abroad', 1, false, ' ' . get_string('abroad', 'mod_stage'), ['class' => 'form-check-input']);
+    echo html_writer::end_tag('div');
 
     echo html_writer::tag('label', get_string('datestart', 'mod_stage'));
     echo html_writer::empty_tag('input', ['type' => 'date', 'name' => 'datestart', 'class' => 'form-control']);
