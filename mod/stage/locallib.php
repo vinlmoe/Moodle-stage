@@ -2003,9 +2003,69 @@ function stage_render_navlinks(stdClass $cm, context $context) {
 }
 
 /**
+ * Badge de statut « Complété » / « À compléter », utilisé partout dans le résumé de l'étudiant.
+ *
+ * @param bool $done
+ * @return string HTML
+ */
+function stage_render_status_badge($done) {
+    return $done
+        ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+        : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+}
+
+/**
+ * Construit les cellules « requis / retenu / reste à faire / statut » communes à tous les bilans
+ * du résumé de l'étudiant (par thématique, par année, mobilité internationale).
+ *
+ * Le reste à faire est la donnée la plus utile à l'étudiant : elle évite d'avoir à soustraire
+ * mentalement le retenu du requis sur chaque ligne. Sans exigence chiffrée, les trois colonnes
+ * chiffrées n'ont pas de sens : seule la durée retenue est affichée.
+ *
+ * @param int $retained Durée retenue (validée DEVE).
+ * @param int $required Durée requise, 0 si aucune exigence.
+ * @param bool $done
+ * @return array Quatre cellules : requis, retenu, reste, statut.
+ */
+function stage_render_progress_cells($retained, $required, $done) {
+    if ($required <= 0) {
+        return ['-', $retained, '-', '-'];
+    }
+
+    return [
+        $required,
+        $retained,
+        $done ? '-' : ($required - $retained),
+        stage_render_status_badge($done),
+    ];
+}
+
+/**
+ * En-têtes de colonnes communs aux tableaux de bilan du résumé de l'étudiant, à faire suivre des
+ * cellules construites par stage_render_progress_cells().
+ *
+ * @return array
+ */
+function stage_progress_table_head() {
+    return [
+        get_string('requiredduration', 'mod_stage'),
+        get_string('retainedduration', 'mod_stage'),
+        get_string('remainingduration', 'mod_stage'),
+        get_string('status', 'mod_stage'),
+    ];
+}
+
+/**
  * Affiche l'avancement d'un étudiant (thématiques obligatoires et liste de ses saisies).
  * Utilisé par la page de l'étudiant lui-même (avec lien de saisie de l'auto-évaluation, si
  * $cm est fourni) et par le tableau de pilotage de la DEVE (lecture seule).
+ *
+ * L'information est présentée du général au particulier, en cinq sections : la synthèse (chiffres
+ * clés du dossier), le bilan par année d'étude, le bilan par thématique obligatoire, l'obligation
+ * de mobilité internationale, puis le détail de chaque stage saisi. Les bilans par année et par
+ * thématique tiennent chacun dans un seul tableau (l'année ou la plage d'années est une colonne,
+ * non un titre de section) et affichent le reste à faire plutôt que d'obliger l'étudiant à le
+ * calculer lui-même.
  *
  * @param stdClass $stage
  * @param int $userid
@@ -2020,140 +2080,153 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     global $OUTPUT;
 
     $progress = stage_get_student_progress($stage->id, $userid);
-
-    // Les thématiques obligatoires sont déjà triées par année d'étude (stage_get_themes) :
-    // on les regroupe sous un sous-titre par année pour organiser la vision de l'étudiant.
-    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
     $mandatorythemes = array_filter($progress->themes, function($t) {
         return $t->theme->mandatory;
     });
-    if (empty($mandatorythemes)) {
-        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
-    } else {
-        $currentyear = null;
-        $table = null;
-        foreach ($mandatorythemes as $t) {
-            $themeyearkey = $t->theme->minstudyyear . '-' . $t->theme->maxstudyyear;
-            if ($currentyear === null || $themeyearkey != $currentyear) {
-                if ($table !== null) {
-                    echo html_writer::table($table);
-                }
-                $currentyear = $themeyearkey;
-                echo $OUTPUT->heading(stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear), 5);
-                $table = new html_table();
-                $table->head = [
-                    get_string('theme', 'mod_stage'),
-                    get_string('requiredduration', 'mod_stage'),
-                    get_string('retainedduration', 'mod_stage'),
-                    get_string('status', 'mod_stage'),
-                ];
-            }
-            $status = $t->done
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            $table->data[] = [
-                format_string($t->theme->name),
-                $t->requiredduration,
-                $t->retained,
-                $status,
-            ];
-        }
-        echo html_writer::table($table);
-    }
-
     // Bilan des objectifs par année d'étude (hors stages complémentaires) : les objectifs d'une
     // année sont atteints si sa durée totale, la durée de chacune de ses thématiques obligatoires
     // ET, à l'année avant laquelle elle est due le cas échéant, l'obligation de mobilité
     // internationale sont validées (voir stage_get_student_year_progress()).
     $yearprogress = stage_get_student_year_progress($stage->id, $userid);
+    // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
+    // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
+    $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
+    // Total des stages complémentaires (EP), à part : ne compte pas dans le décompte obligatoire.
+    $complementary = stage_get_student_complementary_days($stage->id, $userid);
+
+    // 1. Synthèse : les chiffres clés du dossier en tête, pour situer l'avancement d'un coup
+    // d'œil avant d'entrer dans le détail. Ils étaient auparavant dispersés en bas de page.
+    $themesdonecount = count(array_filter($mandatorythemes, function($t) {
+        return $t->done;
+    }));
+    $yearsdonecount = count(array_filter($yearprogress, function($row) {
+        return $row->done;
+    }));
+
+    echo $OUTPUT->heading(get_string('summary', 'mod_stage'), 4);
+    $summarytable = new html_table();
+    $summarytable->head = [get_string('summaryitem', 'mod_stage'), get_string('summaryvalue', 'mod_stage')];
+    $summarytable->data[] = [
+        get_string('summarytotaldays', 'mod_stage'),
+        get_string('retaineddaysonly', 'mod_stage', $progress->totalretained),
+    ];
+    if (!empty($yearprogress)) {
+        $summarytable->data[] = [
+            get_string('summaryyearsdone', 'mod_stage'),
+            $yearsdonecount . ' / ' . count($yearprogress) . ' '
+                . stage_render_status_badge($yearsdonecount === count($yearprogress)),
+        ];
+    }
+    if (!empty($mandatorythemes)) {
+        $summarytable->data[] = [
+            get_string('summarythemesdone', 'mod_stage'),
+            $themesdonecount . ' / ' . count($mandatorythemes) . ' '
+                . stage_render_status_badge($themesdonecount === count($mandatorythemes)),
+        ];
+    }
+    if ($abroadprogress->required > 0) {
+        $summarytable->data[] = [
+            get_string('summaryabroaddays', 'mod_stage'),
+            get_string('progressofdays', 'mod_stage',
+                (object) ['retained' => $abroadprogress->retained, 'required' => $abroadprogress->required])
+                . ' ' . stage_render_status_badge($abroadprogress->done),
+        ];
+    }
+    if ($complementary->total > 0) {
+        $summarytable->data[] = [
+            get_string('summarycomplementarydays', 'mod_stage'),
+            get_string('retaineddaysonly', 'mod_stage', $complementary->total),
+        ];
+    }
+    echo html_writer::table($summarytable);
+
+    // 2. Bilan par année d'étude, en un seul tableau plutôt qu'un tableau et un titre par année :
+    // l'année n'est rappelée que sur la première ligne de son groupe, et la colonne « Reste à
+    // faire » évite d'avoir à soustraire soi-même le retenu du requis.
     if (!empty($yearprogress)) {
         echo $OUTPUT->heading(get_string('yeartotals', 'mod_stage'), 4);
+        $yeartable = new html_table();
+        $yeartable->head = array_merge(
+            [get_string('studyyear', 'mod_stage'), get_string('objective', 'mod_stage')],
+            stage_progress_table_head()
+        );
         foreach ($yearprogress as $row) {
-            $status = $row->done
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            echo $OUTPUT->heading(stage_studyyear_label($row->studyyear) . ' ' . $status, 5);
-
-            $yeartable = new html_table();
-            $yeartable->head = [
-                get_string('theme', 'mod_stage'),
-                get_string('requiredduration', 'mod_stage'),
-                get_string('retainedduration', 'mod_stage'),
-                get_string('status', 'mod_stage'),
-            ];
-            $totalstatus = $row->totaldone
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            $yeartable->data[] = [
-                html_writer::tag('strong', get_string('totalrequiredduration', 'mod_stage')),
-                $row->required,
-                $row->retained,
-                $row->required > 0 ? $totalstatus : '-',
-            ];
+            $yearcell = html_writer::tag('strong', stage_studyyear_label($row->studyyear))
+                . ' ' . stage_render_status_badge($row->done);
+            $yeartable->data[] = array_merge(
+                [$yearcell, html_writer::tag('strong', get_string('yeartotalobjective', 'mod_stage'))],
+                stage_render_progress_cells($row->retained, $row->required, $row->totaldone)
+            );
             foreach ($row->themes as $themerow) {
-                $themestatus = $themerow->done
-                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-                $yeartable->data[] = [
-                    format_string($themerow->theme->name),
-                    $themerow->required,
-                    $themerow->retained,
-                    $themerow->required > 0 ? $themestatus : '-',
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', format_string($themerow->theme->name)],
+                    stage_render_progress_cells($themerow->retained, $themerow->required, $themerow->done)
+                );
             }
             if ($row->abroad !== null) {
-                $abroadrowstatus = $row->abroad->done
-                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-                $yeartable->data[] = [
-                    html_writer::tag('strong', get_string('abroadtotal', 'mod_stage')),
-                    $row->abroad->required,
-                    $row->abroad->retained,
-                    $abroadrowstatus,
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', get_string('abroadtotal', 'mod_stage')],
+                    stage_render_progress_cells($row->abroad->retained, $row->abroad->required, $row->abroad->done)
+                );
             }
             // Stages complémentaires (EP) de l'année : ligne à part, purement informative, ne
             // comptant pas dans le décompte des stages obligatoires (voir
             // stage_get_student_complementary_days()).
             if ($row->complementary > 0) {
-                $yeartable->data[] = [
-                    html_writer::tag('em', get_string('complementarystages', 'mod_stage')),
-                    '-',
-                    $row->complementary,
-                    '-',
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', html_writer::tag('em', get_string('complementarystages', 'mod_stage'))],
+                    stage_render_progress_cells($row->complementary, 0, true)
+                );
             }
-            echo html_writer::table($yeartable);
         }
+        echo html_writer::table($yeartable);
     }
 
-    // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
-    // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
-    $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
+    // 3. Bilan par thématique obligatoire, toutes années confondues : complète le bilan par année
+    // ci-dessus en montrant aussi les thématiques sur lesquelles rien n'a encore été saisi. Un
+    // seul tableau, avec la plage d'années en colonne plutôt qu'un titre par plage.
+    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
+    if (empty($mandatorythemes)) {
+        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
+    } else {
+        $themetable = new html_table();
+        $themetable->head = array_merge(
+            [get_string('theme', 'mod_stage'), get_string('studyyear', 'mod_stage')],
+            stage_progress_table_head()
+        );
+        foreach ($mandatorythemes as $t) {
+            $themetable->data[] = array_merge(
+                [
+                    format_string($t->theme->name),
+                    stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear),
+                ],
+                stage_render_progress_cells($t->retained, $t->requiredduration, $t->done)
+            );
+        }
+        echo html_writer::table($themetable);
+    }
+
+    // 4. Obligation de mobilité internationale : rappelée à part, avec la consigne de la DEVE et
+    // l'année avant laquelle elle doit être satisfaite (elle figure aussi dans le bilan de cette
+    // année-là ci-dessus, comme condition de sa validation).
     if ($abroadprogress->required > 0) {
         echo $OUTPUT->heading(get_string('abroadtotal', 'mod_stage'), 4);
         if (!empty($stage->abroadrule)) {
             echo html_writer::tag('p', format_text($stage->abroadrule, FORMAT_PLAIN), ['class' => 'text-muted']);
         }
-        $abroadstatus = $abroadprogress->done
-            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
         $abroadtable = new html_table();
-        $abroadtable->head = [
-            get_string('abroaddaysrequired', 'mod_stage'),
-            get_string('abroaddaysretained', 'mod_stage'),
-            get_string('abroadbeforeyear', 'mod_stage'),
-            get_string('status', 'mod_stage'),
-        ];
-        $abroadtable->data[] = [
-            $abroadprogress->required,
-            $abroadprogress->retained,
-            $abroadprogress->beforeyear > 0 ? stage_studyyear_label($abroadprogress->beforeyear) : '-',
-            $abroadstatus,
-        ];
+        $abroadtable->head = array_merge(
+            [get_string('abroadbeforeyear', 'mod_stage')],
+            stage_progress_table_head()
+        );
+        $abroadtable->data[] = array_merge(
+            [$abroadprogress->beforeyear > 0 ? stage_studyyear_label($abroadprogress->beforeyear) : '-'],
+            stage_render_progress_cells($abroadprogress->retained, $abroadprogress->required, $abroadprogress->done)
+        );
         echo html_writer::table($abroadtable);
     }
 
+    // 5. Détail de chaque stage saisi.
     echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);
     $themes = stage_get_themes($stage->id);
     $entries = stage_get_student_entries($stage->id, $userid);
@@ -2197,22 +2270,21 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $conventionbadge,
         ];
         if ($cm && ($selfevallink || $detaillink)) {
+            // Les actions sont rendues en petits boutons plutôt qu'en liens séparés par des
+            // barres verticales, pour rester lisibles quand il y en a plusieurs.
+            $btn = ['class' => 'btn btn-sm btn-secondary mr-1 mb-1'];
             $actions = [];
             if ($selfevallink) {
-                if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE) {
+                if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE
+                        || (int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
                     $actions[] = html_writer::link(
                         new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('requestconvention', 'mod_stage')
-                    );
-                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
-                    $actions[] = html_writer::link(
-                        new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('requestconvention', 'mod_stage')
+                        get_string('requestconvention', 'mod_stage'), $btn
                     );
                 } else if (stage_convention_is_signed($entry->conventionstatus)) {
                     $actions[] = html_writer::link(
                         new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('selfeval', 'mod_stage')
+                        get_string('selfeval', 'mod_stage'), $btn
                     );
                     // Le PDF de la convention signée n'existe que pour le circuit de gestion de
                     // convention de ce plugin (STAGE_CONVENTION_SIGNED), et seulement si la DEVE
@@ -2222,7 +2294,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                             && stage_get_signed_convention_file(context_module::instance($cm->id), $entry->id)) {
                         $actions[] = html_writer::link(
                             new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                            get_string('downloadsignedconvention', 'mod_stage')
+                            get_string('downloadsignedconvention', 'mod_stage'), $btn
                         );
                     }
                 }
@@ -2232,10 +2304,10 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             if ($detaillink) {
                 $actions[] = html_writer::link(
                     new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                    get_string('viewdetails', 'mod_stage')
+                    get_string('viewdetails', 'mod_stage'), $btn
                 );
             }
-            $row[] = implode(' | ', $actions);
+            $row[] = implode('', $actions);
         }
         $table->data[] = $row;
     }
@@ -2245,13 +2317,8 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         echo html_writer::table($table);
     }
 
-    echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
-
-    // Total des stages complémentaires (EP), à part, ne comptant pas dans le total ci-dessus.
-    $complementary = stage_get_student_complementary_days($stage->id, $userid);
-    if ($complementary->total > 0) {
-        echo $OUTPUT->heading(get_string('totalcomplementary', 'mod_stage', $complementary->total), 5);
-    }
+    // Les totaux (durée retenue, stages complémentaires) sont désormais présentés dans la
+    // synthèse en tête de page : inutile de les répéter ici.
 }
 
 /**

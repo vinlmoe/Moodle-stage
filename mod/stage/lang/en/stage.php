@@ -467,6 +467,19 @@ $string['confirmdeletetheme'] = 'Delete this theme?';
 $string['totalretained'] = 'Total retained duration: {$a} days';
 $string['totalcomplementary'] = 'Including complementary internships (EP): {$a} days (not counted)';
 $string['complementarystages'] = 'Complementary internships (EP)';
+$string['summary'] = 'Summary';
+$string['summaryitem'] = 'Indicator';
+$string['summaryvalue'] = 'Value';
+$string['summarytotaldays'] = 'Total duration retained';
+$string['summaryyearsdone'] = 'Years completed';
+$string['summarythemesdone'] = 'Mandatory themes completed';
+$string['summaryabroaddays'] = 'International mobility';
+$string['summarycomplementarydays'] = 'Including complementary internships (EP, not counted)';
+$string['progressofdays'] = '{$a->retained} / {$a->required} days';
+$string['retaineddaysonly'] = '{$a} days';
+$string['remainingduration'] = 'Remaining (days)';
+$string['objective'] = 'Objective';
+$string['yeartotalobjective'] = 'Total duration for the year';
 $string['numstages'] = '{$a} internship(s) declared';
 
 // Headings.

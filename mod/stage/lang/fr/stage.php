@@ -478,6 +478,19 @@ $string['confirmdeletetheme'] = 'Supprimer cette thématique ?';
 $string['totalretained'] = 'Durée totale retenue : {$a} jours';
 $string['totalcomplementary'] = 'Dont stages complémentaires (EP) : {$a} jours (hors décompte)';
 $string['complementarystages'] = 'Stages complémentaires (EP)';
+$string['summary'] = 'Synthèse';
+$string['summaryitem'] = 'Indicateur';
+$string['summaryvalue'] = 'Valeur';
+$string['summarytotaldays'] = 'Durée totale retenue';
+$string['summaryyearsdone'] = 'Années validées';
+$string['summarythemesdone'] = 'Thématiques obligatoires validées';
+$string['summaryabroaddays'] = "Mobilité internationale";
+$string['summarycomplementarydays'] = 'Dont stages complémentaires (EP, hors décompte)';
+$string['progressofdays'] = '{$a->retained} / {$a->required} jours';
+$string['retaineddaysonly'] = '{$a} jours';
+$string['remainingduration'] = 'Reste à faire (jours)';
+$string['objective'] = 'Objectif';
+$string['yeartotalobjective'] = "Durée totale de l'année";
 $string['numstages'] = '{$a} stage(s) déclaré(s)';
 
 // Headings.
