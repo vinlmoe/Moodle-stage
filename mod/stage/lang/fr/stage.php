@@ -153,6 +153,12 @@ $string['maxstudyyear'] = "Année d'étude maximum";
 $string['studyyearrange_error'] = "L'année minimum doit être inférieure ou égale à l'année maximum.";
 $string['currentstudyyear'] = 'Année d\'étude courante des étudiants';
 $string['currentstudyyear_help'] = "Année d'étude (N) des étudiants inscrits à ce cours. Sert de référence pour les stages qu'ils peuvent déclarer en convention : année N (normale), N-1 (dette) ou N+1 (anticipation). Laisser sur « Non spécifiée » pour ne pas restreindre le choix.";
+$string['abroad'] = "Stage à l'étranger";
+$string['requiredabroaddays'] = "Jours de mobilité internationale requis";
+$string['requiredabroaddays_help'] = "Nombre de jours de stage à l'étranger que chaque étudiant doit cumuler au total sur l'ensemble de ses stages (0 = aucune obligation). Seuls les stages marqués « Stage à l'étranger » et les stages obligatoires (hors stages complémentaires) comptent dans ce bilan.";
+$string['abroadtotal'] = 'Mobilité internationale';
+$string['abroaddaysrequired'] = 'Jours à l\'étranger requis';
+$string['abroaddaysretained'] = "Jours à l'étranger retenus";
 $string['totalrequiredduration'] = 'Durée totale requise (jours)';
 $string['managethemedurations'] = 'Durées par année';
 $string['themedurationssaved'] = 'Durées enregistrées.';
@@ -236,7 +242,10 @@ $string['cancelentry'] = 'Annuler ce stage';
 $string['confirmcancelentry'] = "Annuler ce stage ? La saisie sera conservée telle quelle, mais son statut passera "
     . 'à "Annulé" de façon définitive. Merci de préciser le motif ci-dessous.';
 $string['cancelcomment'] = "Motif de l'annulation";
+$string['cancelledby'] = 'Annulé par';
+$string['canceltime'] = "Date d'annulation";
 $string['stagecancelled'] = 'Le stage a été annulé.';
+$string['evaluatedby'] = 'Évalué par';
 $string['onlyunassigned'] = 'Étudiants sans référent uniquement';
 $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}';
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
@@ -308,6 +317,10 @@ $string['rejectconvention'] = 'Refuser';
 $string['conventionrejectcomment'] = 'Commentaire (envoyé à l\'étudiant en cas de refus)';
 $string['conventionrejected'] = "La demande de convention a été refusée. L'étudiant en a été informé par courriel.";
 $string['conventionrejectedwithcomment'] = 'Refusée : {$a}';
+$string['conventionrejectedby'] = 'Refusée par';
+$string['conventionvalidatedby'] = "Validée par l'enseignant.e référent.e";
+$string['conventioneditedby'] = 'Éditée par';
+$string['conventionsignedby'] = 'Signée par';
 $string['conventionrejectedexplain'] = 'Votre demande de convention a été refusée par la DEVE, pour le motif suivant : '
     . '"{$a}". Merci de corriger votre demande ci-dessous et de la soumettre à nouveau.';
 $string['conventionrejectednotifsubject'] = 'Convention de stage refusée : {$a}';

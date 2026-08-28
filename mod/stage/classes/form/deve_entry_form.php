@@ -75,6 +75,8 @@ class deve_entry_form extends \moodleform {
         $mform->addElement('text', 'structure', get_string('structure', 'mod_stage'), ['size' => '64']);
         $mform->setType('structure', PARAM_TEXT);
 
+        $mform->addElement('advcheckbox', 'abroad', get_string('abroad', 'mod_stage'));
+
         $mform->addElement('date_selector', 'datestart', get_string('datestart', 'mod_stage'));
         $mform->addElement('date_selector', 'dateend', get_string('dateend', 'mod_stage'));
 

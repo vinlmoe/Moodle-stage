@@ -49,6 +49,8 @@ class register_entries extends \external_api {
                     'declaredduration' => new \external_value(PARAM_INT, 'Durée déclarée en jours'),
                     'studyyear' => new \external_value(PARAM_INT,
                         "Année d'étude à laquelle ce stage est rattaché (0 = non spécifiée)", VALUE_DEFAULT, 0),
+                    'abroad' => new \external_value(PARAM_INT, "Stage effectué à l'étranger (0 ou 1)",
+                        VALUE_DEFAULT, 0),
                 ])
             ),
         ]);
@@ -101,7 +103,9 @@ class register_entries extends \external_api {
                 $entrydata['datestart'] ?: null,
                 $entrydata['dateend'] ?: null,
                 $entrydata['declaredduration'],
-                $entrydata['studyyear']
+                $entrydata['studyyear'],
+                \STAGE_CONVENTION_NONE,
+                $entrydata['abroad']
             );
             $created[] = $id;
         }

@@ -148,6 +148,12 @@ $string['maxstudyyear'] = 'Maximum study year';
 $string['studyyearrange_error'] = 'The minimum year must be less than or equal to the maximum year.';
 $string['currentstudyyear'] = 'Students\' current study year';
 $string['currentstudyyear_help'] = 'Study year (N) of the students enrolled in this course. Used as the reference for the internships they can declare in a convention: year N (normal), N-1 (debt/resit) or N+1 (anticipation). Leave on "Unspecified" to not restrict the choice.';
+$string['abroad'] = 'Internship abroad';
+$string['requiredabroaddays'] = 'Required international mobility days';
+$string['requiredabroaddays_help'] = 'Total number of days abroad each student must accumulate across all their internships (0 = no requirement). Only internships marked "Internship abroad" and mandatory internships (excluding complementary ones) count towards this total.';
+$string['abroadtotal'] = 'International mobility';
+$string['abroaddaysrequired'] = 'Days abroad required';
+$string['abroaddaysretained'] = 'Days abroad retained';
 $string['totalrequiredduration'] = 'Total required duration (days)';
 $string['managethemedurations'] = 'Durations per year';
 $string['themedurationssaved'] = 'Durations saved.';
@@ -231,7 +237,10 @@ $string['cancelentry'] = 'Cancel this internship';
 $string['confirmcancelentry'] = 'Cancel this internship? The entry will be kept as-is, but its status will '
     . 'permanently change to "Cancelled". Please give a reason below.';
 $string['cancelcomment'] = 'Reason for cancellation';
+$string['cancelledby'] = 'Cancelled by';
+$string['canceltime'] = 'Cancellation date';
 $string['stagecancelled'] = 'The internship has been cancelled.';
+$string['evaluatedby'] = 'Evaluated by';
 $string['onlyunassigned'] = 'Students without a referent only';
 $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review - {$a}';
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
@@ -299,6 +308,10 @@ $string['rejectconvention'] = 'Reject';
 $string['conventionrejectcomment'] = 'Comment (sent to the student if rejected)';
 $string['conventionrejected'] = 'The agreement request has been rejected. The student has been notified by email.';
 $string['conventionrejectedwithcomment'] = 'Rejected: {$a}';
+$string['conventionrejectedby'] = 'Rejected by';
+$string['conventionvalidatedby'] = 'Validated by the referent teacher';
+$string['conventioneditedby'] = 'Edited by';
+$string['conventionsignedby'] = 'Signed by';
 $string['conventionrejectedexplain'] = 'Your agreement request was rejected by the DEVE, for the following '
     . 'reason: "{$a}". Please correct your request below and submit it again.';
 $string['conventionrejectednotifsubject'] = 'Internship agreement rejected: {$a}';

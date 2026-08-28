@@ -91,7 +91,8 @@ if ($mform->is_cancelled()) {
     redirect($viewurl);
 } else if ($data = $mform->get_data()) {
     $entryid = stage_register_entry($stage->id, $USER->id, $data->themeid, $data->structure,
-        $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear);
+        $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear, STAGE_CONVENTION_NONE,
+        $data->abroad);
     $entry = $DB->get_record('stage_entry', ['id' => $entryid], '*', MUST_EXIST);
 
     $requireteachervalidation = stage_convention_requires_teacher_validation($stage);

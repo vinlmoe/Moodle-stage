@@ -442,5 +442,24 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082416, 'stage');
     }
 
+    if ($oldversion < 2026082417) {
+        // Obligation de mobilité internationale : nombre de jours de stage à l'étranger requis.
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('requiredabroaddays', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0',
+            'currentstudyyear');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        // Indique si une saisie de stage a été effectuée à l'étranger.
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('abroad', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'structure');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082417, 'stage');
+    }
+
     return true;
 }
