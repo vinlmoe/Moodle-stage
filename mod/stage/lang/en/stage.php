@@ -280,6 +280,8 @@ $string['conventionsignaturehostrepresentative'] = 'The host organisation repres
 $string['conventionsignaturereferentteacher'] = 'The referent teacher';
 $string['conventionsignatureestablishment'] = 'The educational establishment';
 $string['conventionsignaturename'] = 'Name: {$a}';
+$string['conventionsignaturedelegation'] = 'By delegation of the head of establishment';
+$string['conventionsignaturedelegationname'] = 'By delegation of the head of establishment: {$a}';
 $string['conventionestablishmentsignatory'] = 'Person with signing delegation';
 $string['conventionestablishmentsignatory_help'] = 'Name of the person holding a signing delegation from the '
     . 'head of establishment (in place of a signature by the head of establishment themselves). Pre-filled in '

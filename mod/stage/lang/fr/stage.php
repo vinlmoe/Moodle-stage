@@ -285,6 +285,8 @@ $string['conventionsignaturehostrepresentative'] = "Le/la responsable de l'organ
 $string['conventionsignaturereferentteacher'] = "L'enseignant.e référent.e";
 $string['conventionsignatureestablishment'] = "L'établissement d'enseignement";
 $string['conventionsignaturename'] = 'Nom : {$a}';
+$string['conventionsignaturedelegation'] = 'Par délégation du chef d\'établissement';
+$string['conventionsignaturedelegationname'] = 'Par délégation du chef d\'établissement : {$a}';
 $string['conventionestablishmentsignatory'] = 'Personne ayant délégation de signature';
 $string['conventionestablishmentsignatory_help'] = "Nom de la personne ayant délégation de signature du chef "
     . "d'établissement (à défaut d'une signature par le chef d'établissement lui-même). Préaffiché dans le "

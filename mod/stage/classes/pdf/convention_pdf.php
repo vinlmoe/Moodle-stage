@@ -218,11 +218,11 @@ class convention_pdf extends \pdf {
         $this->section_heading($this->str('conventionsignatures'));
 
         $boxes = [
-            [$this->str('conventionsignaturestudent'), $stagedata['student']['fullname'] ?? ''],
-            [$this->str('conventionsignaturetutor'), $stagedata['tutor']['name'] ?? ''],
-            [$this->str('conventionsignaturehostrepresentative'), $stagedata['host']['representative'] ?? ''],
-            [$this->str('conventionsignaturereferentteacher'), $stagedata['referentteacher']['name'] ?? ''],
-            [$this->str('conventionsignatureestablishment'), $stagedata['establishment']['signatory'] ?? ''],
+            [$this->str('conventionsignaturestudent'), $stagedata['student']['fullname'] ?? '', false],
+            [$this->str('conventionsignaturetutor'), $stagedata['tutor']['name'] ?? '', false],
+            [$this->str('conventionsignaturehostrepresentative'), $stagedata['host']['representative'] ?? '', false],
+            [$this->str('conventionsignaturereferentteacher'), $stagedata['referentteacher']['name'] ?? '', false],
+            [$this->str('conventionsignatureestablishment'), $stagedata['establishment']['signatory'] ?? '', true],
         ];
 
         $cols = 2;
@@ -233,7 +233,7 @@ class convention_pdf extends \pdf {
         $boxwidth = ($pagewidth - $gap * ($cols - 1)) / $cols;
 
         $y = $this->GetY();
-        foreach ($boxes as $i => [$label, $name]) {
+        foreach ($boxes as $i => [$label, $name, $delegation]) {
             $col = $i % $cols;
             if ($col === 0) {
                 $this->ensure_space($boxheight + 6);
@@ -244,8 +244,18 @@ class convention_pdf extends \pdf {
             $this->SetFont('freesans', 'B', 9);
             $this->MultiCell($boxwidth, 5, $label, 0, 'L', false, 0, $x, $y);
             $namey = $y + 5;
-            if ($name !== '' && $name !== '-') {
-                $this->SetFont('freesans', '', 9);
+
+            $this->SetFont('freesans', '', 9);
+            if ($delegation) {
+                // La signature de l'établissement se fait par délégation du chef d'établissement,
+                // jamais directement en son nom : la mention doit l'indiquer explicitement, avec
+                // ou sans le nom de la personne déléguée.
+                $delegationtext = ($name !== '' && $name !== '-')
+                    ? $this->str('conventionsignaturedelegationname', $name)
+                    : $this->str('conventionsignaturedelegation');
+                $this->MultiCell($boxwidth, 5, $delegationtext, 0, 'L', false, 0, $x, $namey);
+                $namey += 5;
+            } else if ($name !== '' && $name !== '-') {
                 $this->MultiCell($boxwidth, 5, $this->str('conventionsignaturename', $name), 0, 'L', false, 0, $x, $namey);
                 $namey += 5;
             }
