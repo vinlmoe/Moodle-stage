@@ -163,6 +163,12 @@ $string['teachereval'] = 'Teacher evaluation';
 $string['devecomment'] = 'Academic office comment';
 $string['student'] = 'Student';
 $string['referentteachers'] = 'Referent teachers';
+$string['currentreferentteachers'] = 'Current referent teacher(s)';
+$string['noreferentteacher'] = 'None';
+$string['availableteachers'] = 'Available teachers';
+$string['selectedteachers'] = 'Selected referent teachers';
+$string['addselected'] = 'Add';
+$string['removeselected'] = 'Remove';
 
 // Statuses.
 $string['status_enregistre'] = 'Registered';

@@ -168,6 +168,12 @@ $string['teachereval'] = "Évaluation de l'enseignant";
 $string['devecomment'] = 'Commentaire DEVE';
 $string['student'] = 'Étudiant';
 $string['referentteachers'] = 'Enseignants référents';
+$string['currentreferentteachers'] = 'Enseignant(s) référent(s) actuel(s)';
+$string['noreferentteacher'] = 'Aucun';
+$string['availableteachers'] = 'Enseignants disponibles';
+$string['selectedteachers'] = 'Enseignants référents sélectionnés';
+$string['addselected'] = 'Ajouter';
+$string['removeselected'] = 'Retirer';
 
 // Statuses.
 $string['status_enregistre'] = 'Enregistré';
