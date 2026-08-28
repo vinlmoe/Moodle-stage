@@ -50,6 +50,11 @@ class theme_form extends \moodleform {
 
         $mform->addElement('advcheckbox', 'mandatory', get_string('mandatory', 'mod_stage'));
 
+        $mform->addElement('text', 'requiredduration', get_string('requiredduration', 'mod_stage'));
+        $mform->setType('requiredduration', PARAM_INT);
+        $mform->setDefault('requiredduration', 0);
+        $mform->addHelpButton('requiredduration', 'requiredduration', 'mod_stage');
+
         $mform->addElement('select', 'minstudyyear', get_string('minstudyyear', 'mod_stage'), stage_studyyear_options());
         $mform->setDefault('minstudyyear', 0);
 

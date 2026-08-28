@@ -248,9 +248,13 @@ function stage_theme_option_label(stdClass $theme) {
 }
 
 /**
- * Retourne la durée obligatoire requise pour une thématique, pour une année d'étude donnée. Se
- * rabat sur la durée définie pour l'année 0 (non spécifiée) si aucune valeur n'existe pour cette
- * année précise, puis sur 0.
+ * Retourne la durée obligatoire requise pour une thématique, pour une année d'étude donnée
+ * (utilisée à l'année finale de la thématique pour une thématique à plage, voir
+ * stage_theme_final_year()). Une thématique définit soit une durée unique pour l'ensemble de la
+ * thématique (stage_theme.requiredduration), soit une durée par année (stage_theme_duration) :
+ * l'un ou l'autre. La durée unique, si définie (non nulle), est toujours prioritaire. À défaut,
+ * se rabat sur la durée par année définie pour l'année 0 (non spécifiée) si aucune valeur
+ * n'existe pour cette année précise, puis sur 0.
  *
  * @param int $themeid
  * @param int $studyyear
@@ -258,6 +262,11 @@ function stage_theme_option_label(stdClass $theme) {
  */
 function stage_get_theme_duration($themeid, $studyyear) {
     global $DB;
+
+    $flat = $DB->get_field('stage_theme', 'requiredduration', ['id' => $themeid]);
+    if (!empty($flat)) {
+        return (int) $flat;
+    }
 
     $duration = $DB->get_field('stage_theme_duration', 'requiredduration',
         ['themeid' => $themeid, 'studyyear' => (int) $studyyear]);
@@ -1979,6 +1988,7 @@ function stage_import_themes($sourcestageid, $targetstageid) {
             'name' => $theme->name,
             'description' => $theme->description,
             'mandatory' => $theme->mandatory,
+            'requiredduration' => $theme->requiredduration,
             'minstudyyear' => $theme->minstudyyear,
             'maxstudyyear' => $theme->maxstudyyear,
             'sortorder' => $theme->sortorder,
