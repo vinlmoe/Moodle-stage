@@ -860,7 +860,23 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
     $record->timecreated = time();
     $record->timemodified = time();
 
-    return $DB->insert_record('stage_entry', $record);
+    $entryid = $DB->insert_record('stage_entry', $record);
+
+    // Toute saisie a au moins une plage de dates : les plages sont la seule saisie possible des
+    // dates d'un stage (voir stage_save_entry_periods()), et les pages qui les affichent ou les
+    // rééditent doivent en trouver, quel que soit le chemin de création — formulaire, création en
+    // masse, import CSV ou StageVet, service web. L'appelant qui dispose de plusieurs plages les
+    // remplace ensuite par la liste complète.
+    if (!empty($datestart) && !empty($dateend)) {
+        $DB->insert_record('stage_entry_period', (object) [
+            'entryid' => $entryid,
+            'datestart' => $datestart,
+            'dateend' => $dateend,
+            'timecreated' => time(),
+        ]);
+    }
+
+    return $entryid;
 }
 
 /**
@@ -1076,6 +1092,14 @@ function stage_add_period_fields(\moodleform $form, $mform, $initialcount = 1) {
     ];
     $form->repeat_elements($repeatarray, max((int) $initialcount, 1), [], 'periodrepeats', 'periodaddfields', 1,
         get_string('addperiod', 'mod_stage'), true);
+
+    // Au moins une plage est exigée (voir stage_validate_periods()), mais un date_selector
+    // « optional » s'affiche décoché : sur une création, la première ligne serait à activer avant
+    // même de pouvoir la remplir, et son oubli renverrait une erreur dont la cause n'a rien
+    // d'évident. Une valeur par défaut la laisse activée ; set_data() la remplace par les dates
+    // réelles lors d'une édition.
+    $mform->setDefault('perioddatestart[0]', time());
+    $mform->setDefault('perioddateend[0]', time());
 }
 
 /**

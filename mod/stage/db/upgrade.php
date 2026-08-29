@@ -565,5 +565,31 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082421, 'stage');
     }
 
+    if ($oldversion < 2026082422) {
+        // Les plages de dates sont devenues la seule saisie possible des dates d'un stage, et
+        // toute saisie créée depuis reçoit la sienne (voir stage_register_entry()). Les saisies
+        // antérieures n'en ont pas : leurs dates étaient jusque-là reconstituées à la volée
+        // (stage_get_or_seed_entry_periods()), ce qui suffisait à les afficher mais laissait la
+        // base incohérente selon l'ancienneté de la saisie. On matérialise la plage manquante.
+        $sql = "SELECT e.id, e.datestart, e.dateend
+                  FROM {stage_entry} e
+             LEFT JOIN {stage_entry_period} p ON p.entryid = e.id
+                 WHERE p.id IS NULL AND e.datestart > 0 AND e.dateend > 0";
+        $records = [];
+        foreach ($DB->get_recordset_sql($sql) as $entry) {
+            $records[] = (object) [
+                'entryid' => $entry->id,
+                'datestart' => $entry->datestart,
+                'dateend' => $entry->dateend,
+                'timecreated' => time(),
+            ];
+        }
+        if ($records) {
+            $DB->insert_records('stage_entry_period', $records);
+        }
+
+        upgrade_mod_savepoint(true, 2026082422, 'stage');
+    }
+
     return true;
 }

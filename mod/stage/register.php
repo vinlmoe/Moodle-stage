@@ -202,6 +202,7 @@ if ($mode === 'single') {
     }
 
     $entrystudent = $entry ? $DB->get_record('user', ['id' => $entry->userid]) : null;
+    $entryperiods = $entry ? array_values(stage_get_or_seed_entry_periods($entry)) : [];
     $formurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entryid]);
     $mform = new deve_entry_form($formurl, [
         'themes' => $themes,
@@ -209,6 +210,7 @@ if ($mode === 'single') {
         'lockstudent' => (bool) $entry,
         'studentname' => $entrystudent ? fullname($entrystudent) : '',
         'stageid' => $stage->id,
+        'periods' => $entryperiods,
     ]);
 
     $toform = new stdClass();
@@ -224,8 +226,12 @@ if ($mode === 'single') {
         $toform->abroad = $entry->abroad;
         $toform->country = $entry->country;
         $toform->exemptfromconvention = (int) $entry->conventionstatus === STAGE_CONVENTION_EXEMPT ? 1 : 0;
-        $toform->datestart = $entry->datestart;
-        $toform->dateend = $entry->dateend;
+        $toform->perioddatestart = array_map(function($period) {
+            return $period->datestart;
+        }, $entryperiods);
+        $toform->perioddateend = array_map(function($period) {
+            return $period->dateend;
+        }, $entryperiods);
         // Le nombre de jours proposé par défaut est celui coché par l'étudiant lors de son
         // auto-évaluation (jours de stage effectifs), s'il en a déjà sélectionné ; sinon la durée
         // déclarée existante. Reste modifiable par la DEVE avant enregistrement.
@@ -237,16 +243,23 @@ if ($mode === 'single') {
     if ($mform->is_cancelled()) {
         redirect($baseurl);
     } else if ($data = $mform->get_data()) {
+        // Les dates du stage sont déduites des plages, seul endroit où elles se saisissent : le
+        // formulaire a déjà refusé une saisie sans plage ou avec des plages qui se recoupent.
+        $periods = stage_extract_submitted_periods($data);
+        $datestart = min(array_column($periods, 'datestart'));
+        $dateend = max(array_column($periods, 'dateend'));
         if ($entry) {
-            stage_update_entry_details($entry, $data->themeid, $data->structure, $data->datestart, $data->dateend,
+            stage_update_entry_details($entry, $data->themeid, $data->structure, $datestart, $dateend,
                 $data->declaredduration, $data->studyyear, $data->abroad, $data->country);
+            stage_save_entry_periods($entry->id, $periods);
             stage_set_entry_convention_exempt($entry, !empty($data->exemptfromconvention));
             stage_set_entry_stagetype($entry->id, $data->stagetype);
         } else {
             $conventionstatus = !empty($data->exemptfromconvention) ? STAGE_CONVENTION_EXEMPT : STAGE_CONVENTION_NONE;
             $newentryid = stage_register_entry($stage->id, $data->userid, $data->themeid, $data->structure,
-                $data->datestart, $data->dateend, $data->declaredduration, $data->studyyear, $conventionstatus,
+                $datestart, $dateend, $data->declaredduration, $data->studyyear, $conventionstatus,
                 $data->abroad, $data->country);
+            stage_save_entry_periods($newentryid, $periods);
             stage_set_entry_stagetype($newentryid, $data->stagetype);
         }
         redirect($baseurl, get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
@@ -279,6 +292,11 @@ if ($mode === 'bulk') {
         $start = $datestartraw ? strtotime($datestartraw) : null;
         $end = $dateendraw ? strtotime($dateendraw) : null;
 
+        // Même contrôle bloquant que dans les formulaires : la plage commune doit être complète et
+        // sa fin ne peut pas précéder son début. Une seule plage ici, donc pas de chevauchement
+        // possible.
+        $bulkperioderror = stage_validate_periods($start && $end ? [['datestart' => $start, 'dateend' => $end]] : []);
+
         // Un étudiant ayant déjà un stage sur cette thématique et ces mêmes dates est écarté
         // et signalé, pour ne pas créer de doublon silencieux.
         $existing = stage_get_existing_theme_pairs($stage->id);
@@ -287,8 +305,8 @@ if ($mode === 'bulk') {
             $studentsbyid[$student->id] = $student;
         }
 
-        $bulkresults = (object) ['created' => 0, 'duplicates' => []];
-        foreach ($studentids as $studentid) {
+        $bulkresults = (object) ['created' => 0, 'duplicates' => [], 'error' => $bulkperioderror];
+        foreach ($bulkperioderror !== null ? [] : $studentids as $studentid) {
             $key = stage_duplicate_key($studentid, $themeid, $start, $end);
             if (isset($existing[$key])) {
                 $bulkresults->duplicates[] = isset($studentsbyid[$studentid])
@@ -309,7 +327,11 @@ if ($mode === 'bulk') {
     echo html_writer::link($baseurl, get_string('back'));
     echo $OUTPUT->notification(get_string('bulkregistersignvethelp', 'mod_stage'), 'info');
 
-    if ($bulkresults) {
+    if ($bulkresults && $bulkresults->error !== null) {
+        // Plage incohérente : rien n'a été créé, le message doit le dire plutôt que d'annoncer
+        // « 0 stage enregistré » sans expliquer pourquoi.
+        echo $OUTPUT->notification($bulkresults->error, \core\output\notification::NOTIFY_ERROR);
+    } else if ($bulkresults) {
         echo $OUTPUT->notification(get_string('bulkregistered', 'mod_stage', $bulkresults->created),
             \core\output\notification::NOTIFY_SUCCESS);
         if (!empty($bulkresults->duplicates)) {
@@ -359,11 +381,18 @@ if ($mode === 'bulk') {
         })();
     ");
 
-    echo html_writer::tag('label', get_string('datestart', 'mod_stage'));
-    echo html_writer::empty_tag('input', ['type' => 'date', 'name' => 'datestart', 'class' => 'form-control']);
+    // Création en masse : une seule plage de dates, commune à tous les étudiants sélectionnés.
+    // Ce sont bien les bornes d'une plage, et non des dates saisies séparément : la plage est
+    // créée avec la saisie et ses dates en sont déduites (voir stage_register_entry()).
+    echo html_writer::tag('label', get_string('periods', 'mod_stage') . ' — ' . get_string('periodstart', 'mod_stage'));
+    echo html_writer::empty_tag('input', [
+        'type' => 'date', 'name' => 'datestart', 'class' => 'form-control', 'required' => 'required',
+    ]);
 
-    echo html_writer::tag('label', get_string('dateend', 'mod_stage'));
-    echo html_writer::empty_tag('input', ['type' => 'date', 'name' => 'dateend', 'class' => 'form-control']);
+    echo html_writer::tag('label', get_string('periods', 'mod_stage') . ' — ' . get_string('periodend', 'mod_stage'));
+    echo html_writer::empty_tag('input', [
+        'type' => 'date', 'name' => 'dateend', 'class' => 'form-control', 'required' => 'required',
+    ]);
 
     echo html_writer::tag('label', get_string('declaredduration', 'mod_stage'), ['for' => 'declaredduration']);
     echo html_writer::empty_tag('input', [

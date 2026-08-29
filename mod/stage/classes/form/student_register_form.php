@@ -79,12 +79,6 @@ class student_register_form extends \moodleform {
         $mform->setType('declaredduration', PARAM_INT);
         $mform->addRule('declaredduration', null, 'required', null, 'client');
 
-        // Les plages de dates sont le seul endroit où se saisissent les dates du stage : ses dates
-        // de début et de fin en sont déduites (première et dernière date couvertes, voir
-        // stage_save_entry_periods()). Des champs de début/fin distincts n'auraient rien pu
-        // apporter de plus, et auraient pu les contredire.
-        stage_add_period_fields($this, $mform);
-
         // Langue et gabarit de la convention.
         $mform->addElement('select', 'conventionlang', get_string('conventionlang', 'mod_stage'),
             stage_convention_lang_options(), ['id' => 'id_conventionlang']);
@@ -115,6 +109,12 @@ class student_register_form extends \moodleform {
             stage_convention_yearsituation_options());
         $mform->addElement('select', 'stagetype', get_string('conventionstagetype', 'mod_stage'),
             stage_convention_stagetype_options());
+
+        // Les plages de dates sont le seul endroit où se saisissent les dates du stage : ses dates
+        // de début et de fin en sont déduites (première et dernière date couvertes, voir
+        // stage_save_entry_periods()). Des champs de début/fin distincts n'auraient rien pu
+        // apporter de plus, et auraient pu les contredire.
+        stage_add_period_fields($this, $mform);
 
         // Coordonnées de l'étudiant.
         $mform->addElement('header', 'studentheader', get_string('conventionstudent', 'mod_stage'));

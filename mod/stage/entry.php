@@ -90,29 +90,13 @@ if ($editable && !empty($questions) && data_submitted() && confirm_sesskey()) {
 // construit et traité avant tout affichage, pour permettre la redirection après soumission.
 $mform = null;
 if ($editable && empty($questions)) {
-    $entrytheme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
-    $customdata = [
-        'themes' => stage_get_themes($stage->id, true),
-        'locked' => true,
-        'themename' => $entrytheme ? format_string($entrytheme->name) : '',
-        'structure' => $entry->structure,
-        'datestart' => $entry->datestart,
-        'dateend' => $entry->dateend,
-        'declaredduration' => $entry->declaredduration,
-        // Le rappel du stage est déjà affiché au-dessus du formulaire (voir plus bas,
-        // stage_render_entry_summary()) : inutile de le répéter en tête de celui-ci.
-        'hidestatic' => true,
-    ];
-    $mform = new entry_form(null, $customdata);
+    // Le formulaire ne porte que le commentaire : les caractéristiques du stage sont fixées par la
+    // DEVE et rappelées au-dessus par stage_render_entry_summary().
+    $mform = new entry_form(null, []);
 
     $toform = new stdClass();
     $toform->id = $cm->id;
     $toform->entryid = $entryid;
-    $toform->themeid = $entry->themeid;
-    $toform->structure = $entry->structure;
-    $toform->datestart = $entry->datestart;
-    $toform->dateend = $entry->dateend;
-    $toform->declaredduration = $entry->declaredduration;
     $toform->studentselfeval = ['text' => $entry->studentselfeval, 'format' => FORMAT_HTML];
     $mform->set_data($toform);
 
