@@ -89,14 +89,23 @@ if ($canmanageteachers) {
         ],
     ]];
 }
+$setuplinks = [];
 if ($canmanagethemes) {
-    $sections[] = [get_string('adminsectionsetup', 'mod_stage'), [
-        [
-            get_string('importfromcourse', 'mod_stage'),
-            get_string('importfromcourse_desc', 'mod_stage'),
-            new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id]),
-        ],
-    ]];
+    $setuplinks[] = [
+        get_string('importfromcourse', 'mod_stage'),
+        get_string('importfromcourse_desc', 'mod_stage'),
+        new moodle_url('/mod/stage/administration_import.php', ['id' => $cm->id]),
+    ];
+}
+if (has_capability('mod/stage:registerstages', $context)) {
+    $setuplinks[] = [
+        get_string('transferstudent', 'mod_stage'),
+        get_string('transferstudent_desc', 'mod_stage'),
+        new moodle_url('/mod/stage/transfer.php', ['id' => $cm->id]),
+    ];
+}
+if (!empty($setuplinks)) {
+    $sections[] = [get_string('adminsectionsetup', 'mod_stage'), $setuplinks];
 }
 
 foreach ($sections as [$sectiontitle, $entries]) {

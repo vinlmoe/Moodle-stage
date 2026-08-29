@@ -2748,6 +2748,246 @@ function stage_get_importable_stage_instances($excludestageid) {
 }
 
 /**
+ * Liste les autres instances de mod_stage vers lesquelles l'utilisateur courant peut transférer
+ * un étudiant et ses stages (voir transfer.php) : celles où il/elle a la capacité d'enregistrer
+ * les stages, sans laquelle il ne pourrait de toute façon rien y gérer ensuite.
+ *
+ * @param int $excludestageid Instance courante, à exclure de la liste.
+ * @return array int (stageid) => string (libellé "Cours - Activité")
+ */
+function stage_get_transfer_target_instances($excludestageid) {
+    global $DB;
+
+    $options = [];
+    $stages = $DB->get_records_select('stage', 'id != :id', ['id' => $excludestageid], 'id ASC');
+    foreach ($stages as $otherstage) {
+        $cm = get_coursemodule_from_instance('stage', $otherstage->id, 0, false, IGNORE_MISSING);
+        if (!$cm) {
+            continue;
+        }
+        if (!has_capability('mod/stage:registerstages', context_module::instance($cm->id))) {
+            continue;
+        }
+        $course = get_course($cm->course);
+        $options[$otherstage->id] = format_string($course->fullname) . ' - ' . format_string($otherstage->name);
+    }
+    return $options;
+}
+
+/**
+ * Prépare le transfert d'un étudiant et de ses stages vers une autre instance de l'activité
+ * (généralement dans un autre cours) : établit la correspondance des références propres à
+ * l'instance source, et relève ce qui empêche ou complique le transfert.
+ *
+ * Les stages sont déplacés, non copiés : leurs identifiants sont conservés, si bien que tout ce
+ * qui y est rattaché (plages, jours de stage, détails de convention, réponses) suit sans être
+ * recopié. Doivent en revanche être retraduites les références qui appartiennent à l'instance
+ * source et n'ont pas le même identifiant dans la cible : thématique, gabarit de convention, et
+ * questions auxquelles répondent les évaluations. Le rapprochement se fait sur le nom, normalisé
+ * comme à l'import StageVet (voir stage_normalize_name()).
+ *
+ * Rien n'est modifié ici : la fonction ne fait que calculer le plan, que transfer.php montre à la
+ * DEVE avant confirmation et que stage_execute_student_transfer() applique tel quel.
+ *
+ * @param stdClass $sourcestage
+ * @param stdClass $targetstage
+ * @param int $userid Étudiant à transférer.
+ * @return stdClass {entries, thememap, templatemap, questionmap, unmatchedthemes,
+ *                  unmatchedtemplates, droppedanswers, referentteachers, blockers, warnings}
+ */
+function stage_plan_student_transfer(stdClass $sourcestage, stdClass $targetstage, $userid) {
+    global $DB;
+
+    $plan = (object) [
+        'entries' => stage_get_student_entries($sourcestage->id, $userid),
+        'thememap' => [],
+        'templatemap' => [],
+        'questionmap' => [],
+        'unmatchedthemes' => [],
+        'unmatchedtemplates' => [],
+        'droppedanswers' => 0,
+        'referentteachers' => [],
+        'blockers' => [],
+        'warnings' => [],
+    ];
+
+    if (empty($plan->entries)) {
+        $plan->blockers[] = get_string('transfernoentries', 'mod_stage');
+        return $plan;
+    }
+
+    // L'étudiant doit être inscrit au cours cible : les tableaux de bord et le bilan de promotion
+    // parcourent les inscrits, des stages rattachés à un non-inscrit n'y apparaîtraient nulle part.
+    $targetcm = get_coursemodule_from_instance('stage', $targetstage->id, 0, false, MUST_EXIST);
+    $targetcontext = context_module::instance($targetcm->id);
+    $targetcourse = get_course($targetcm->course);
+    if (!is_enrolled($targetcontext, $userid)) {
+        $plan->blockers[] = get_string('transfernotenrolled', 'mod_stage', format_string($targetcourse->fullname));
+    }
+
+    // Thématiques : rapprochées par nom. Sans correspondance, le stage perdrait son rattachement
+    // et fausserait le bilan de l'étudiant dans la cible : le transfert est refusé plutôt que
+    // d'être fait à moitié.
+    $targetthemesbyname = [];
+    foreach (stage_get_themes($targetstage->id) as $targettheme) {
+        $targetthemesbyname[stage_normalize_name($targettheme->name)] = $targettheme;
+    }
+    $sourcethemes = stage_get_themes($sourcestage->id);
+    foreach ($plan->entries as $entry) {
+        if (array_key_exists($entry->themeid, $plan->thememap)) {
+            continue;
+        }
+        $sourcetheme = $sourcethemes[$entry->themeid] ?? null;
+        $match = $sourcetheme ? ($targetthemesbyname[stage_normalize_name($sourcetheme->name)] ?? null) : null;
+        $plan->thememap[$entry->themeid] = $match ? $match->id : null;
+        if (!$match) {
+            $plan->unmatchedthemes[] = $sourcetheme ? format_string($sourcetheme->name) : (string) $entry->themeid;
+        }
+    }
+    if (!empty($plan->unmatchedthemes)) {
+        $plan->blockers[] = get_string('transferunmatchedthemes', 'mod_stage',
+            implode(', ', $plan->unmatchedthemes));
+    }
+
+    // Gabarits de convention : rapprochés par nom et langue. Sans correspondance, le gabarit est
+    // simplement oublié — la convention déjà signée reste disponible, seule sa regénération en PDF
+    // ne serait plus possible sans rechoisir un gabarit.
+    $targettemplatesbyname = [];
+    foreach (stage_get_convention_templates($targetstage->id) as $targettemplate) {
+        $targettemplatesbyname[stage_normalize_name($targettemplate->name) . '|' . $targettemplate->lang] =
+            $targettemplate;
+    }
+    $sourcetemplates = stage_get_convention_templates($sourcestage->id);
+    foreach ($plan->entries as $entry) {
+        if (empty($entry->conventiontemplateid) || array_key_exists($entry->conventiontemplateid, $plan->templatemap)) {
+            continue;
+        }
+        $sourcetemplate = $sourcetemplates[$entry->conventiontemplateid] ?? null;
+        $key = $sourcetemplate
+            ? stage_normalize_name($sourcetemplate->name) . '|' . $sourcetemplate->lang : null;
+        $match = $key !== null ? ($targettemplatesbyname[$key] ?? null) : null;
+        $plan->templatemap[$entry->conventiontemplateid] = $match ? $match->id : null;
+        if (!$match) {
+            $plan->unmatchedtemplates[] = $sourcetemplate
+                ? format_string($sourcetemplate->name) : (string) $entry->conventiontemplateid;
+        }
+    }
+    if (!empty($plan->unmatchedtemplates)) {
+        $plan->warnings[] = get_string('transferunmatchedtemplates', 'mod_stage',
+            implode(', ', array_unique($plan->unmatchedtemplates)));
+    }
+
+    // Questions d'évaluation : les réponses déjà saisies pointent vers les questions de la
+    // thématique source. Elles sont rapprochées, dans la thématique cible correspondante, sur le
+    // type d'évaluation et le nom ; celles qui n'ont pas d'équivalent sont supprimées, faute de
+    // quoi elles renverraient à des questions d'une autre instance.
+    foreach ($plan->thememap as $sourcethemeid => $targetthemeid) {
+        if (!$targetthemeid) {
+            continue;
+        }
+        foreach (['student', 'teacher'] as $evaltype) {
+            $targetquestions = [];
+            foreach (stage_get_questions($targetthemeid, $evaltype) as $targetquestion) {
+                $targetquestions[stage_normalize_name($targetquestion->name)] = $targetquestion;
+            }
+            foreach (stage_get_questions($sourcethemeid, $evaltype) as $sourcequestion) {
+                $match = $targetquestions[stage_normalize_name($sourcequestion->name)] ?? null;
+                $plan->questionmap[$sourcequestion->id] = $match ? $match->id : null;
+            }
+        }
+    }
+    $entryids = array_keys($plan->entries);
+    if (!empty($entryids)) {
+        [$insql, $inparams] = $DB->get_in_or_equal($entryids, SQL_PARAMS_NAMED);
+        foreach ($DB->get_records_select('stage_answer', "entryid $insql", $inparams) as $answer) {
+            if (empty($plan->questionmap[$answer->questionid])) {
+                $plan->droppedanswers++;
+            }
+        }
+    }
+    if ($plan->droppedanswers > 0) {
+        $plan->warnings[] = get_string('transferdroppedanswers', 'mod_stage', $plan->droppedanswers);
+    }
+
+    // L'attribution des enseignants référents est propre au cours : elle n'est pas transférée,
+    // les enseignants de la source n'étant en général pas inscrits au cours cible.
+    $plan->referentteachers = array_map('fullname', stage_get_student_teachers($sourcestage->id, $userid));
+    if (!empty($plan->referentteachers)) {
+        $plan->warnings[] = get_string('transferreferentteachers', 'mod_stage',
+            implode(', ', $plan->referentteachers));
+    }
+
+    return $plan;
+}
+
+/**
+ * Exécute le transfert préparé par stage_plan_student_transfer() : rattache les stages de
+ * l'étudiant à l'instance cible, retraduit les références propres à l'instance et déplace les
+ * conventions signées vers le contexte du module cible.
+ *
+ * Le tout dans une transaction : un transfert à moitié appliqué laisserait des stages rattachés à
+ * une instance mais pointant vers les thématiques d'une autre.
+ *
+ * @param stdClass $sourcestage
+ * @param context $sourcecontext Contexte du module source.
+ * @param stdClass $targetstage
+ * @param context $targetcontext Contexte du module cible.
+ * @param int $userid
+ * @param stdClass $plan Plan calculé par stage_plan_student_transfer(), sans bloquant.
+ * @return int Nombre de stages transférés.
+ */
+function stage_execute_student_transfer(stdClass $sourcestage, context $sourcecontext, stdClass $targetstage,
+        context $targetcontext, $userid, stdClass $plan) {
+    global $DB;
+
+    $transaction = $DB->start_delegated_transaction();
+    $fs = get_file_storage();
+    $now = time();
+
+    foreach ($plan->entries as $entry) {
+        $update = (object) [
+            'id' => $entry->id,
+            'stageid' => $targetstage->id,
+            'themeid' => $plan->thememap[$entry->themeid],
+            'timemodified' => $now,
+        ];
+        if (!empty($entry->conventiontemplateid)) {
+            $update->conventiontemplateid = $plan->templatemap[$entry->conventiontemplateid] ?: null;
+        }
+        $DB->update_record('stage_entry', $update);
+
+        // Les réponses suivent le stage (même entryid) mais doivent désigner les questions de
+        // l'instance cible ; celles sans équivalent sont supprimées.
+        foreach ($DB->get_records('stage_answer', ['entryid' => $entry->id]) as $answer) {
+            $targetquestionid = $plan->questionmap[$answer->questionid] ?? null;
+            if ($targetquestionid) {
+                $DB->update_record('stage_answer', (object) [
+                    'id' => $answer->id, 'questionid' => $targetquestionid, 'timemodified' => $now,
+                ]);
+            } else {
+                $DB->delete_records('stage_answer', ['id' => $answer->id]);
+            }
+        }
+
+        // La convention signée est stockée dans le contexte du module : elle deviendrait
+        // inaccessible depuis la cible si elle restait dans celui de la source.
+        foreach ($fs->get_area_files($sourcecontext->id, 'mod_stage', 'signedconvention', $entry->id, 'itemid', false)
+                as $file) {
+            $fs->create_file_from_storedfile(['contextid' => $targetcontext->id], $file);
+            $file->delete();
+        }
+    }
+
+    // L'attribution des enseignants référents est propre au cours : elle reste dans la source,
+    // où elle continue de décrire l'année passée, et n'est pas recréée dans la cible.
+    $DB->delete_records('stage_entry_teacher', ['stageid' => $sourcestage->id, 'studentid' => $userid]);
+
+    $transaction->allow_commit();
+
+    return count($plan->entries);
+}
+
+/**
  * Copie les thématiques d'une instance source vers une instance cible (nouvelles thématiques,
  * les originales ne sont pas modifiées). N'importe pas les questions d'évaluation personnalisées
  * associées.
