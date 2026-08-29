@@ -75,17 +75,14 @@ class student_register_form extends \moodleform {
         $mform->setType('country', PARAM_TEXT);
         $mform->hideIf('country', 'abroad', 'notchecked');
 
-        $mform->addElement('date_selector', 'datestart', get_string('datestart', 'mod_stage'));
-        $mform->addElement('date_selector', 'dateend', get_string('dateend', 'mod_stage'));
-
         $mform->addElement('text', 'declaredduration', get_string('declaredduration', 'mod_stage'));
         $mform->setType('declaredduration', PARAM_INT);
         $mform->addRule('declaredduration', null, 'required', null, 'client');
 
-        // Plages de dates détaillées (facultatif, en plus des dates ci-dessus) : un stage peut
-        // comporter plusieurs plages non contiguës (ex : deux séjours séparés), voir
-        // stage_add_period_fields(). L'étudiant en choisira ses jours de stage effectifs lors de
-        // son auto-évaluation.
+        // Les plages de dates sont le seul endroit où se saisissent les dates du stage : ses dates
+        // de début et de fin en sont déduites (première et dernière date couvertes, voir
+        // stage_save_entry_periods()). Des champs de début/fin distincts n'auraient rien pu
+        // apporter de plus, et auraient pu les contredire.
         stage_add_period_fields($this, $mform);
 
         // Langue et gabarit de la convention.
@@ -208,8 +205,9 @@ class student_register_form extends \moodleform {
     }
 
     /**
-     * Validation serveur : refuse un doublon (même thématique et mêmes dates pour l'étudiant
-     * connecté) et vérifie que le gabarit sélectionné est dans la langue choisie.
+     * Validation serveur : vérifie la cohérence des plages de dates, refuse un doublon (même
+     * thématique et mêmes dates pour l'étudiant connecté) et vérifie que le gabarit sélectionné
+     * est dans la langue choisie.
      *
      * @param array $data
      * @param array $files
@@ -218,12 +216,21 @@ class student_register_form extends \moodleform {
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
+        // Les dates du stage étant déduites des plages, leur cohérence conditionne tout le reste :
+        // le contrôle de doublon ci-dessous s'appuie sur elles.
+        $periods = stage_extract_submitted_periods((object) $data);
+        $perioderror = stage_validate_periods($periods);
+        if ($perioderror !== null) {
+            $errors['perioddatestart[0]'] = $perioderror;
+            return $errors;
+        }
+
         $duplicate = stage_entry_is_duplicate(
             $this->_customdata['stageid'],
             $this->_customdata['userid'],
             $data['themeid'],
-            $data['datestart'],
-            $data['dateend'],
+            min(array_column($periods, 'datestart')),
+            max(array_column($periods, 'dateend')),
             0
         );
         if ($duplicate) {

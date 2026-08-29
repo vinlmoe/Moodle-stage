@@ -205,8 +205,10 @@ class convention_pdf extends \pdf {
      * Cadre de signatures en bas de la page 1 : une case par signataire (stagiaire, maître de
      * stage, responsable de l'organisme d'accueil, enseignant.e référent.e, personne ayant
      * délégation de signature du chef d'établissement), réparties sur deux colonnes, avec le nom
-     * déjà connu préaffiché quand il est disponible. Réservé aux conventions imprimées destinées à
-     * être signées à la main (voir generate_page1(), $withsignatures).
+     * déjà connu préaffiché quand il est disponible. Chaque case comporte une ligne de date à
+     * remplir à la main : une convention n'engage qu'à compter de sa signature, et chaque
+     * signataire signe à sa propre date. Réservé aux conventions imprimées destinées à être
+     * signées à la main (voir generate_page1(), $withsignatures).
      *
      * @param array $stagedata Voir generate_page1() : utilisé ici pour préremplir les noms déjà
      *                         connus (stagiaire, tuteur, enseignant.e référent.e, signataire de
@@ -227,42 +229,74 @@ class convention_pdf extends \pdf {
 
         $cols = 2;
         $gap = 4;
-        $boxheight = 28;
+        $lineheight = 5;
+        // Espace laissé libre sous les mentions pour la date et la signature manuscrite.
+        $signspace = 22;
         $left = $this->getMargins()['left'];
         $pagewidth = $this->getPageWidth() - $left - $this->getMargins()['right'];
         $boxwidth = ($pagewidth - $gap * ($cols - 1)) / $cols;
 
-        $y = $this->GetY();
+        // Les hauteurs de libellé et de mention sont mesurées, non supposées : la mention de
+        // délégation, plus longue que les autres, passe sur deux lignes et le cadre serait sinon
+        // tracé par-dessus. La hauteur retenue est celle de la case la plus haute de la rangée,
+        // pour que les cadres d'une même rangée s'alignent.
+        $this->SetFont('freesans', '', 9);
         foreach ($boxes as $i => [$label, $name, $delegation]) {
+            if ($delegation) {
+                // La signature de l'établissement se fait par délégation du chef d'établissement,
+                // jamais directement en son nom : la mention doit l'indiquer explicitement, avec
+                // ou sans le nom de la personne déléguée.
+                $text = ($name !== '' && $name !== '-')
+                    ? $this->str('conventionsignaturedelegationname', $name)
+                    : $this->str('conventionsignaturedelegation');
+            } else {
+                $text = ($name !== '' && $name !== '-') ? $this->str('conventionsignaturename', $name) : '';
+            }
+            $boxes[$i][3] = $text;
+            // Compté en nombre de lignes puis multiplié par la hauteur de ligne effectivement
+            // utilisée ci-dessous : getStringHeight() renvoie la hauteur propre à la police, plus
+            // petite, et le cadre viendrait mordre la dernière ligne de texte.
+            $this->SetFont('freesans', 'B', 9);
+            $lines = $this->getNumLines($label, $boxwidth);
+            if ($text !== '') {
+                $this->SetFont('freesans', '', 9);
+                $lines += $this->getNumLines($text, $boxwidth);
+            }
+            $boxes[$i][4] = $lines * $lineheight;
+        }
+        $rowtextheight = [];
+        foreach ($boxes as $i => $box) {
+            $row = intdiv($i, $cols);
+            $rowtextheight[$row] = max($rowtextheight[$row] ?? 0, $box[4]);
+        }
+
+        $y = $this->GetY();
+        foreach ($boxes as $i => [$label, $name, $delegation, $text, $textheight]) {
             $col = $i % $cols;
+            $rowheight = $rowtextheight[intdiv($i, $cols)] + 1 + $signspace;
             if ($col === 0) {
-                $this->ensure_space($boxheight + 6);
+                $this->ensure_space($rowheight + 6);
                 $y = $this->GetY();
             }
             $x = $left + $col * ($boxwidth + $gap);
 
             $this->SetFont('freesans', 'B', 9);
-            $this->MultiCell($boxwidth, 5, $label, 0, 'L', false, 0, $x, $y);
-            $namey = $y + 5;
-
-            $this->SetFont('freesans', '', 9);
-            if ($delegation) {
-                // La signature de l'établissement se fait par délégation du chef d'établissement,
-                // jamais directement en son nom : la mention doit l'indiquer explicitement, avec
-                // ou sans le nom de la personne déléguée.
-                $delegationtext = ($name !== '' && $name !== '-')
-                    ? $this->str('conventionsignaturedelegationname', $name)
-                    : $this->str('conventionsignaturedelegation');
-                $this->MultiCell($boxwidth, 5, $delegationtext, 0, 'L', false, 0, $x, $namey);
-                $namey += 5;
-            } else if ($name !== '' && $name !== '-') {
-                $this->MultiCell($boxwidth, 5, $this->str('conventionsignaturename', $name), 0, 'L', false, 0, $x, $namey);
-                $namey += 5;
+            $this->MultiCell($boxwidth, $lineheight, $label, 0, 'L', false, 1, $x, $y);
+            if ($text !== '') {
+                $this->SetFont('freesans', '', 9);
+                $this->MultiCell($boxwidth, $lineheight, $text, 0, 'L', false, 1, $x, $this->GetY());
             }
-            $this->Rect($x, $namey, $boxwidth, max($boxheight - ($namey - $y), 12));
+
+            // La date est dans le cadre plutôt qu'au-dessus : elle fait partie de ce que le
+            // signataire remplit, au même titre que sa signature.
+            $boxtop = $y + $rowtextheight[intdiv($i, $cols)] + 1;
+            $this->Rect($x, $boxtop, $boxwidth, $signspace);
+            $this->SetFont('freesans', '', 8);
+            $this->MultiCell($boxwidth - 4, 4, $this->str('conventionsignaturedate'), 0, 'L', false, 0,
+                $x + 2, $boxtop + 1.5);
 
             if ($col === $cols - 1 || $i === count($boxes) - 1) {
-                $this->SetY($y + $boxheight + 6);
+                $this->SetY($y + $rowheight + 6);
             }
         }
     }

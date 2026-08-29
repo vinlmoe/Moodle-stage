@@ -931,8 +931,17 @@ function stage_get_or_seed_entry_periods(stdClass $entry) {
 }
 
 /**
- * Remplace les plages de dates d'une saisie de stage par la liste fournie. Les plages invalides
- * (dates manquantes ou fin antérieure au début) sont ignorées.
+ * Remplace les plages de dates d'une saisie de stage par la liste fournie, et aligne les dates de
+ * début et de fin de la saisie sur la première et la dernière date couvertes.
+ *
+ * Les plages sont la source de vérité des dates du stage : les dates de la saisie, affichées
+ * partout ailleurs (listes, convention, exports), en sont déduites plutôt que saisies séparément,
+ * ce qui garantit qu'elles ne peuvent pas les contredire. Les plages invalides (dates manquantes
+ * ou fin antérieure au début) sont ignorées ; une liste vide laisse les dates de la saisie
+ * inchangées, faute de quoi elles seraient effacées sans que rien ne les remplace.
+ *
+ * La cohérence des plages entre elles (absence de chevauchement) relève des formulaires, qui
+ * refusent la saisie plutôt que de la corriger en silence : voir stage_validate_periods().
  *
  * @param int $entryid
  * @param array $periods Liste de tableaux ['datestart' => int, 'dateend' => int]
@@ -957,9 +966,64 @@ function stage_save_entry_periods($entryid, array $periods) {
             'timecreated' => time(),
         ];
     }
-    if ($records) {
-        $DB->insert_records('stage_entry_period', $records);
+    if (!$records) {
+        return;
     }
+
+    $DB->insert_records('stage_entry_period', $records);
+
+    $starts = array_column($records, 'datestart');
+    $ends = array_column($records, 'dateend');
+    $DB->update_record('stage_entry', (object) [
+        'id' => $entryid,
+        'datestart' => min($starts),
+        'dateend' => max($ends),
+        'timemodified' => time(),
+    ]);
+}
+
+/**
+ * Vérifie la cohérence des plages de dates saisies pour un stage : au moins une plage, une fin
+ * qui ne précède pas son début, et aucun chevauchement entre plages.
+ *
+ * Deux plages qui se recoupent feraient compter deux fois les mêmes journées dans le décompte des
+ * jours de stage, et n'ont de toute façon pas de sens sur une convention : la saisie est refusée
+ * plutôt que corrigée en silence. Utilisée par les formulaires de demande et de validation de
+ * convention, seuls endroits où les plages se saisissent.
+ *
+ * @param array $periods Liste de tableaux ['datestart' => int, 'dateend' => int], telle que
+ *                       produite par stage_extract_submitted_periods().
+ * @return string|null Message d'erreur à afficher, ou null si les plages sont cohérentes.
+ */
+function stage_validate_periods(array $periods) {
+    if (empty($periods)) {
+        return get_string('periodsrequired', 'mod_stage');
+    }
+
+    foreach ($periods as $period) {
+        if ($period['dateend'] < $period['datestart']) {
+            return get_string('periodendbeforestart', 'mod_stage');
+        }
+    }
+
+    // Trié par date de début, deux plages se chevauchent si l'une commence avant la fin de la
+    // précédente : une seule comparaison par plage suffit alors à toutes les détecter.
+    usort($periods, function($a, $b) {
+        return $a['datestart'] <=> $b['datestart'];
+    });
+    $dateformat = get_string('strftimedate', 'langconfig');
+    for ($i = 1; $i < count($periods); $i++) {
+        if ($periods[$i]['datestart'] <= $periods[$i - 1]['dateend']) {
+            return get_string('periodsoverlap', 'mod_stage', (object) [
+                'first' => userdate($periods[$i - 1]['datestart'], $dateformat) . ' - '
+                    . userdate($periods[$i - 1]['dateend'], $dateformat),
+                'second' => userdate($periods[$i]['datestart'], $dateformat) . ' - '
+                    . userdate($periods[$i]['dateend'], $dateformat),
+            ]);
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -2308,14 +2372,11 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
         get_string('edit') => $rights->register
             ? new moodle_url('/mod/stage/register.php',
                 ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]) : null,
-        // La gestion des plages est aussi ouverte à l'enseignant référent (voir entry_periods.php).
-        get_string('periods', 'mod_stage') => $rights->register || $rights->assignedteacher
-            ? new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
         get_string('generateconvention', 'mod_stage') =>
             $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
                 ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
-        // Comme entry_periods.php et convention_signed.php, la convention signée est ouverte à la
-        // DEVE et à l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
+        // Comme convention_signed.php, la convention signée est ouverte à la DEVE et à
+        // l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
         get_string('downloadsignedconvention', 'mod_stage') =>
             ($rights->register || $rights->assignedteacher)
                 && $conventionstatus === STAGE_CONVENTION_SIGNED
