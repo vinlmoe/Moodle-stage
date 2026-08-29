@@ -141,8 +141,6 @@ if ($mode === 'list') {
         $actions = stage_render_actions([
             get_string('edit') =>
                 new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]),
-            get_string('periods', 'mod_stage') =>
-                new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]),
         ], 'btn btn-sm btn-secondary mr-1 mb-1');
 
         $conventionactions = stage_render_actions([

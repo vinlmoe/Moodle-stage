@@ -135,6 +135,15 @@ class convention_review_form extends \moodleform {
         $mform->setType('leavemodalities', PARAM_TEXT);
         $mform->hideIf('leavemodalities', 'hasleave', 'notchecked');
 
+        // Option de génération, proposée uniquement à la DEVE (convention_review.php), dont la
+        // validation télécharge immédiatement le PDF : l'enseignant référent, lui, ne fait que
+        // transmettre la demande, sans rien générer.
+        if (!empty($this->_customdata['withsignatureoption'])) {
+            $mform->addElement('header', 'generationheader', get_string('generateconvention', 'mod_stage'));
+            $mform->setExpanded('generationheader');
+            $mform->addElement('advcheckbox', 'withsignatures', get_string('includesignatureblock', 'mod_stage'));
+        }
+
         $mform->addElement('header', 'rejectheader', get_string('conventionrejectcomment', 'mod_stage'));
         $mform->setExpanded('rejectheader');
         $mform->addElement('textarea', 'rejectcomment', get_string('conventionrejectcomment', 'mod_stage'),
@@ -161,6 +170,13 @@ class convention_review_form extends \moodleform {
         $errors = parent::validation($data, $files);
 
         if (!empty($data['validateconvention'])) {
+            // Les plages de dates conditionnent les dates du stage et sa convention : elles sont
+            // vérifiées à la validation, au même titre que les champs obligatoires, mais pas au
+            // refus, qui doit rester possible sur une saisie incohérente.
+            $perioderror = stage_validate_periods(stage_extract_submitted_periods((object) $data));
+            if ($perioderror !== null) {
+                $errors['perioddatestart[0]'] = $perioderror;
+            }
             foreach (self::REQUIRED_FIELDS as $field) {
                 if ($data[$field] === '' || $data[$field] === null) {
                     $errors[$field] = get_string('required');

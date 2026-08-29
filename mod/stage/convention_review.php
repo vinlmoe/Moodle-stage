@@ -63,7 +63,13 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
 $periods = array_values(stage_get_or_seed_entry_periods($entry));
-$mform = new convention_review_form($baseurl, ['referentteachers' => $referentteachers, 'periods' => $periods]);
+$mform = new convention_review_form($baseurl, [
+    'referentteachers' => $referentteachers, 'periods' => $periods,
+    // La validation DEVE télécharge immédiatement le PDF : le choix d'y inclure un cadre de
+    // signatures se fait donc ici, et pas seulement lors d'une regénération ultérieure
+    // (convention.php).
+    'withsignatureoption' => true,
+]);
 
 $detail = stage_get_convention_detail($entry->id);
 $formdata = (object) ['id' => $cm->id, 'entryid' => $entryid];
@@ -121,7 +127,7 @@ if ($mform->is_cancelled()) {
         // Génère et télécharge immédiatement le PDF de la convention, plutôt que d'obliger la
         // DEVE à revenir ensuite sur la liste pour cliquer "Générer la convention" séparément.
         $entry = $DB->get_record('stage_entry', ['id' => $entry->id], '*', MUST_EXIST);
-        $result = stage_build_convention_pdf($stage, $entry, $context);
+        $result = stage_build_convention_pdf($stage, $entry, $context, !empty($data->withsignatures));
         if ($result['error']) {
             redirect($backurl, get_string('conventionvalidatedpdferror', 'mod_stage', get_string($result['error'], 'mod_stage')),
                 null, \core\output\notification::NOTIFY_WARNING);
