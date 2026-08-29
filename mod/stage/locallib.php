@@ -860,7 +860,23 @@ function stage_register_entry($stageid, $studentid, $themeid, $structure, $dates
     $record->timecreated = time();
     $record->timemodified = time();
 
-    return $DB->insert_record('stage_entry', $record);
+    $entryid = $DB->insert_record('stage_entry', $record);
+
+    // Toute saisie a au moins une plage de dates : les plages sont la seule saisie possible des
+    // dates d'un stage (voir stage_save_entry_periods()), et les pages qui les affichent ou les
+    // rééditent doivent en trouver, quel que soit le chemin de création — formulaire, création en
+    // masse, import CSV ou StageVet, service web. L'appelant qui dispose de plusieurs plages les
+    // remplace ensuite par la liste complète.
+    if (!empty($datestart) && !empty($dateend)) {
+        $DB->insert_record('stage_entry_period', (object) [
+            'entryid' => $entryid,
+            'datestart' => $datestart,
+            'dateend' => $dateend,
+            'timecreated' => time(),
+        ]);
+    }
+
+    return $entryid;
 }
 
 /**

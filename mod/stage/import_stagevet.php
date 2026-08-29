@@ -295,6 +295,17 @@ if (data_submitted() && confirm_sesskey()) {
 
                 foreach ($entryrecords as $rowkey => $record) {
                     $entryid = $DB->insert_record('stage_entry', $record);
+                    // Comme toute saisie créée par stage_register_entry(), celle-ci reçoit la
+                    // plage de dates correspondante : les plages sont la seule saisie possible des
+                    // dates d'un stage, et les pages qui les rééditent doivent en trouver.
+                    if (!empty($record->datestart) && !empty($record->dateend)) {
+                        $DB->insert_record('stage_entry_period', (object) [
+                            'entryid' => $entryid,
+                            'datestart' => $record->datestart,
+                            'dateend' => $record->dateend,
+                            'timecreated' => time(),
+                        ]);
+                    }
                     $detailbyrowkey[$rowkey]->entryid = $entryid;
                     $detailbyrowkey[$rowkey]->timecreated = time();
                     $detailbyrowkey[$rowkey]->timemodified = time();
