@@ -124,13 +124,17 @@ class deve_entry_form extends \moodleform {
             return $errors;
         }
 
+        // L'entryid à exclure vient du customdata (connu côté serveur avant même la construction
+        // du formulaire, voir register.php), pas du champ caché soumis par le client : pour une
+        // édition, c'est ce qui garantit que la saisie ne se compare jamais à elle-même, quel que
+        // soit l'aléa d'un champ caché mal réhydraté.
         $duplicate = stage_entry_is_duplicate(
             $this->_customdata['stageid'],
             $data['userid'],
             $data['themeid'],
             min(array_column($periods, 'datestart')),
             max(array_column($periods, 'dateend')),
-            $data['entryid']
+            $this->_customdata['entryid'] ?? 0
         );
         if ($duplicate) {
             $errors['themeid'] = get_string('errorduplicateentry', 'mod_stage');

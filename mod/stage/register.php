@@ -211,6 +211,10 @@ if ($mode === 'single') {
         'studentname' => $entrystudent ? fullname($entrystudent) : '',
         'stageid' => $stage->id,
         'periods' => $entryperiods,
+        // Connu côté serveur dès l'URL, avant la construction du formulaire : c'est cette valeur,
+        // et non le champ caché "entryid" soumis par le client, qui sert à exclure la saisie en
+        // cours d'édition du contrôle de doublon (voir deve_entry_form::validation()).
+        'entryid' => $entryid,
     ]);
 
     $toform = new stdClass();
