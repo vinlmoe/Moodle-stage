@@ -110,10 +110,12 @@ $string['importstagevetcsv_help'] = 'Import the CSV file exported directly from 
     . 'not use the same names by default, first create themes with the same names used in StageVet (e.g. '
     . '"THEME LIBRE / A2, A3, A4, A5"). Each imported internship is registered with agreement status "Signed '
     . '(StageVet)" (already signed outside this plugin): the agreement details available in the export are still '
-    . 'saved for reference, without triggering any PDF generation.';
+    . 'saved for reference, without triggering any PDF generation. The start and end dates from the export form the '
+    . "imported internship's only date period: a line without usable dates is reported and skipped.";
 $string['importstagevetnoheader'] = 'The file does not seem to have a recognisable header row. Check that it is '
     . 'an unmodified StageVet export.';
 $string['importstageveterrornotheme'] = 'Line {$a}: no theme provided.';
+$string['importstageveterrordates'] = 'Line {$a->line} ({$a->student}): start and end dates missing or inconsistent. These dates form the internship\'s only period: the line is skipped.';
 $string['importstagevetunknownstudentsreport'] = '{$a} student(s) not found among those enrolled on the course';
 $string['importstagevetunknownthemesreport'] = '{$a} theme(s) not found';
 $string['importstagevetreportline'] = '{$a->value} (line(s) {$a->lines})';

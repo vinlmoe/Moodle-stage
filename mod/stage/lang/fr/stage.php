@@ -113,10 +113,13 @@ $string['importstagevetcsv_help'] = "Importez directement le fichier CSV export�
     . "mêmes intitulés par défaut, créez au préalable des thématiques portant les mêmes noms que ceux utilisés "
     . "dans StageVet (ex. « THEME LIBRE / A2, A3, A4, A5 »). Chaque stage importé est enregistré avec le statut de "
     . 'convention "Signée (StageVet)" (déjà signée hors de ce plugin) : les coordonnées de convention disponibles '
-    . "dans l'export sont tout de même enregistrées à titre de référence, sans déclencher de génération de PDF.";
+    . "dans l'export sont tout de même enregistrées à titre de référence, sans déclencher de génération de PDF. "
+    . "Les dates de début et de fin de l'export constituent l'unique plage de dates du stage importé : une ligne "
+    . "sans dates exploitables est signalée et ignorée.";
 $string['importstagevetnoheader'] = "Le fichier ne semble pas avoir de ligne d'en-tête reconnaissable. Vérifiez qu'il "
     . "s'agit bien d'un export StageVet non modifié.";
 $string['importstageveterrornotheme'] = 'Ligne {$a} : aucune thématique renseignée.';
+$string['importstageveterrordates'] = 'Ligne {$a->line} ({$a->student}) : dates de début et de fin absentes ou incohérentes. Ces dates constituent l\'unique plage du stage : la ligne est ignorée.';
 $string['importstagevetunknownstudentsreport'] = '{$a} étudiant(s) introuvable(s) parmi les inscrits au cours';
 $string['importstagevetunknownthemesreport'] = '{$a} thématique(s) introuvable(s)';
 $string['importstagevetreportline'] = '{$a->value} (ligne(s) {$a->lines})';
