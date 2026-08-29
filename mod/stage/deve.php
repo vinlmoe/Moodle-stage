@@ -90,10 +90,9 @@ if ($entryid) {
     echo $OUTPUT->heading(get_string('validatestage', 'mod_stage', fullname($student)));
     echo html_writer::link($baseurl, get_string('back'));
 
-    echo html_writer::tag('p', get_string('theme', 'mod_stage') . ' : ' . format_string($theme->name));
-    echo html_writer::tag('p', get_string('declaredduration', 'mod_stage') . ' : ' . $entry->declaredduration);
-    echo html_writer::tag('p', get_string('status', 'mod_stage') . ' : '
-        . html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status)));
+    // Rappel de la saisie validée, en tableau plutôt qu'en paragraphes épars, et complété des
+    // informations qui manquaient ici (année d'étude, structure, mobilité, plages, convention).
+    echo stage_render_entry_summary($entry, $theme);
 
     // Les deux évaluations amont, telles qu'elles ont été saisies (questions ou commentaire libre).
     $answers = stage_get_answers($entry->id);

@@ -1650,9 +1650,12 @@ function stage_render_detail_section($heading, array $rows) {
  *
  * @param array $links Paires [libellé => moodle_url]. Une URL nulle fait sauter l'entrée.
  * @param string $class Classe du bouton (par défaut secondaire, discret dans un tableau).
- * @return string HTML, ou '-' si aucune action n'est proposée.
+ * @param string $empty Valeur renvoyée si aucune action n'est proposée : '-' pour remplir une
+ *                      cellule de tableau, '' quand l'appelant enchaîne plusieurs groupes et
+ *                      compose lui-même le rendu de l'ensemble vide.
+ * @return string HTML, ou $empty si aucune action n'est proposée.
  */
-function stage_render_actions(array $links, $class = 'btn btn-sm btn-secondary mr-1 mb-1') {
+function stage_render_actions(array $links, $class = 'btn btn-sm btn-secondary mr-1 mb-1', $empty = '-') {
     $out = '';
     foreach ($links as $label => $url) {
         if ($url === null) {
@@ -1661,7 +1664,7 @@ function stage_render_actions(array $links, $class = 'btn btn-sm btn-secondary m
         $out .= html_writer::link($url, $label, ['class' => $class]);
     }
 
-    return $out !== '' ? $out : '-';
+    return $out !== '' ? $out : $empty;
 }
 
 /**
@@ -2158,9 +2161,96 @@ function stage_progress_table_head() {
 }
 
 /**
+ * Rend les actions de gestion possibles sur une saisie donnée, pour la DEVE ou l'enseignant
+ * référent, dans la liste des stages du résumé d'un étudiant.
+ *
+ * Chaque action n'est proposée que si l'utilisateur a le droit correspondant ET que la saisie est
+ * dans un état où elle a un sens : la page cible refuserait de toute façon, et proposer un bouton
+ * qui mène à un refus ou à une page sans objet est pire que de ne rien proposer. Les droits sont
+ * calculés une fois par étudiant par l'appelant (voir stage_print_student_dashboard()) plutôt
+ * qu'ici, pour ne pas rejouer les mêmes requêtes à chaque ligne du tableau.
+ *
+ * @param stdClass $entry
+ * @param stdClass $cm Course module.
+ * @param context $context Contexte du module stage.
+ * @param stdClass $rights Droits de l'utilisateur courant sur cet étudiant, tels que calculés par
+ *                          stage_print_student_dashboard() : {register, validatedeve,
+ *                          assignedteacher, viewdetail} (booléens).
+ * @return string HTML des boutons d'action, chaîne vide s'il n'y en a aucun.
+ */
+function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, context $context, stdClass $rights) {
+    $status = (int) $entry->status;
+    $conventionstatus = (int) $entry->conventionstatus;
+    $out = '';
+
+    // Ce qui attend une action de l'utilisateur : mis en avant, c'est ce pour quoi il ouvre cette
+    // page. Chaque état n'en ouvre qu'une seule.
+    $out .= stage_render_actions([
+        get_string('evaluate', 'mod_stage') =>
+            $rights->assignedteacher && $status === STAGE_STATUS_EVAL_ETUDIANT
+                ? new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionteachervalidate', 'mod_stage') =>
+            $rights->assignedteacher && $conventionstatus === STAGE_CONVENTION_TEACHERPENDING
+                ? new moodle_url('/mod/stage/convention_teacher_validate.php',
+                    ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('validate', 'mod_stage') =>
+            $rights->validatedeve && $status === STAGE_STATUS_EVAL_ENSEIGNANT
+                ? new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionreview', 'mod_stage') =>
+            $rights->register && $conventionstatus === STAGE_CONVENTION_REQUESTED
+                ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionmarksigned', 'mod_stage') =>
+            $rights->register && $conventionstatus === STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+    ], 'btn btn-sm btn-primary mr-1 mb-1', '');
+
+    // Actions disponibles en permanence : consultation et retouches.
+    $out .= stage_render_actions([
+        get_string('viewdetails', 'mod_stage') => $rights->viewdetail
+            ? new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('edit') => $rights->register
+            ? new moodle_url('/mod/stage/register.php',
+                ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]) : null,
+        // La gestion des plages est aussi ouverte à l'enseignant référent (voir entry_periods.php).
+        get_string('periods', 'mod_stage') => $rights->register || $rights->assignedteacher
+            ? new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('generateconvention', 'mod_stage') =>
+            $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        // Comme entry_periods.php et convention_signed.php, la convention signée est ouverte à la
+        // DEVE et à l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
+        get_string('downloadsignedconvention', 'mod_stage') =>
+            ($rights->register || $rights->assignedteacher)
+                && $conventionstatus === STAGE_CONVENTION_SIGNED
+                && stage_get_signed_convention_file($context, $entry->id)
+                    ? new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id])
+                    : null,
+    ], 'btn btn-sm btn-secondary mr-1 mb-1', '');
+
+    // Réinitialiser et annuler défont un travail déjà fait : en rouge et en dernier, comme dans la
+    // liste de register.php, pour ne pas être cliquées à la place de « Modifier ».
+    if ($rights->register && $status !== STAGE_STATUS_ENREGISTRE) {
+        $out .= html_writer::link(
+            new moodle_url('/mod/stage/register.php',
+                ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]),
+            get_string('resetentry', 'mod_stage'), [
+                'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
+                'onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');",
+            ]);
+    }
+    if ($rights->register && $status !== STAGE_STATUS_ANNULE) {
+        $out .= html_writer::link(
+            new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+            get_string('cancelentry', 'mod_stage'), ['class' => 'btn btn-sm btn-outline-danger mr-1 mb-1']);
+    }
+
+    return $out;
+}
+
+/**
  * Affiche l'avancement d'un étudiant (thématiques obligatoires et liste de ses saisies).
  * Utilisé par la page de l'étudiant lui-même (avec lien de saisie de l'auto-évaluation, si
- * $cm est fourni) et par le tableau de pilotage de la DEVE (lecture seule).
+ * $cm est fourni) et par le tableau de pilotage de la DEVE et des enseignants référents.
  *
  * L'information est présentée du général au particulier, en cinq sections : la synthèse (chiffres
  * clés du dossier), le bilan par année d'étude, le bilan par thématique obligatoire, l'obligation
@@ -2169,17 +2259,23 @@ function stage_progress_table_head() {
  * non un titre de section) et affichent le reste à faire plutôt que d'obliger l'étudiant à le
  * calculer lui-même.
  *
+ * La colonne d'actions de la liste des stages est déduite des droits de l'utilisateur courant sur
+ * l'étudiant affiché (voir stage_render_entry_management_actions()) : la DEVE et l'enseignant
+ * référent peuvent agir directement sur chaque stage depuis cette page, sans repasser par les
+ * listes de register.php, deve.php ou teacher.php.
+ *
  * @param stdClass $stage
  * @param int $userid
  * @param stdClass|null $cm Course module, pour afficher les liens d'action.
- * @param bool $selfevallink Affiche le lien de saisie de l'auto-évaluation de l'étudiant
- *                            (page de l'étudiant lui-même uniquement).
- * @param bool $detaillink Affiche un lien vers le détail en lecture seule de chaque saisie
- *                          (tableau de pilotage DEVE / enseignant référent).
+ * @param bool $selfevallink Affiche les actions de l'étudiant sur ses propres stages (demande de
+ *                            convention, auto-évaluation) : page de l'étudiant lui-même uniquement.
+ * @param bool $detaillink Conservé pour la compatibilité des appels : l'accès au détail en lecture
+ *                          seule de chaque saisie découle désormais des droits de l'utilisateur,
+ *                          comme les autres actions de gestion.
  * @return void
  */
 function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $selfevallink = false, $detaillink = false) {
-    global $OUTPUT;
+    global $OUTPUT, $USER;
 
     $progress = stage_get_student_progress($stage->id, $userid);
     $mandatorythemes = array_filter($progress->themes, function($t) {
@@ -2350,6 +2446,25 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
     $themes = stage_get_themes($stage->id);
     $entries = stage_get_student_entries($stage->id, $userid);
 
+    // Droits de l'utilisateur courant sur les stages de cet étudiant, calculés une seule fois
+    // ici : l'attribution d'un enseignant référent porte sur l'étudiant, pas sur chaque saisie,
+    // et la rejouer à chaque ligne du tableau multiplierait les requêtes pour rien.
+    $context = $cm ? context_module::instance($cm->id) : null;
+    $rights = (object) [
+        'register' => false, 'validatedeve' => false, 'assignedteacher' => false, 'viewdetail' => false,
+    ];
+    if ($context) {
+        $rights->register = has_capability('mod/stage:registerstages', $context);
+        $rights->validatedeve = has_capability('mod/stage:validatedeve', $context);
+        $rights->assignedteacher = has_capability('mod/stage:evaluateteacher', $context)
+            && array_key_exists($userid, stage_get_assigned_students($stage->id, $USER->id));
+        // Même condition que entrydetail.php : ni la capacité d'enregistrer les stages ni celle
+        // de les valider n'y donnent accès à elles seules.
+        $rights->viewdetail = has_capability('mod/stage:viewall', $context) || $rights->assignedteacher;
+    }
+    $canmanage = $rights->register || $rights->validatedeve || $rights->assignedteacher || $rights->viewdetail;
+    $showactions = $cm && ($selfevallink || $detaillink || $canmanage);
+
     $table = new html_table();
     $table->head = [
         get_string('theme', 'mod_stage'),
@@ -2361,7 +2476,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         get_string('status', 'mod_stage'),
         get_string('conventionstatus', 'mod_stage'),
     ];
-    if ($cm && ($selfevallink || $detaillink)) {
+    if ($showactions) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
     // Une ligne sur fond distinct pour chaque stage à l'étranger, pour les repérer d'un coup
@@ -2388,20 +2503,20 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $badge,
             $conventionbadge,
         ];
-        if ($cm && ($selfevallink || $detaillink)) {
+        if ($showactions) {
             // Les actions sont rendues en petits boutons plutôt qu'en liens séparés par des
             // barres verticales, pour rester lisibles quand il y en a plusieurs.
             $btn = ['class' => 'btn btn-sm btn-secondary mr-1 mb-1'];
-            $actions = [];
+            $actions = '';
             if ($selfevallink) {
                 if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE
                         || (int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
-                    $actions[] = html_writer::link(
+                    $actions .= html_writer::link(
                         new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('requestconvention', 'mod_stage'), $btn
                     );
                 } else if (stage_convention_is_signed($entry->conventionstatus)) {
-                    $actions[] = html_writer::link(
+                    $actions .= html_writer::link(
                         new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('selfeval', 'mod_stage'), $btn
                     );
@@ -2410,8 +2525,8 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                     // en a effectivement téléversé un (facultatif, voir convention_sign.php) : les
                     // stages enregistrés en masse (SignVet) n'en ont jamais.
                     if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED
-                            && stage_get_signed_convention_file(context_module::instance($cm->id), $entry->id)) {
-                        $actions[] = html_writer::link(
+                            && stage_get_signed_convention_file($context, $entry->id)) {
+                        $actions .= html_writer::link(
                             new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                             get_string('downloadsignedconvention', 'mod_stage'), $btn
                         );
@@ -2420,13 +2535,14 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                 // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
                 // l'instant, le badge de statut ci-dessus suffit à le renseigner.
             }
-            if ($detaillink) {
-                $actions[] = html_writer::link(
-                    new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                    get_string('viewdetails', 'mod_stage'), $btn
-                );
+            // Actions de gestion de la DEVE et de l'enseignant référent : évaluer, valider,
+            // relire la convention, modifier, annuler... selon leurs droits et l'état de la
+            // saisie. Elles évitent d'avoir à repasser par les listes de register.php, deve.php
+            // ou teacher.php pour agir sur le stage qu'on est justement en train de consulter.
+            if ($canmanage) {
+                $actions .= stage_render_entry_management_actions($entry, $cm, $context, $rights);
             }
-            $row[] = implode('', $actions);
+            $row[] = $actions !== '' ? $actions : '-';
         }
         $table->data[] = $row;
     }
