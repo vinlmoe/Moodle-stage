@@ -2062,6 +2062,101 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
 }
 
 /**
+ * Années d'étude à retenir pour le bilan de promotion : l'année d'étude courante du stage
+ * (stage->currentstudyyear) et les précédentes, ignorées au-delà.
+ *
+ * Les objectifs des années à venir ne sont pas encore exigibles : les faire figurer dans un bilan
+ * de promotion ferait apparaître en retard toute la promotion. Tant que l'année courante n'est pas
+ * renseignée, toutes les années sur lesquelles la promotion a des objectifs sont retenues.
+ *
+ * @param stdClass $stage
+ * @param array $rows Lignes de stage_get_pilotage_overview().
+ * @return array Années d'étude concernées, triées par ordre croissant.
+ */
+function stage_get_promotion_years(stdClass $stage, array $rows) {
+    $years = [];
+    foreach ($rows as $row) {
+        foreach ($row->yearprogress as $yearrow) {
+            if (empty($stage->currentstudyyear) || $yearrow->studyyear <= $stage->currentstudyyear) {
+                $years[(int) $yearrow->studyyear] = true;
+            }
+        }
+    }
+    $years = array_keys($years);
+    sort($years);
+
+    return $years;
+}
+
+/**
+ * Construit le bilan de promotion : pour chaque étudiant, la validation de chacune des années
+ * d'étude échues (année courante et précédentes, voir stage_get_promotion_years()), et le constat
+ * global qui en découle.
+ *
+ * Les étudiants qui ne valident pas au moins une de ces années sont placés en tête, du plus en
+ * retard au moins en retard : c'est sur eux que la DEVE a une action à mener, et un bilan de
+ * promotion est d'abord une liste de relances. Les autres suivent, par ordre alphabétique.
+ *
+ * @param stdClass $stage
+ * @param context $context Contexte du module stage.
+ * @param array|null $restrictuserids Restreint à ces étudiants (enseignant référent), ou null.
+ * @return stdClass {years (années retenues), rows (lignes triées), failedcount, total}
+ *                  Chaque ligne ajoute aux champs de stage_get_pilotage_overview() :
+ *                  'yearsdone' [année => bool], 'failedyears' [années non validées],
+ *                  'uptodate' (bool : aucune année échue en défaut).
+ */
+function stage_get_promotion_report(stdClass $stage, context $context, ?array $restrictuserids = null) {
+    $rows = stage_get_pilotage_overview($stage->id, $context, $restrictuserids);
+    $years = stage_get_promotion_years($stage, $rows);
+
+    foreach ($rows as $row) {
+        $row->yearsdone = [];
+        $row->failedyears = [];
+        foreach ($years as $year) {
+            // Une année sans objectif pour cet étudiant n'est ni validée ni en défaut : elle
+            // reste absente de yearsdone, et se lit « sans objet » à l'affichage.
+            if (!isset($row->yearprogress[$year])) {
+                continue;
+            }
+            $done = (bool) $row->yearprogress[$year]->done;
+            $row->yearsdone[$year] = $done;
+            if (!$done) {
+                $row->failedyears[] = $year;
+            }
+        }
+        $row->uptodate = empty($row->failedyears);
+    }
+
+    usort($rows, function($a, $b) {
+        // Les étudiants en défaut d'abord ; parmi eux, ceux qui accumulent le plus d'années non
+        // validées, puis ceux dont le retard est le plus ancien : c'est l'ordre d'urgence.
+        if ($a->uptodate !== $b->uptodate) {
+            return $a->uptodate <=> $b->uptodate;
+        }
+        if (!$a->uptodate) {
+            $countcmp = count($b->failedyears) <=> count($a->failedyears);
+            if ($countcmp !== 0) {
+                return $countcmp;
+            }
+            $oldestcmp = reset($a->failedyears) <=> reset($b->failedyears);
+            if ($oldestcmp !== 0) {
+                return $oldestcmp;
+            }
+        }
+        return core_text::strtolower(fullname($a->user)) <=> core_text::strtolower(fullname($b->user));
+    });
+
+    return (object) [
+        'years' => $years,
+        'rows' => $rows,
+        'total' => count($rows),
+        'failedcount' => count(array_filter($rows, function($row) {
+            return !$row->uptodate;
+        })),
+    ];
+}
+
+/**
  * Rend la barre de liens de navigation entre les pages de gestion de l'activité, affichée en
  * haut de view.php et de dashboard.php (page d'atterrissage de la DEVE et de l'enseignant
  * référent, voir view.php). Les pages d'administration (thématiques, gabarits de convention,
@@ -2095,6 +2190,8 @@ function stage_render_navlinks(stdClass $cm, context $context) {
     }
     if (has_capability('mod/stage:viewall', $context)) {
         $links[get_string('exportexcel', 'mod_stage')] = new moodle_url('/mod/stage/export.php', ['id' => $cm->id]);
+        $links[get_string('promotionreportpdf', 'mod_stage')] =
+            new moodle_url('/mod/stage/export_pdf.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:managethemes', $context) || has_capability('mod/stage:manageteachers', $context)) {
         $links[get_string('administration', 'mod_stage')] =
