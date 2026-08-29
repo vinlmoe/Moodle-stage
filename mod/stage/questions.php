@@ -185,9 +185,11 @@ foreach (['student' => get_string('evaltype_student', 'mod_stage'), 'teacher' =>
         $deleteurl = new moodle_url('/mod/stage/questions.php',
             ['id' => $cm->id, 'themeid' => $theme->id, 'action' => 'delete', 'questionid' => $question->id,
                 'sesskey' => sesskey()]);
-        $actions = html_writer::link($editurl, get_string('edit')) . ' | '
-            . html_writer::link($deleteurl, get_string('delete'),
-                ['onclick' => "return confirm('" . get_string('confirmdeletequestion', 'mod_stage') . "');"]);
+        $actions = stage_render_actions([get_string('edit') => $editurl])
+            . html_writer::link($deleteurl, get_string('delete'), [
+                'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
+                'onclick' => "return confirm('" . get_string('confirmdeletequestion', 'mod_stage') . "');",
+            ]);
         $table->data[] = [
             format_string($question->name),
             $qtypelabel,

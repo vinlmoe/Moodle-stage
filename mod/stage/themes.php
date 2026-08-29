@@ -197,12 +197,17 @@ if (empty($themes)) {
         $questionsurl = new moodle_url('/mod/stage/questions.php', ['id' => $cm->id, 'themeid' => $theme->id]);
         $durationsurl = new moodle_url('/mod/stage/theme_durations.php', ['id' => $cm->id, 'themeid' => $theme->id]);
 
-        $actions = html_writer::link($editurl, get_string('edit')) . ' | '
-            . html_writer::link($toggleurl, get_string('toggle', 'mod_stage')) . ' | '
-            . html_writer::link($durationsurl, get_string('managethemedurations', 'mod_stage')) . ' | '
-            . html_writer::link($questionsurl, get_string('evalquestions', 'mod_stage')) . ' | '
-            . html_writer::link($deleteurl, get_string('delete'),
-                ['onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');"]);
+        // La suppression est isolée en rouge, à la fin : parmi cinq liens indifférenciés séparés
+        // par des barres verticales, elle était trop facile à cliquer par erreur.
+        $actions = stage_render_actions([
+            get_string('edit') => $editurl,
+            get_string('toggle', 'mod_stage') => $toggleurl,
+            get_string('managethemedurations', 'mod_stage') => $durationsurl,
+            get_string('evalquestions', 'mod_stage') => $questionsurl,
+        ]) . html_writer::link($deleteurl, get_string('delete'), [
+            'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
+            'onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');",
+        ]);
 
         $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
             $durationlabel, $visible, $actions];

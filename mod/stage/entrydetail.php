@@ -82,23 +82,13 @@ echo html_writer::link($backurl, get_string('back'));
 $dateformat = get_string('strftimedate', 'langconfig');
 $datetimeformat = get_string('strftimedatetime', 'langconfig');
 
-// Informations générales.
-echo $OUTPUT->heading(get_string('conventionthemeduration', 'mod_stage'), 4);
-stage_detail_row(get_string('theme', 'mod_stage'), $theme ? format_string($theme->name) : '-');
-if ($theme) {
-    stage_detail_row(get_string('studyyear', 'mod_stage'), stage_studyyear_label($entry->studyyear));
-}
-stage_detail_row(get_string('structure', 'mod_stage'), s($entry->structure));
-if (!empty($entry->abroad)) {
-    echo html_writer::tag('p', html_writer::span(get_string('abroad', 'mod_stage'), 'badge badge-info'));
-    stage_detail_row(get_string('country', 'mod_stage'), s($entry->country));
-}
-stage_detail_row(get_string('datestart', 'mod_stage'), $entry->datestart ? userdate($entry->datestart, $dateformat) : null);
-stage_detail_row(get_string('dateend', 'mod_stage'), $entry->dateend ? userdate($entry->dateend, $dateformat) : null);
-stage_detail_row(get_string('declaredduration', 'mod_stage'), $entry->declaredduration);
-stage_detail_row(get_string('retainedduration', 'mod_stage'), $entry->retainedduration);
-stage_detail_row(get_string('status', 'mod_stage'),
-    html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status)));
+// Chaque section est rendue en tableau libellé/valeur (stage_render_detail_section()) plutôt qu'en
+// suite de paragraphes : la page en enchaîne une quarantaine, l'alignement des valeurs en colonne
+// les rend nettement plus faciles à parcourir. Les lignes vides et les sections entièrement vides
+// disparaissent d'elles-mêmes.
+
+// 1. Le stage lui-même : de quel stage il s'agit et où il en est.
+echo stage_render_entry_summary($entry, $theme);
 
 // Jours de stage effectifs sélectionnés par l'étudiant parmi les plages de la saisie, s'il y en a.
 $periods = stage_get_or_seed_entry_periods($entry);
@@ -107,82 +97,73 @@ if (!empty($periods)) {
     echo stage_render_workday_picker($periods, stage_get_entry_workdays($entry->id), false);
 }
 
-// Motif d'annulation, le cas échéant.
+// 2. Annulation, le cas échéant : à placer juste après le stage, c'est l'information qui explique
+// tout le reste de la page.
 if ((int) $entry->status === STAGE_STATUS_ANNULE) {
-    echo $OUTPUT->heading(get_string('cancelentry', 'mod_stage'), 4);
-    stage_detail_row(get_string('cancelledby', 'mod_stage'), $userlabel($entry->cancelledby));
-    stage_detail_row(get_string('canceltime', 'mod_stage'),
-        $entry->canceltime ? userdate($entry->canceltime, $datetimeformat) : null);
-    stage_detail_row(get_string('cancelcomment', 'mod_stage'), $entry->cancelcomment
-        ? format_text($entry->cancelcomment, FORMAT_PLAIN) : null);
+    echo stage_render_detail_section(get_string('cancelentry', 'mod_stage'), [
+        get_string('cancelledby', 'mod_stage') => $userlabel($entry->cancelledby),
+        get_string('canceltime', 'mod_stage') => $entry->canceltime
+            ? userdate($entry->canceltime, $datetimeformat) : null,
+        get_string('cancelcomment', 'mod_stage') => $entry->cancelcomment
+            ? format_text($entry->cancelcomment, FORMAT_PLAIN) : null,
+    ]);
 }
 
-// Convention.
-echo $OUTPUT->heading(get_string('conventionstatus', 'mod_stage'), 4);
-stage_detail_row(get_string('conventionstatus', 'mod_stage'), html_writer::span(
-    stage_convention_status_label($entry->conventionstatus),
-    'badge ' . stage_convention_status_badgeclass($entry->conventionstatus)
-));
-if ($template) {
-    stage_detail_row(get_string('conventiontemplatename', 'mod_stage'),
-        format_string($template->name) . ' (' . stage_convention_lang_label($template->lang) . ')');
-}
-stage_detail_row(get_string('conventionrequestdate', 'mod_stage'),
-    $entry->conventionrequesttime ? userdate($entry->conventionrequesttime, $datetimeformat) : null);
-if (!empty($entry->conventionteachervalidatedby)) {
-    stage_detail_row(get_string('conventionvalidatedby', 'mod_stage'),
-        $userlabel($entry->conventionteachervalidatedby) . ' - '
-        . userdate($entry->conventionteachervalidatetime, $datetimeformat));
-}
-if (!empty($entry->conventioneditedby)) {
-    stage_detail_row(get_string('conventioneditedby', 'mod_stage'),
-        $userlabel($entry->conventioneditedby) . ' - ' . userdate($entry->conventionedittime, $datetimeformat));
-}
-if (!empty($entry->conventionsignedby)) {
-    stage_detail_row(get_string('conventionsignedby', 'mod_stage'),
-        $userlabel($entry->conventionsignedby) . ' - ' . userdate($entry->conventionsigntime, $datetimeformat));
-}
+// 3. Suivi de la convention : son avancement, qui a fait quoi et quand.
+$conventionrows = [
+    get_string('conventiontemplatename', 'mod_stage') => $template
+        ? format_string($template->name) . ' (' . stage_convention_lang_label($template->lang) . ')' : null,
+    get_string('conventionrequestdate', 'mod_stage') => $entry->conventionrequesttime
+        ? userdate($entry->conventionrequesttime, $datetimeformat) : null,
+    get_string('conventionvalidatedby', 'mod_stage') => !empty($entry->conventionteachervalidatedby)
+        ? $userlabel($entry->conventionteachervalidatedby) . ' - '
+            . userdate($entry->conventionteachervalidatetime, $datetimeformat) : null,
+    get_string('conventioneditedby', 'mod_stage') => !empty($entry->conventioneditedby)
+        ? $userlabel($entry->conventioneditedby) . ' - ' . userdate($entry->conventionedittime, $datetimeformat) : null,
+    get_string('conventionsignedby', 'mod_stage') => !empty($entry->conventionsignedby)
+        ? $userlabel($entry->conventionsignedby) . ' - ' . userdate($entry->conventionsigntime, $datetimeformat) : null,
+];
 // Motif de refus de convention, le cas échéant.
 if ((int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
-    stage_detail_row(get_string('conventionrejectedby', 'mod_stage'),
-        $entry->conventionrejecttime
-            ? $userlabel($entry->conventionrejectedby) . ' - ' . userdate($entry->conventionrejecttime, $datetimeformat)
-            : null);
-    stage_detail_row(get_string('conventionrejectcomment', 'mod_stage'), $entry->conventionrejectcomment
-        ? format_text($entry->conventionrejectcomment, FORMAT_PLAIN) : null);
+    $conventionrows[get_string('conventionrejectedby', 'mod_stage')] = $entry->conventionrejecttime
+        ? $userlabel($entry->conventionrejectedby) . ' - ' . userdate($entry->conventionrejecttime, $datetimeformat)
+        : null;
+    $conventionrows[get_string('conventionrejectcomment', 'mod_stage')] = $entry->conventionrejectcomment
+        ? format_text($entry->conventionrejectcomment, FORMAT_PLAIN) : null;
 }
+echo stage_render_detail_section(get_string('conventionfollowup', 'mod_stage'), $conventionrows);
 
-// Détails de convention saisis par l'étudiant, le cas échéant.
+// 4. Contenu de la convention, tel que saisi par l'étudiant puis corrigé aux validations.
 if ($detail) {
-    echo $OUTPUT->heading(get_string('conventionsupervision', 'mod_stage'), 4);
-    if (!empty($detail->referentteacherid)) {
-        stage_detail_row(get_string('conventionreferentteacher', 'mod_stage'), $userlabel($detail->referentteacherid));
-    }
-    stage_detail_row(get_string('conventionyearsituation', 'mod_stage'),
-        stage_convention_yearsituation_options()[$detail->yearsituation] ?? $detail->yearsituation);
-    stage_detail_row(get_string('conventionstagetype', 'mod_stage'),
-        stage_convention_stagetype_options()[$detail->stagetype] ?? $detail->stagetype);
+    echo stage_render_detail_section(get_string('conventionsupervision', 'mod_stage'), [
+        get_string('conventionreferentteacher', 'mod_stage') => !empty($detail->referentteacherid)
+            ? $userlabel($detail->referentteacherid) : null,
+        get_string('conventionyearsituation', 'mod_stage') =>
+            stage_convention_yearsituation_options()[$detail->yearsituation] ?? $detail->yearsituation,
+        get_string('conventionstagetype', 'mod_stage') =>
+            stage_convention_stagetype_options()[$detail->stagetype] ?? $detail->stagetype,
+        get_string('conventiontutorname', 'mod_stage') => s($detail->tutorname),
+        get_string('conventiontutorfunction', 'mod_stage') => s($detail->tutorfunction),
+        get_string('conventiontutorphone', 'mod_stage') => s($detail->tutorphone),
+        get_string('conventiontutoremail', 'mod_stage') => s($detail->tutoremail),
+    ]);
 
-    echo $OUTPUT->heading(get_string('conventionstudent', 'mod_stage'), 4);
-    stage_detail_row(get_string('conventionbirthdate', 'mod_stage'),
-        $detail->studentbirthdate ? userdate($detail->studentbirthdate, $dateformat) : null);
-    stage_detail_row(get_string('conventionstudentaddress', 'mod_stage'), s($detail->studentaddress));
-    stage_detail_row(get_string('conventionstudentphone', 'mod_stage'), s($detail->studentphone));
+    echo stage_render_detail_section(get_string('conventionstudent', 'mod_stage'), [
+        get_string('conventionbirthdate', 'mod_stage') => $detail->studentbirthdate
+            ? userdate($detail->studentbirthdate, $dateformat) : null,
+        get_string('conventionstudentaddress', 'mod_stage') => s($detail->studentaddress),
+        get_string('conventionstudentphone', 'mod_stage') => s($detail->studentphone),
+    ]);
 
-    echo $OUTPUT->heading(get_string('conventionhoststructure', 'mod_stage'), 4);
-    stage_detail_row(get_string('conventionhostaddress', 'mod_stage'), s($detail->hostaddress));
-    stage_detail_row(get_string('conventionhostrepresentative', 'mod_stage'), s($detail->hostrepresentative));
-    stage_detail_row(get_string('conventionhostrepresentativetitle', 'mod_stage'), s($detail->hostrepresentativetitle));
-    stage_detail_row(get_string('conventionhostservice', 'mod_stage'), s($detail->hostservice));
-    stage_detail_row(get_string('conventionhostphone', 'mod_stage'), s($detail->hostphone));
-    stage_detail_row(get_string('conventionhostemail', 'mod_stage'), s($detail->hostemail));
-    stage_detail_row(get_string('conventionhostlocation', 'mod_stage'), s($detail->hostlocation));
-
-    echo $OUTPUT->heading(get_string('conventiontutor', 'mod_stage'), 4);
-    stage_detail_row(get_string('conventiontutorname', 'mod_stage'), s($detail->tutorname));
-    stage_detail_row(get_string('conventiontutorfunction', 'mod_stage'), s($detail->tutorfunction));
-    stage_detail_row(get_string('conventiontutorphone', 'mod_stage'), s($detail->tutorphone));
-    stage_detail_row(get_string('conventiontutoremail', 'mod_stage'), s($detail->tutoremail));
+    echo stage_render_detail_section(get_string('conventionhoststructure', 'mod_stage'), [
+        get_string('conventionhostaddress', 'mod_stage') => s($detail->hostaddress),
+        get_string('conventionhostrepresentative', 'mod_stage') => s($detail->hostrepresentative),
+        get_string('conventionhostrepresentativetitle', 'mod_stage') => s($detail->hostrepresentativetitle),
+        get_string('conventionhostservice', 'mod_stage') => s($detail->hostservice),
+        get_string('conventionhostphone', 'mod_stage') => s($detail->hostphone),
+        get_string('conventionhostemail', 'mod_stage') => s($detail->hostemail),
+        get_string('conventionhostlocation', 'mod_stage') => s($detail->hostlocation),
+    ]);
 
     $modalities = [];
     if (!empty($detail->nightpresence)) {
@@ -200,23 +181,21 @@ if ($detail) {
     if (!empty($detail->othermodality)) {
         $modalities[] = s($detail->othermodality);
     }
-    if (!empty($modalities) || !empty($detail->gratificationamount) || !empty($detail->hasleave)) {
-        echo $OUTPUT->heading(get_string('conventionmodalities', 'mod_stage'), 4);
-        if (!empty($modalities)) {
-            echo html_writer::alist($modalities);
-        }
-        stage_detail_row(get_string('conventiongratification', 'mod_stage'), s($detail->gratificationamount));
-        if (!empty($detail->hasleave)) {
-            stage_detail_row(get_string('conventionleavedays', 'mod_stage'), $detail->leavedays);
-            stage_detail_row(get_string('conventionleavemodalities', 'mod_stage'),
-                $detail->leavemodalities ? format_text($detail->leavemodalities, FORMAT_PLAIN) : null);
-        }
-    }
+    echo stage_render_detail_section(get_string('conventionmodalities', 'mod_stage'), [
+        get_string('conventionmodalities', 'mod_stage') => !empty($modalities)
+            ? html_writer::alist($modalities) : null,
+        get_string('conventiongratification', 'mod_stage') => s($detail->gratificationamount),
+        get_string('conventionleavedays', 'mod_stage') => !empty($detail->hasleave) ? $detail->leavedays : null,
+        get_string('conventionleavemodalities', 'mod_stage') => !empty($detail->hasleave) && $detail->leavemodalities
+            ? format_text($detail->leavemodalities, FORMAT_PLAIN) : null,
+    ]);
 }
 
+// 5. Évaluations successives, dans l'ordre du circuit : l'étudiant s'auto-évalue, l'enseignant
+// référent évalue, la DEVE valide. Chaque section rappelle qui a évalué et quand, au-dessus du
+// contenu de l'évaluation.
 $answers = stage_get_answers($entry->id);
 
-// Auto-évaluation étudiant, quand elle existe.
 $studentquestions = stage_get_questions($entry->themeid, 'student');
 if (!empty($studentquestions) || $entry->studentselfeval) {
     echo $OUTPUT->heading(get_string('studentselfeval', 'mod_stage'), 4);
@@ -225,25 +204,27 @@ if (!empty($studentquestions) || $entry->studentselfeval) {
         : html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
 }
 
-// Évaluation enseignant, quand elle existe.
 $teacherquestions = stage_get_questions($entry->themeid, 'teacher');
 if (!empty($teacherquestions) || $entry->teachereval) {
     echo $OUTPUT->heading(get_string('teachereval', 'mod_stage'), 4);
     if (!empty($entry->teacherid)) {
-        stage_detail_row(get_string('evaluatedby', 'mod_stage'),
-            $userlabel($entry->teacherid) . ($entry->teachertime ? ' - ' . userdate($entry->teachertime, $datetimeformat) : ''));
+        echo html_writer::tag('p', html_writer::tag('strong', get_string('evaluatedby', 'mod_stage') . ' : ')
+            . $userlabel($entry->teacherid)
+            . ($entry->teachertime ? ' - ' . userdate($entry->teachertime, $datetimeformat) : ''),
+            ['class' => 'text-muted']);
     }
     echo !empty($teacherquestions)
         ? stage_render_answers_readonly($teacherquestions, $answers)
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
 }
 
-// Validation / commentaire DEVE, quand il existe.
 if ($entry->devecomment || !empty($entry->deveuserid)) {
     echo $OUTPUT->heading(get_string('devecomment', 'mod_stage'), 4);
     if (!empty($entry->deveuserid)) {
-        stage_detail_row(get_string('status_validedeve', 'mod_stage'),
-            $userlabel($entry->deveuserid) . ($entry->devetime ? ' - ' . userdate($entry->devetime, $datetimeformat) : ''));
+        echo html_writer::tag('p', html_writer::tag('strong', get_string('status_validedeve', 'mod_stage') . ' : ')
+            . $userlabel($entry->deveuserid)
+            . ($entry->devetime ? ' - ' . userdate($entry->devetime, $datetimeformat) : ''),
+            ['class' => 'text-muted']);
     }
     if ($entry->devecomment) {
         echo html_writer::div(format_text($entry->devecomment, FORMAT_PLAIN));

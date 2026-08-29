@@ -1614,6 +1614,107 @@ function stage_detail_row($label, $value) {
 }
 
 /**
+ * Rend une section d'informations en lecture seule sous forme de tableau libellé/valeur, plutôt
+ * qu'en suite de paragraphes (voir stage_detail_row()) : sur les pages qui en enchaînent des
+ * dizaines, l'alignement des valeurs en colonne les rend nettement plus faciles à parcourir.
+ *
+ * Les lignes dont la valeur est vide sont omises, et la section entière disparaît s'il ne reste
+ * aucune ligne à afficher : inutile d'afficher un titre au-dessus d'un tableau vide.
+ *
+ * @param string $heading Titre de la section.
+ * @param array $rows Paires [libellé => valeur]. Une valeur null ou vide fait sauter la ligne.
+ * @return string HTML, ou '' si toutes les valeurs sont vides.
+ */
+function stage_render_detail_section($heading, array $rows) {
+    global $OUTPUT;
+
+    $table = new html_table();
+    $table->attributes['class'] = 'generaltable stage-detailtable';
+    foreach ($rows as $label => $value) {
+        if ($value === null || $value === '' || $value === false) {
+            continue;
+        }
+        $table->data[] = [html_writer::tag('strong', $label), $value];
+    }
+    if (empty($table->data)) {
+        return '';
+    }
+
+    return $OUTPUT->heading($heading, 4) . html_writer::table($table);
+}
+
+/**
+ * Rend une liste d'actions en petits boutons plutôt qu'en liens séparés par des barres
+ * verticales : dans une colonne « Actions » d'un tableau, les boutons restent lisibles quand il y
+ * en a plusieurs, et se distinguent des liens de contenu.
+ *
+ * @param array $links Paires [libellé => moodle_url]. Une URL nulle fait sauter l'entrée.
+ * @param string $class Classe du bouton (par défaut secondaire, discret dans un tableau).
+ * @return string HTML, ou '-' si aucune action n'est proposée.
+ */
+function stage_render_actions(array $links, $class = 'btn btn-sm btn-secondary mr-1 mb-1') {
+    $out = '';
+    foreach ($links as $label => $url) {
+        if ($url === null) {
+            continue;
+        }
+        $out .= html_writer::link($url, $label, ['class' => $class]);
+    }
+
+    return $out !== '' ? $out : '-';
+}
+
+/**
+ * Rend le rappel d'identité d'une saisie de stage : de quel stage il s'agit (étudiant, thématique,
+ * année, structure, mobilité, dates et durées) et où il en est (statut de la saisie et de sa
+ * convention.)
+ *
+ * Affiché en tête des pages qui portent sur une saisie précise (auto-évaluation, évaluation
+ * enseignant, détail, gestion des plages), pour que l'utilisateur sache toujours sur quel stage il
+ * travaille sans avoir à revenir à la liste.
+ *
+ * @param stdClass $entry
+ * @param stdClass|null $theme Thématique de la saisie, si connue.
+ * @param stdClass|null $student Étudiant concerné : à ne fournir que sur les pages où l'utilisateur
+ *                               n'est pas lui-même l'étudiant (DEVE, enseignant référent).
+ * @return string HTML
+ */
+function stage_render_entry_summary(stdClass $entry, $theme = null, $student = null) {
+    $dateformat = get_string('strftimedate', 'langconfig');
+
+    // Les plages de dates priment sur les dates de début/fin de la saisie : quand un stage est
+    // découpé en plusieurs périodes non contiguës, ce sont elles l'information utile.
+    $periods = stage_get_or_seed_entry_periods($entry);
+    $periodlabels = array_map(function($period) use ($dateformat) {
+        return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
+    }, $periods);
+
+    $rows = [];
+    if ($student !== null) {
+        $rows[get_string('student', 'mod_stage')] = fullname($student);
+    }
+    $rows[get_string('theme', 'mod_stage')] = $theme ? format_string($theme->name) : '-';
+    $rows[get_string('studyyear', 'mod_stage')] = stage_studyyear_label($entry->studyyear);
+    $rows[get_string('structure', 'mod_stage')] = s($entry->structure);
+    if (!empty($entry->abroad)) {
+        $rows[get_string('abroad', 'mod_stage')] = html_writer::span(
+            '🌍 ' . (!empty($entry->country) ? s($entry->country) : get_string('abroad', 'mod_stage')),
+            'badge badge-info');
+    }
+    $rows[count($periodlabels) > 1 ? get_string('periods', 'mod_stage') : get_string('dates', 'mod_stage')] =
+        !empty($periodlabels) ? implode(html_writer::empty_tag('br'), $periodlabels) : null;
+    $rows[get_string('declaredduration', 'mod_stage')] = $entry->declaredduration;
+    $rows[get_string('retainedduration', 'mod_stage')] = $entry->retainedduration ?: null;
+    $rows[get_string('status', 'mod_stage')] = html_writer::span(stage_status_label($entry->status),
+        'badge ' . stage_status_badgeclass($entry->status));
+    $rows[get_string('conventionstatus', 'mod_stage')] = html_writer::span(
+        stage_convention_status_label($entry->conventionstatus),
+        'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
+
+    return stage_render_detail_section(get_string('stagesummary', 'mod_stage'), $rows);
+}
+
+/**
  * Produit le HTML, en lecture seule, des questions d'un formulaire et des réponses
  * qui y ont été apportées. Utilisé pour montrer l'auto-évaluation de l'étudiant à
  * l'enseignant référent et à la DEVE.
@@ -1968,38 +2069,39 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
  * @return string HTML, chaîne vide si l'utilisateur n'a accès à aucun lien.
  */
 function stage_render_navlinks(stdClass $cm, context $context) {
-    $navlinks = [];
+    // Les destinations sont rendues en boutons, dans l'ordre du travail quotidien (enregistrer,
+    // suivre les conventions, valider, piloter) puis les usages ponctuels (export, administration)
+    // en fin de barre : en simples liens séparés par des barres verticales, elles se lisaient
+    // comme une seule phrase et ne se distinguaient pas du contenu de la page.
+    $links = [];
     if (has_capability('mod/stage:registerstages', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
-            get_string('registerstages', 'mod_stage'));
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]),
-            get_string('conventions', 'mod_stage'));
+        $links[get_string('registerstages', 'mod_stage')] =
+            new moodle_url('/mod/stage/register.php', ['id' => $cm->id]);
+        $links[get_string('conventions', 'mod_stage')] =
+            new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:validatedeve', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]),
-            get_string('devevalidation', 'mod_stage'));
+        $links[get_string('devevalidation', 'mod_stage')] = new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:evaluateteacher', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
-            get_string('teachervalidation', 'mod_stage'));
+        $links[get_string('teachervalidation', 'mod_stage')] =
+            new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
-            get_string('pilotage', 'mod_stage'));
+        $links[get_string('pilotage', 'mod_stage')] = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:viewall', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
-            get_string('exportexcel', 'mod_stage'));
+        $links[get_string('exportexcel', 'mod_stage')] = new moodle_url('/mod/stage/export.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:managethemes', $context) || has_capability('mod/stage:manageteachers', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]),
-            get_string('administration', 'mod_stage'));
+        $links[get_string('administration', 'mod_stage')] =
+            new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]);
     }
 
-    if (empty($navlinks)) {
+    if (empty($links)) {
         return '';
     }
-    return html_writer::div(implode(' | ', $navlinks), 'generalbox stage-navlinks');
+    return html_writer::div(stage_render_actions($links, 'btn btn-secondary mr-1 mb-1'), 'stage-navlinks mb-3');
 }
 
 /**
