@@ -99,6 +99,9 @@ if ($editable && empty($questions)) {
         'datestart' => $entry->datestart,
         'dateend' => $entry->dateend,
         'declaredduration' => $entry->declaredduration,
+        // Le rappel du stage est déjà affiché au-dessus du formulaire (voir plus bas,
+        // stage_render_entry_summary()) : inutile de le répéter en tête de celui-ci.
+        'hidestatic' => true,
     ];
     $mform = new entry_form(null, $customdata);
 
@@ -127,6 +130,11 @@ if ($editable && empty($questions)) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('selfeval', 'mod_stage'));
+echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]), get_string('back'));
+
+// Rappel de la saisie concernée : la page ne disait pas de quel stage il s'agissait, alors qu'un
+// étudiant peut en avoir plusieurs en cours d'auto-évaluation.
+echo stage_render_entry_summary($entry, $DB->get_record('stage_theme', ['id' => $entry->themeid]));
 
 if (!$editable) {
     $message = !$conventionsigned ? get_string('conventionnotsignedyet', 'mod_stage') : get_string('entrynoteditable', 'mod_stage');

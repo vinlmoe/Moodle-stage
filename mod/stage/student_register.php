@@ -126,17 +126,13 @@ if ($mform->is_cancelled()) {
     $detail->leavemodalities = $detail->hasleave ? $data->leavemodalities : '';
     $detail->gratificationamount = $data->gratificationamount;
     stage_save_convention_detail($entry->id, $detail);
+    stage_save_entry_periods($entry->id, stage_extract_submitted_periods($data));
 
     if ($requireteachervalidation) {
         stage_notify_teacher_convention_pending($stage, $cm, $entry);
     }
 
-    // Redirige vers la gestion des plages de dates plutôt que directement vers la page de
-    // l'étudiant, pour lui proposer d'en ajouter plusieurs (non contiguës) dès la création,
-    // au lieu de la seule plage saisie ci-dessus.
-    $periodsurl = new moodle_url('/mod/stage/entry_periods.php',
-        ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $viewurl->out_as_local_url(false)]);
-    redirect($periodsurl, get_string('stageandconventionregistered', 'mod_stage'), null,
+    redirect($viewurl, get_string('stageandconventionregistered', 'mod_stage'), null,
         \core\output\notification::NOTIFY_SUCCESS);
 }
 

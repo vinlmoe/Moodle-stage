@@ -133,35 +133,49 @@ if ($mode === 'list') {
                 'badge badge-secondary');
         }
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
-        $editurl = new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]);
-        $periodsurl = new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-        $actions = html_writer::link($editurl, get_string('edit')) . ' | '
-            . html_writer::link($periodsurl, get_string('periods', 'mod_stage'));
+        // Jusqu'à sept actions sont possibles sur une même saisie : présentées en liens séparés
+        // par des barres verticales, elles formaient une ligne indistincte. Elles sont désormais
+        // rendues en boutons et hiérarchisées en trois groupes — la saisie elle-même, sa
+        // convention, puis les actions destructrices, visuellement mises à l'écart.
         $conventionstatus = (int) $entry->conventionstatus;
-        if ($conventionstatus === STAGE_CONVENTION_REQUESTED) {
-            $reviewurl = new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-            $actions .= ' | ' . html_writer::link($reviewurl, get_string('conventionreview', 'mod_stage'));
-        } else if (in_array($conventionstatus, [STAGE_CONVENTION_EDITED, STAGE_CONVENTION_SIGNED], true)) {
-            $conventionurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-            $actions .= ' | ' . html_writer::link($conventionurl, get_string('generateconvention', 'mod_stage'));
+        $actions = stage_render_actions([
+            get_string('edit') =>
+                new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]),
+            get_string('periods', 'mod_stage') =>
+                new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+        ], 'btn btn-sm btn-secondary mr-1 mb-1');
+
+        $conventionactions = stage_render_actions([
+            get_string('conventionreview', 'mod_stage') => $conventionstatus === STAGE_CONVENTION_REQUESTED
+                ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+            get_string('generateconvention', 'mod_stage') =>
+                in_array($conventionstatus, [STAGE_CONVENTION_EDITED, STAGE_CONVENTION_SIGNED], true)
+                    ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+            get_string('conventionmarksigned', 'mod_stage') => $conventionstatus === STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+            get_string('downloadsignedconvention', 'mod_stage') =>
+                $conventionstatus === STAGE_CONVENTION_SIGNED && stage_get_signed_convention_file($context, $entry->id)
+                    ? new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id])
+                    : null,
+        ], 'btn btn-sm btn-outline-primary mr-1 mb-1');
+        if ($conventionactions !== '-') {
+            $actions .= $conventionactions;
         }
-        if ($conventionstatus === STAGE_CONVENTION_EDITED) {
-            $signurl = new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-            $actions .= ' | ' . html_writer::link($signurl, get_string('conventionmarksigned', 'mod_stage'));
-        } else if ($conventionstatus === STAGE_CONVENTION_SIGNED
-                && stage_get_signed_convention_file($context, $entry->id)) {
-            $signedurl = new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-            $actions .= ' | ' . html_writer::link($signedurl, get_string('downloadsignedconvention', 'mod_stage'));
-        }
+
+        // Réinitialiser et annuler défont un travail déjà fait : en rouge et en dernier, pour ne
+        // pas être cliquées par inadvertance à la place de « Modifier ».
         if ((int) $entry->status !== STAGE_STATUS_ENREGISTRE) {
             $reseturl = new moodle_url('/mod/stage/register.php',
                 ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]);
-            $actions .= ' | ' . html_writer::link($reseturl, get_string('resetentry', 'mod_stage'),
-                ['onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');"]);
+            $actions .= html_writer::link($reseturl, get_string('resetentry', 'mod_stage'), [
+                'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
+                'onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');",
+            ]);
         }
         if ((int) $entry->status !== STAGE_STATUS_ANNULE) {
-            $cancelurl = new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-            $actions .= ' | ' . html_writer::link($cancelurl, get_string('cancelentry', 'mod_stage'));
+            $actions .= html_writer::link(
+                new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                get_string('cancelentry', 'mod_stage'), ['class' => 'btn btn-sm btn-outline-danger mr-1 mb-1']);
         }
         $table->data[] = [
             $student ? fullname($student) : '-',

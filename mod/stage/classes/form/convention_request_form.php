@@ -79,6 +79,10 @@ class convention_request_form extends \moodleform {
         $mform->addElement('select', 'stagetype', get_string('conventionstagetype', 'mod_stage'),
             stage_convention_stagetype_options());
 
+        // Plages de dates du stage (plusieurs plages non contiguës possibles), sur la même page
+        // que le reste des informations de convention (voir stage_add_period_fields()).
+        stage_add_period_fields($this, $mform, count($this->_customdata['periods'] ?? []));
+
         // Coordonnées de l'étudiant.
         $mform->addElement('header', 'studentheader', get_string('conventionstudent', 'mod_stage'));
         $mform->setExpanded('studentheader');

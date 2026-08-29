@@ -963,6 +963,58 @@ function stage_save_entry_periods($entryid, array $periods) {
 }
 
 /**
+ * Extrait les plages de dates soumises par un champ répété "perioddatestart"/"perioddateend"
+ * (voir stage_add_period_fields()), en ignorant les lignes vides ou incomplètes (option
+ * "optional" du date_selector : valeur 0 quand la ligne n'est pas activée).
+ *
+ * @param stdClass $data Données soumises d'un formulaire utilisant stage_add_period_fields()
+ * @return array Liste de tableaux ['datestart' => int, 'dateend' => int], prête pour
+ *               stage_save_entry_periods()
+ */
+function stage_extract_submitted_periods(stdClass $data) {
+    $periods = [];
+    if (empty($data->perioddatestart) || !is_array($data->perioddatestart)) {
+        return $periods;
+    }
+    foreach ($data->perioddatestart as $i => $start) {
+        $end = $data->perioddateend[$i] ?? 0;
+        if (empty($start) || empty($end)) {
+            continue;
+        }
+        $periods[] = ['datestart' => $start, 'dateend' => $end];
+    }
+    return $periods;
+}
+
+/**
+ * Ajoute à un formulaire les champs répétés (avec bouton "Ajouter une plage") permettant de
+ * saisir plusieurs plages de dates pour un stage, directement sur la même page que les autres
+ * informations de convention (voir student_register_form, convention_request_form,
+ * convention_review_form). Les valeurs soumises sont récupérées avec
+ * stage_extract_submitted_periods() puis enregistrées avec stage_save_entry_periods().
+ *
+ * @param \moodleform $form Le formulaire, pour appeler sa méthode repeat_elements().
+ * @param \MoodleQuickForm $mform Son $this->_form (propriété protégée, à passer depuis la classe
+ *                                appelante : ce helper ne peut pas y accéder directement).
+ * @param int $initialcount Nombre de lignes affichées initialement (au moins 1).
+ * @return void
+ */
+function stage_add_period_fields(\moodleform $form, $mform, $initialcount = 1) {
+    $mform->addElement('header', 'periodsheader', get_string('periods', 'mod_stage'));
+    $mform->setExpanded('periodsheader');
+    $mform->addElement('static', 'periodshelp', '', get_string('periods_help', 'mod_stage'));
+
+    $repeatarray = [
+        $mform->createElement('date_selector', 'perioddatestart', get_string('periodstart', 'mod_stage'),
+            ['optional' => true]),
+        $mform->createElement('date_selector', 'perioddateend', get_string('periodend', 'mod_stage'),
+            ['optional' => true]),
+    ];
+    $form->repeat_elements($repeatarray, max((int) $initialcount, 1), [], 'periodrepeats', 'periodaddfields', 1,
+        get_string('addperiod', 'mod_stage'), true);
+}
+
+/**
  * Retourne la liste des jours (timestamps à minuit, heure du serveur) compris dans une plage de
  * dates, bornes incluses.
  *
@@ -1562,6 +1614,110 @@ function stage_detail_row($label, $value) {
 }
 
 /**
+ * Rend une section d'informations en lecture seule sous forme de tableau libellé/valeur, plutôt
+ * qu'en suite de paragraphes (voir stage_detail_row()) : sur les pages qui en enchaînent des
+ * dizaines, l'alignement des valeurs en colonne les rend nettement plus faciles à parcourir.
+ *
+ * Les lignes dont la valeur est vide sont omises, et la section entière disparaît s'il ne reste
+ * aucune ligne à afficher : inutile d'afficher un titre au-dessus d'un tableau vide.
+ *
+ * @param string $heading Titre de la section.
+ * @param array $rows Paires [libellé => valeur]. Une valeur null ou vide fait sauter la ligne.
+ * @return string HTML, ou '' si toutes les valeurs sont vides.
+ */
+function stage_render_detail_section($heading, array $rows) {
+    global $OUTPUT;
+
+    $table = new html_table();
+    $table->attributes['class'] = 'generaltable stage-detailtable';
+    foreach ($rows as $label => $value) {
+        if ($value === null || $value === '' || $value === false) {
+            continue;
+        }
+        $table->data[] = [html_writer::tag('strong', $label), $value];
+    }
+    if (empty($table->data)) {
+        return '';
+    }
+
+    return $OUTPUT->heading($heading, 4) . html_writer::table($table);
+}
+
+/**
+ * Rend une liste d'actions en petits boutons plutôt qu'en liens séparés par des barres
+ * verticales : dans une colonne « Actions » d'un tableau, les boutons restent lisibles quand il y
+ * en a plusieurs, et se distinguent des liens de contenu.
+ *
+ * @param array $links Paires [libellé => moodle_url]. Une URL nulle fait sauter l'entrée.
+ * @param string $class Classe du bouton (par défaut secondaire, discret dans un tableau).
+ * @param string $empty Valeur renvoyée si aucune action n'est proposée : '-' pour remplir une
+ *                      cellule de tableau, '' quand l'appelant enchaîne plusieurs groupes et
+ *                      compose lui-même le rendu de l'ensemble vide.
+ * @return string HTML, ou $empty si aucune action n'est proposée.
+ */
+function stage_render_actions(array $links, $class = 'btn btn-sm btn-secondary mr-1 mb-1', $empty = '-') {
+    $out = '';
+    foreach ($links as $label => $url) {
+        if ($url === null) {
+            continue;
+        }
+        $out .= html_writer::link($url, $label, ['class' => $class]);
+    }
+
+    return $out !== '' ? $out : $empty;
+}
+
+/**
+ * Rend le rappel d'identité d'une saisie de stage : de quel stage il s'agit (étudiant, thématique,
+ * année, structure, mobilité, dates et durées) et où il en est (statut de la saisie et de sa
+ * convention.)
+ *
+ * Affiché en tête des pages qui portent sur une saisie précise (auto-évaluation, évaluation
+ * enseignant, détail, gestion des plages), pour que l'utilisateur sache toujours sur quel stage il
+ * travaille sans avoir à revenir à la liste.
+ *
+ * @param stdClass $entry
+ * @param stdClass|null $theme Thématique de la saisie, si connue.
+ * @param stdClass|null $student Étudiant concerné : à ne fournir que sur les pages où l'utilisateur
+ *                               n'est pas lui-même l'étudiant (DEVE, enseignant référent).
+ * @return string HTML
+ */
+function stage_render_entry_summary(stdClass $entry, $theme = null, $student = null) {
+    $dateformat = get_string('strftimedate', 'langconfig');
+
+    // Les plages de dates priment sur les dates de début/fin de la saisie : quand un stage est
+    // découpé en plusieurs périodes non contiguës, ce sont elles l'information utile.
+    $periods = stage_get_or_seed_entry_periods($entry);
+    $periodlabels = array_map(function($period) use ($dateformat) {
+        return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
+    }, $periods);
+
+    $rows = [];
+    if ($student !== null) {
+        $rows[get_string('student', 'mod_stage')] = fullname($student);
+    }
+    $rows[get_string('theme', 'mod_stage')] = $theme ? format_string($theme->name) : '-';
+    $rows[get_string('studyyear', 'mod_stage')] = stage_studyyear_label($entry->studyyear);
+    $rows[get_string('structure', 'mod_stage')] = s($entry->structure);
+    if (!empty($entry->abroad)) {
+        $rows[get_string('abroad', 'mod_stage')] = html_writer::span(
+            '🌍 ' . (!empty($entry->country) ? s($entry->country) : get_string('abroad', 'mod_stage')),
+            'badge badge-info');
+    }
+    $rows[count($periodlabels) > 1 ? get_string('periods', 'mod_stage') : get_string('dates', 'mod_stage')] =
+        !empty($periodlabels) ? implode(html_writer::empty_tag('br'), $periodlabels) : null;
+    $rows[get_string('declaredduration', 'mod_stage')] = $entry->declaredduration;
+    $rows[get_string('retainedduration', 'mod_stage')] = $entry->retainedduration ?: null;
+    $rows[get_string('status', 'mod_stage')] = html_writer::span(stage_status_label($entry->status),
+        'badge ' . stage_status_badgeclass($entry->status));
+    $rows[get_string('conventionstatus', 'mod_stage')] = html_writer::span(
+        stage_convention_status_label($entry->conventionstatus),
+        'badge ' . stage_convention_status_badgeclass($entry->conventionstatus));
+
+    return stage_render_detail_section(get_string('stagesummary', 'mod_stage'), $rows);
+}
+
+/**
  * Produit le HTML, en lecture seule, des questions d'un formulaire et des réponses
  * qui y ont été apportées. Utilisé pour montrer l'auto-évaluation de l'étudiant à
  * l'enseignant référent et à la DEVE.
@@ -1906,6 +2062,101 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
 }
 
 /**
+ * Années d'étude à retenir pour le bilan de promotion : l'année d'étude courante du stage
+ * (stage->currentstudyyear) et les précédentes, ignorées au-delà.
+ *
+ * Les objectifs des années à venir ne sont pas encore exigibles : les faire figurer dans un bilan
+ * de promotion ferait apparaître en retard toute la promotion. Tant que l'année courante n'est pas
+ * renseignée, toutes les années sur lesquelles la promotion a des objectifs sont retenues.
+ *
+ * @param stdClass $stage
+ * @param array $rows Lignes de stage_get_pilotage_overview().
+ * @return array Années d'étude concernées, triées par ordre croissant.
+ */
+function stage_get_promotion_years(stdClass $stage, array $rows) {
+    $years = [];
+    foreach ($rows as $row) {
+        foreach ($row->yearprogress as $yearrow) {
+            if (empty($stage->currentstudyyear) || $yearrow->studyyear <= $stage->currentstudyyear) {
+                $years[(int) $yearrow->studyyear] = true;
+            }
+        }
+    }
+    $years = array_keys($years);
+    sort($years);
+
+    return $years;
+}
+
+/**
+ * Construit le bilan de promotion : pour chaque étudiant, la validation de chacune des années
+ * d'étude échues (année courante et précédentes, voir stage_get_promotion_years()), et le constat
+ * global qui en découle.
+ *
+ * Les étudiants qui ne valident pas au moins une de ces années sont placés en tête, du plus en
+ * retard au moins en retard : c'est sur eux que la DEVE a une action à mener, et un bilan de
+ * promotion est d'abord une liste de relances. Les autres suivent, par ordre alphabétique.
+ *
+ * @param stdClass $stage
+ * @param context $context Contexte du module stage.
+ * @param array|null $restrictuserids Restreint à ces étudiants (enseignant référent), ou null.
+ * @return stdClass {years (années retenues), rows (lignes triées), failedcount, total}
+ *                  Chaque ligne ajoute aux champs de stage_get_pilotage_overview() :
+ *                  'yearsdone' [année => bool], 'failedyears' [années non validées],
+ *                  'uptodate' (bool : aucune année échue en défaut).
+ */
+function stage_get_promotion_report(stdClass $stage, context $context, ?array $restrictuserids = null) {
+    $rows = stage_get_pilotage_overview($stage->id, $context, $restrictuserids);
+    $years = stage_get_promotion_years($stage, $rows);
+
+    foreach ($rows as $row) {
+        $row->yearsdone = [];
+        $row->failedyears = [];
+        foreach ($years as $year) {
+            // Une année sans objectif pour cet étudiant n'est ni validée ni en défaut : elle
+            // reste absente de yearsdone, et se lit « sans objet » à l'affichage.
+            if (!isset($row->yearprogress[$year])) {
+                continue;
+            }
+            $done = (bool) $row->yearprogress[$year]->done;
+            $row->yearsdone[$year] = $done;
+            if (!$done) {
+                $row->failedyears[] = $year;
+            }
+        }
+        $row->uptodate = empty($row->failedyears);
+    }
+
+    usort($rows, function($a, $b) {
+        // Les étudiants en défaut d'abord ; parmi eux, ceux qui accumulent le plus d'années non
+        // validées, puis ceux dont le retard est le plus ancien : c'est l'ordre d'urgence.
+        if ($a->uptodate !== $b->uptodate) {
+            return $a->uptodate <=> $b->uptodate;
+        }
+        if (!$a->uptodate) {
+            $countcmp = count($b->failedyears) <=> count($a->failedyears);
+            if ($countcmp !== 0) {
+                return $countcmp;
+            }
+            $oldestcmp = reset($a->failedyears) <=> reset($b->failedyears);
+            if ($oldestcmp !== 0) {
+                return $oldestcmp;
+            }
+        }
+        return core_text::strtolower(fullname($a->user)) <=> core_text::strtolower(fullname($b->user));
+    });
+
+    return (object) [
+        'years' => $years,
+        'rows' => $rows,
+        'total' => count($rows),
+        'failedcount' => count(array_filter($rows, function($row) {
+            return !$row->uptodate;
+        })),
+    ];
+}
+
+/**
  * Rend la barre de liens de navigation entre les pages de gestion de l'activité, affichée en
  * haut de view.php et de dashboard.php (page d'atterrissage de la DEVE et de l'enseignant
  * référent, voir view.php). Les pages d'administration (thématiques, gabarits de convention,
@@ -1916,195 +2167,400 @@ function stage_get_pilotage_overview($stageid, context $context, ?array $restric
  * @return string HTML, chaîne vide si l'utilisateur n'a accès à aucun lien.
  */
 function stage_render_navlinks(stdClass $cm, context $context) {
-    $navlinks = [];
+    // Les destinations sont rendues en boutons, dans l'ordre du travail quotidien (enregistrer,
+    // suivre les conventions, valider, piloter) puis les usages ponctuels (export, administration)
+    // en fin de barre : en simples liens séparés par des barres verticales, elles se lisaient
+    // comme une seule phrase et ne se distinguaient pas du contenu de la page.
+    $links = [];
     if (has_capability('mod/stage:registerstages', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/register.php', ['id' => $cm->id]),
-            get_string('registerstages', 'mod_stage'));
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]),
-            get_string('conventions', 'mod_stage'));
+        $links[get_string('registerstages', 'mod_stage')] =
+            new moodle_url('/mod/stage/register.php', ['id' => $cm->id]);
+        $links[get_string('conventions', 'mod_stage')] =
+            new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:validatedeve', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]),
-            get_string('devevalidation', 'mod_stage'));
+        $links[get_string('devevalidation', 'mod_stage')] = new moodle_url('/mod/stage/deve.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:evaluateteacher', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]),
-            get_string('teachervalidation', 'mod_stage'));
+        $links[get_string('teachervalidation', 'mod_stage')] =
+            new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]),
-            get_string('pilotage', 'mod_stage'));
+        $links[get_string('pilotage', 'mod_stage')] = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:viewall', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/export.php', ['id' => $cm->id]),
-            get_string('exportexcel', 'mod_stage'));
+        $links[get_string('exportexcel', 'mod_stage')] = new moodle_url('/mod/stage/export.php', ['id' => $cm->id]);
+        $links[get_string('promotionreportpdf', 'mod_stage')] =
+            new moodle_url('/mod/stage/export_pdf.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:managethemes', $context) || has_capability('mod/stage:manageteachers', $context)) {
-        $navlinks[] = html_writer::link(new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]),
-            get_string('administration', 'mod_stage'));
+        $links[get_string('administration', 'mod_stage')] =
+            new moodle_url('/mod/stage/administration.php', ['id' => $cm->id]);
     }
 
-    if (empty($navlinks)) {
+    if (empty($links)) {
         return '';
     }
-    return html_writer::div(implode(' | ', $navlinks), 'generalbox stage-navlinks');
+    return html_writer::div(stage_render_actions($links, 'btn btn-secondary mr-1 mb-1'), 'stage-navlinks mb-3');
+}
+
+/**
+ * Badge de statut « Complété » / « À compléter », utilisé partout dans le résumé de l'étudiant.
+ *
+ * @param bool $done
+ * @return string HTML
+ */
+function stage_render_status_badge($done) {
+    return $done
+        ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
+        : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
+}
+
+/**
+ * Construit les cellules « requis / retenu / reste à faire / statut » communes à tous les bilans
+ * du résumé de l'étudiant (par thématique, par année, mobilité internationale).
+ *
+ * Le reste à faire est la donnée la plus utile à l'étudiant : elle évite d'avoir à soustraire
+ * mentalement le retenu du requis sur chaque ligne. Sans exigence chiffrée, les trois colonnes
+ * chiffrées n'ont pas de sens : seule la durée retenue est affichée.
+ *
+ * @param int $retained Durée retenue (validée DEVE).
+ * @param int $required Durée requise, 0 si aucune exigence.
+ * @param bool $done
+ * @return array Quatre cellules : requis, retenu, reste, statut.
+ */
+function stage_render_progress_cells($retained, $required, $done) {
+    if ($required <= 0) {
+        return ['-', $retained, '-', '-'];
+    }
+
+    return [
+        $required,
+        $retained,
+        $done ? '-' : ($required - $retained),
+        stage_render_status_badge($done),
+    ];
+}
+
+/**
+ * En-têtes de colonnes communs aux tableaux de bilan du résumé de l'étudiant, à faire suivre des
+ * cellules construites par stage_render_progress_cells().
+ *
+ * @return array
+ */
+function stage_progress_table_head() {
+    return [
+        get_string('requiredduration', 'mod_stage'),
+        get_string('retainedduration', 'mod_stage'),
+        get_string('remainingduration', 'mod_stage'),
+        get_string('status', 'mod_stage'),
+    ];
+}
+
+/**
+ * Rend les actions de gestion possibles sur une saisie donnée, pour la DEVE ou l'enseignant
+ * référent, dans la liste des stages du résumé d'un étudiant.
+ *
+ * Chaque action n'est proposée que si l'utilisateur a le droit correspondant ET que la saisie est
+ * dans un état où elle a un sens : la page cible refuserait de toute façon, et proposer un bouton
+ * qui mène à un refus ou à une page sans objet est pire que de ne rien proposer. Les droits sont
+ * calculés une fois par étudiant par l'appelant (voir stage_print_student_dashboard()) plutôt
+ * qu'ici, pour ne pas rejouer les mêmes requêtes à chaque ligne du tableau.
+ *
+ * @param stdClass $entry
+ * @param stdClass $cm Course module.
+ * @param context $context Contexte du module stage.
+ * @param stdClass $rights Droits de l'utilisateur courant sur cet étudiant, tels que calculés par
+ *                          stage_print_student_dashboard() : {register, validatedeve,
+ *                          assignedteacher, viewdetail} (booléens).
+ * @return string HTML des boutons d'action, chaîne vide s'il n'y en a aucun.
+ */
+function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, context $context, stdClass $rights) {
+    $status = (int) $entry->status;
+    $conventionstatus = (int) $entry->conventionstatus;
+    $out = '';
+
+    // Ce qui attend une action de l'utilisateur : mis en avant, c'est ce pour quoi il ouvre cette
+    // page. Chaque état n'en ouvre qu'une seule.
+    $out .= stage_render_actions([
+        get_string('evaluate', 'mod_stage') =>
+            $rights->assignedteacher && $status === STAGE_STATUS_EVAL_ETUDIANT
+                ? new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionteachervalidate', 'mod_stage') =>
+            $rights->assignedteacher && $conventionstatus === STAGE_CONVENTION_TEACHERPENDING
+                ? new moodle_url('/mod/stage/convention_teacher_validate.php',
+                    ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('validate', 'mod_stage') =>
+            $rights->validatedeve && $status === STAGE_STATUS_EVAL_ENSEIGNANT
+                ? new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionreview', 'mod_stage') =>
+            $rights->register && $conventionstatus === STAGE_CONVENTION_REQUESTED
+                ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('conventionmarksigned', 'mod_stage') =>
+            $rights->register && $conventionstatus === STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+    ], 'btn btn-sm btn-primary mr-1 mb-1', '');
+
+    // Actions disponibles en permanence : consultation et retouches.
+    $out .= stage_render_actions([
+        get_string('viewdetails', 'mod_stage') => $rights->viewdetail
+            ? new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('edit') => $rights->register
+            ? new moodle_url('/mod/stage/register.php',
+                ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]) : null,
+        // La gestion des plages est aussi ouverte à l'enseignant référent (voir entry_periods.php).
+        get_string('periods', 'mod_stage') => $rights->register || $rights->assignedteacher
+            ? new moodle_url('/mod/stage/entry_periods.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        get_string('generateconvention', 'mod_stage') =>
+            $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+        // Comme entry_periods.php et convention_signed.php, la convention signée est ouverte à la
+        // DEVE et à l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
+        get_string('downloadsignedconvention', 'mod_stage') =>
+            ($rights->register || $rights->assignedteacher)
+                && $conventionstatus === STAGE_CONVENTION_SIGNED
+                && stage_get_signed_convention_file($context, $entry->id)
+                    ? new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id])
+                    : null,
+    ], 'btn btn-sm btn-secondary mr-1 mb-1', '');
+
+    // Réinitialiser et annuler défont un travail déjà fait : en rouge et en dernier, comme dans la
+    // liste de register.php, pour ne pas être cliquées à la place de « Modifier ».
+    if ($rights->register && $status !== STAGE_STATUS_ENREGISTRE) {
+        $out .= html_writer::link(
+            new moodle_url('/mod/stage/register.php',
+                ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]),
+            get_string('resetentry', 'mod_stage'), [
+                'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
+                'onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');",
+            ]);
+    }
+    if ($rights->register && $status !== STAGE_STATUS_ANNULE) {
+        $out .= html_writer::link(
+            new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+            get_string('cancelentry', 'mod_stage'), ['class' => 'btn btn-sm btn-outline-danger mr-1 mb-1']);
+    }
+
+    return $out;
 }
 
 /**
  * Affiche l'avancement d'un étudiant (thématiques obligatoires et liste de ses saisies).
  * Utilisé par la page de l'étudiant lui-même (avec lien de saisie de l'auto-évaluation, si
- * $cm est fourni) et par le tableau de pilotage de la DEVE (lecture seule).
+ * $cm est fourni) et par le tableau de pilotage de la DEVE et des enseignants référents.
+ *
+ * L'information est présentée du général au particulier, en cinq sections : la synthèse (chiffres
+ * clés du dossier), le bilan par année d'étude, le bilan par thématique obligatoire, l'obligation
+ * de mobilité internationale, puis le détail de chaque stage saisi. Les bilans par année et par
+ * thématique tiennent chacun dans un seul tableau (l'année ou la plage d'années est une colonne,
+ * non un titre de section) et affichent le reste à faire plutôt que d'obliger l'étudiant à le
+ * calculer lui-même.
+ *
+ * La colonne d'actions de la liste des stages est déduite des droits de l'utilisateur courant sur
+ * l'étudiant affiché (voir stage_render_entry_management_actions()) : la DEVE et l'enseignant
+ * référent peuvent agir directement sur chaque stage depuis cette page, sans repasser par les
+ * listes de register.php, deve.php ou teacher.php.
  *
  * @param stdClass $stage
  * @param int $userid
  * @param stdClass|null $cm Course module, pour afficher les liens d'action.
- * @param bool $selfevallink Affiche le lien de saisie de l'auto-évaluation de l'étudiant
- *                            (page de l'étudiant lui-même uniquement).
- * @param bool $detaillink Affiche un lien vers le détail en lecture seule de chaque saisie
- *                          (tableau de pilotage DEVE / enseignant référent).
+ * @param bool $selfevallink Affiche les actions de l'étudiant sur ses propres stages (demande de
+ *                            convention, auto-évaluation) : page de l'étudiant lui-même uniquement.
+ * @param bool $detaillink Conservé pour la compatibilité des appels : l'accès au détail en lecture
+ *                          seule de chaque saisie découle désormais des droits de l'utilisateur,
+ *                          comme les autres actions de gestion.
  * @return void
  */
 function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $selfevallink = false, $detaillink = false) {
-    global $OUTPUT;
+    global $OUTPUT, $USER;
 
     $progress = stage_get_student_progress($stage->id, $userid);
-
-    // Les thématiques obligatoires sont déjà triées par année d'étude (stage_get_themes) :
-    // on les regroupe sous un sous-titre par année pour organiser la vision de l'étudiant.
-    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
     $mandatorythemes = array_filter($progress->themes, function($t) {
         return $t->theme->mandatory;
     });
-    if (empty($mandatorythemes)) {
-        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
-    } else {
-        $currentyear = null;
-        $table = null;
-        foreach ($mandatorythemes as $t) {
-            $themeyearkey = $t->theme->minstudyyear . '-' . $t->theme->maxstudyyear;
-            if ($currentyear === null || $themeyearkey != $currentyear) {
-                if ($table !== null) {
-                    echo html_writer::table($table);
-                }
-                $currentyear = $themeyearkey;
-                echo $OUTPUT->heading(stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear), 5);
-                $table = new html_table();
-                $table->head = [
-                    get_string('theme', 'mod_stage'),
-                    get_string('requiredduration', 'mod_stage'),
-                    get_string('retainedduration', 'mod_stage'),
-                    get_string('status', 'mod_stage'),
-                ];
-            }
-            $status = $t->done
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            $table->data[] = [
-                format_string($t->theme->name),
-                $t->requiredduration,
-                $t->retained,
-                $status,
-            ];
-        }
-        echo html_writer::table($table);
-    }
-
     // Bilan des objectifs par année d'étude (hors stages complémentaires) : les objectifs d'une
     // année sont atteints si sa durée totale, la durée de chacune de ses thématiques obligatoires
     // ET, à l'année avant laquelle elle est due le cas échéant, l'obligation de mobilité
     // internationale sont validées (voir stage_get_student_year_progress()).
     $yearprogress = stage_get_student_year_progress($stage->id, $userid);
+    // Seules l'année d'étude courante et les précédentes sont présentées : les objectifs des
+    // années suivantes ne sont pas encore exigibles, les afficher comme « à compléter » ne ferait
+    // qu'alarmer inutilement l'étudiant. Tant que l'année courante n'est pas renseignée pour ce
+    // stage (voir mod_form.php), toutes les années restent affichées.
+    if (!empty($stage->currentstudyyear)) {
+        $yearprogress = array_filter($yearprogress, function($row) use ($stage) {
+            return $row->studyyear <= $stage->currentstudyyear;
+        });
+    }
+    // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
+    // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
+    $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
+    // Total des stages complémentaires (EP), à part : ne compte pas dans le décompte obligatoire.
+    $complementary = stage_get_student_complementary_days($stage->id, $userid);
+
+    // 1. Synthèse : les chiffres clés du dossier en tête, pour situer l'avancement d'un coup
+    // d'œil avant d'entrer dans le détail. Ils étaient auparavant dispersés en bas de page.
+    $themesdonecount = count(array_filter($mandatorythemes, function($t) {
+        return $t->done;
+    }));
+    $yearsdonecount = count(array_filter($yearprogress, function($row) {
+        return $row->done;
+    }));
+
+    echo $OUTPUT->heading(get_string('summary', 'mod_stage'), 4);
+    $summarytable = new html_table();
+    $summarytable->head = [get_string('summaryitem', 'mod_stage'), get_string('summaryvalue', 'mod_stage')];
+    $summarytable->data[] = [
+        get_string('summarytotaldays', 'mod_stage'),
+        get_string('retaineddaysonly', 'mod_stage', $progress->totalretained),
+    ];
+    if (!empty($yearprogress)) {
+        $summarytable->data[] = [
+            get_string('summaryyearsdone', 'mod_stage'),
+            $yearsdonecount . ' / ' . count($yearprogress) . ' '
+                . stage_render_status_badge($yearsdonecount === count($yearprogress)),
+        ];
+    }
+    if (!empty($mandatorythemes)) {
+        $summarytable->data[] = [
+            get_string('summarythemesdone', 'mod_stage'),
+            $themesdonecount . ' / ' . count($mandatorythemes) . ' '
+                . stage_render_status_badge($themesdonecount === count($mandatorythemes)),
+        ];
+    }
+    if ($abroadprogress->required > 0) {
+        $summarytable->data[] = [
+            get_string('summaryabroaddays', 'mod_stage'),
+            get_string('progressofdays', 'mod_stage',
+                (object) ['retained' => $abroadprogress->retained, 'required' => $abroadprogress->required])
+                . ' ' . stage_render_status_badge($abroadprogress->done),
+        ];
+    }
+    if ($complementary->total > 0) {
+        $summarytable->data[] = [
+            get_string('summarycomplementarydays', 'mod_stage'),
+            get_string('retaineddaysonly', 'mod_stage', $complementary->total),
+        ];
+    }
+    echo html_writer::table($summarytable);
+
+    // 2. Bilan par année d'étude, en un seul tableau plutôt qu'un tableau et un titre par année :
+    // l'année n'est rappelée que sur la première ligne de son groupe, et la colonne « Reste à
+    // faire » évite d'avoir à soustraire soi-même le retenu du requis.
     if (!empty($yearprogress)) {
         echo $OUTPUT->heading(get_string('yeartotals', 'mod_stage'), 4);
+        $yeartable = new html_table();
+        $yeartable->head = array_merge(
+            [get_string('studyyear', 'mod_stage'), get_string('objective', 'mod_stage')],
+            stage_progress_table_head()
+        );
         foreach ($yearprogress as $row) {
-            $status = $row->done
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            echo $OUTPUT->heading(stage_studyyear_label($row->studyyear) . ' ' . $status, 5);
-
-            $yeartable = new html_table();
-            $yeartable->head = [
-                get_string('theme', 'mod_stage'),
-                get_string('requiredduration', 'mod_stage'),
-                get_string('retainedduration', 'mod_stage'),
-                get_string('status', 'mod_stage'),
-            ];
-            $totalstatus = $row->totaldone
-                ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-            $yeartable->data[] = [
-                html_writer::tag('strong', get_string('totalrequiredduration', 'mod_stage')),
-                $row->required,
-                $row->retained,
-                $row->required > 0 ? $totalstatus : '-',
-            ];
+            $yearcell = html_writer::tag('strong', stage_studyyear_label($row->studyyear))
+                . ' ' . stage_render_status_badge($row->done);
+            $yeartable->data[] = array_merge(
+                [$yearcell, html_writer::tag('strong', get_string('yeartotalobjective', 'mod_stage'))],
+                stage_render_progress_cells($row->retained, $row->required, $row->totaldone)
+            );
             foreach ($row->themes as $themerow) {
-                $themestatus = $themerow->done
-                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-                $yeartable->data[] = [
-                    format_string($themerow->theme->name),
-                    $themerow->required,
-                    $themerow->retained,
-                    $themerow->required > 0 ? $themestatus : '-',
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', format_string($themerow->theme->name)],
+                    stage_render_progress_cells($themerow->retained, $themerow->required, $themerow->done)
+                );
             }
             if ($row->abroad !== null) {
-                $abroadrowstatus = $row->abroad->done
-                    ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-                    : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
-                $yeartable->data[] = [
-                    html_writer::tag('strong', get_string('abroadtotal', 'mod_stage')),
-                    $row->abroad->required,
-                    $row->abroad->retained,
-                    $abroadrowstatus,
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', get_string('abroadtotal', 'mod_stage')],
+                    stage_render_progress_cells($row->abroad->retained, $row->abroad->required, $row->abroad->done)
+                );
             }
             // Stages complémentaires (EP) de l'année : ligne à part, purement informative, ne
             // comptant pas dans le décompte des stages obligatoires (voir
             // stage_get_student_complementary_days()).
             if ($row->complementary > 0) {
-                $yeartable->data[] = [
-                    html_writer::tag('em', get_string('complementarystages', 'mod_stage')),
-                    '-',
-                    $row->complementary,
-                    '-',
-                ];
+                $yeartable->data[] = array_merge(
+                    ['', html_writer::tag('em', get_string('complementarystages', 'mod_stage'))],
+                    stage_render_progress_cells($row->complementary, 0, true)
+                );
             }
-            echo html_writer::table($yeartable);
         }
+        echo html_writer::table($yeartable);
     }
 
-    // Bilan de l'obligation de mobilité internationale, commune à tous les stages (pas liée à une
-    // thématique), avec l'année avant laquelle elle doit être satisfaite le cas échéant.
-    $abroadprogress = stage_get_student_abroad_progress($stage->id, $userid);
+    // 3. Bilan par thématique obligatoire, toutes années confondues : complète le bilan par année
+    // ci-dessus en montrant aussi les thématiques sur lesquelles rien n'a encore été saisi. Un
+    // seul tableau, avec la plage d'années en colonne plutôt qu'un titre par plage, et surtout
+    // l'année limite de validation : c'est l'échéance qui compte pour l'étudiant, une thématique
+    // bornée à une plage n'étant vérifiée qu'à sa dernière année (voir stage_theme_final_year()).
+    echo $OUTPUT->heading(get_string('mandatorythemes', 'mod_stage'), 4);
+    if (empty($mandatorythemes)) {
+        echo $OUTPUT->notification(get_string('nomandatorythemes', 'mod_stage'), 'info');
+    } else {
+        $themetable = new html_table();
+        $themetable->head = array_merge(
+            [
+                get_string('theme', 'mod_stage'),
+                get_string('studyyear', 'mod_stage'),
+                get_string('completebyyear', 'mod_stage'),
+            ],
+            stage_progress_table_head()
+        );
+        foreach ($mandatorythemes as $t) {
+            $finalyear = stage_theme_final_year($t->theme);
+            $themetable->data[] = array_merge(
+                [
+                    format_string($t->theme->name),
+                    stage_studyyear_range_label($t->theme->minstudyyear, $t->theme->maxstudyyear),
+                    $finalyear !== null ? stage_studyyear_label($finalyear) : '-',
+                ],
+                stage_render_progress_cells($t->retained, $t->requiredduration, $t->done)
+            );
+        }
+        echo html_writer::table($themetable);
+    }
+
+    // 4. Obligation de mobilité internationale : rappelée à part, avec la consigne de la DEVE et
+    // l'année avant laquelle elle doit être satisfaite (elle figure aussi dans le bilan de cette
+    // année-là ci-dessus, comme condition de sa validation).
     if ($abroadprogress->required > 0) {
         echo $OUTPUT->heading(get_string('abroadtotal', 'mod_stage'), 4);
         if (!empty($stage->abroadrule)) {
             echo html_writer::tag('p', format_text($stage->abroadrule, FORMAT_PLAIN), ['class' => 'text-muted']);
         }
-        $abroadstatus = $abroadprogress->done
-            ? html_writer::span(get_string('themedone', 'mod_stage'), 'badge badge-success')
-            : html_writer::span(get_string('themetodo', 'mod_stage'), 'badge badge-warning');
         $abroadtable = new html_table();
-        $abroadtable->head = [
-            get_string('abroaddaysrequired', 'mod_stage'),
-            get_string('abroaddaysretained', 'mod_stage'),
-            get_string('abroadbeforeyear', 'mod_stage'),
-            get_string('status', 'mod_stage'),
-        ];
-        $abroadtable->data[] = [
-            $abroadprogress->required,
-            $abroadprogress->retained,
-            $abroadprogress->beforeyear > 0 ? stage_studyyear_label($abroadprogress->beforeyear) : '-',
-            $abroadstatus,
-        ];
+        $abroadtable->head = array_merge(
+            [get_string('abroadbeforeyear', 'mod_stage')],
+            stage_progress_table_head()
+        );
+        $abroadtable->data[] = array_merge(
+            [$abroadprogress->beforeyear > 0 ? stage_studyyear_label($abroadprogress->beforeyear) : '-'],
+            stage_render_progress_cells($abroadprogress->retained, $abroadprogress->required, $abroadprogress->done)
+        );
         echo html_writer::table($abroadtable);
     }
 
+    // 5. Détail de chaque stage saisi.
     echo $OUTPUT->heading(get_string('allmystages', 'mod_stage'), 4);
     $themes = stage_get_themes($stage->id);
     $entries = stage_get_student_entries($stage->id, $userid);
+
+    // Droits de l'utilisateur courant sur les stages de cet étudiant, calculés une seule fois
+    // ici : l'attribution d'un enseignant référent porte sur l'étudiant, pas sur chaque saisie,
+    // et la rejouer à chaque ligne du tableau multiplierait les requêtes pour rien.
+    $context = $cm ? context_module::instance($cm->id) : null;
+    $rights = (object) [
+        'register' => false, 'validatedeve' => false, 'assignedteacher' => false, 'viewdetail' => false,
+    ];
+    if ($context) {
+        $rights->register = has_capability('mod/stage:registerstages', $context);
+        $rights->validatedeve = has_capability('mod/stage:validatedeve', $context);
+        $rights->assignedteacher = has_capability('mod/stage:evaluateteacher', $context)
+            && array_key_exists($userid, stage_get_assigned_students($stage->id, $USER->id));
+        // Même condition que entrydetail.php : ni la capacité d'enregistrer les stages ni celle
+        // de les valider n'y donnent accès à elles seules.
+        $rights->viewdetail = has_capability('mod/stage:viewall', $context) || $rights->assignedteacher;
+    }
+    $canmanage = $rights->register || $rights->validatedeve || $rights->assignedteacher || $rights->viewdetail;
+    $showactions = $cm && ($selfevallink || $detaillink || $canmanage);
 
     $table = new html_table();
     $table->head = [
@@ -2117,7 +2573,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         get_string('status', 'mod_stage'),
         get_string('conventionstatus', 'mod_stage'),
     ];
-    if ($cm && ($selfevallink || $detaillink)) {
+    if ($showactions) {
         $table->head[] = get_string('actions', 'mod_stage');
     }
     // Une ligne sur fond distinct pour chaque stage à l'étranger, pour les repérer d'un coup
@@ -2144,46 +2600,46 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
             $badge,
             $conventionbadge,
         ];
-        if ($cm && ($selfevallink || $detaillink)) {
-            $actions = [];
+        if ($showactions) {
+            // Les actions sont rendues en petits boutons plutôt qu'en liens séparés par des
+            // barres verticales, pour rester lisibles quand il y en a plusieurs.
+            $btn = ['class' => 'btn btn-sm btn-secondary mr-1 mb-1'];
+            $actions = '';
             if ($selfevallink) {
-                if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE) {
-                    $actions[] = html_writer::link(
+                if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE
+                        || (int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
+                    $actions .= html_writer::link(
                         new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('requestconvention', 'mod_stage')
-                    );
-                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
-                    $actions[] = html_writer::link(
-                        new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('requestconvention', 'mod_stage')
+                        get_string('requestconvention', 'mod_stage'), $btn
                     );
                 } else if (stage_convention_is_signed($entry->conventionstatus)) {
-                    $actions[] = html_writer::link(
+                    $actions .= html_writer::link(
                         new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('selfeval', 'mod_stage')
+                        get_string('selfeval', 'mod_stage'), $btn
                     );
                     // Le PDF de la convention signée n'existe que pour le circuit de gestion de
                     // convention de ce plugin (STAGE_CONVENTION_SIGNED), et seulement si la DEVE
                     // en a effectivement téléversé un (facultatif, voir convention_sign.php) : les
                     // stages enregistrés en masse (SignVet) n'en ont jamais.
                     if ((int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED
-                            && stage_get_signed_convention_file(context_module::instance($cm->id), $entry->id)) {
-                        $actions[] = html_writer::link(
+                            && stage_get_signed_convention_file($context, $entry->id)) {
+                        $actions .= html_writer::link(
                             new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                            get_string('downloadsignedconvention', 'mod_stage')
+                            get_string('downloadsignedconvention', 'mod_stage'), $btn
                         );
                     }
                 }
                 // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
                 // l'instant, le badge de statut ci-dessus suffit à le renseigner.
             }
-            if ($detaillink) {
-                $actions[] = html_writer::link(
-                    new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                    get_string('viewdetails', 'mod_stage')
-                );
+            // Actions de gestion de la DEVE et de l'enseignant référent : évaluer, valider,
+            // relire la convention, modifier, annuler... selon leurs droits et l'état de la
+            // saisie. Elles évitent d'avoir à repasser par les listes de register.php, deve.php
+            // ou teacher.php pour agir sur le stage qu'on est justement en train de consulter.
+            if ($canmanage) {
+                $actions .= stage_render_entry_management_actions($entry, $cm, $context, $rights);
             }
-            $row[] = implode(' | ', $actions);
+            $row[] = $actions !== '' ? $actions : '-';
         }
         $table->data[] = $row;
     }
@@ -2193,13 +2649,8 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
         echo html_writer::table($table);
     }
 
-    echo $OUTPUT->heading(get_string('totalretained', 'mod_stage', $progress->totalretained), 4);
-
-    // Total des stages complémentaires (EP), à part, ne comptant pas dans le total ci-dessus.
-    $complementary = stage_get_student_complementary_days($stage->id, $userid);
-    if ($complementary->total > 0) {
-        echo $OUTPUT->heading(get_string('totalcomplementary', 'mod_stage', $complementary->total), 5);
-    }
+    // Les totaux (durée retenue, stages complémentaires) sont désormais présentés dans la
+    // synthèse en tête de page : inutile de les répéter ici.
 }
 
 /**
@@ -2208,7 +2659,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
  * défaut ("VetAgro Sup", pas d'autre coordonnée) est utilisée tant que la DEVE n'a rien renseigné.
  *
  * @param stdClass $stage
- * @return stdClass {name, address, representative, representativetitle, phone, email}
+ * @return stdClass {name, address, representative, representativetitle, phone, email, signatory}
  */
 function stage_get_establishment_info(stdClass $stage) {
     return (object) [
@@ -2218,6 +2669,7 @@ function stage_get_establishment_info(stdClass $stage) {
         'representativetitle' => $stage->establishmentrepresentativetitle ?? '',
         'phone' => $stage->establishmentphone ?? '',
         'email' => $stage->establishmentemail ?? '',
+        'signatory' => $stage->establishmentsignatory ?? '',
     ];
 }
 
@@ -2227,7 +2679,8 @@ function stage_get_establishment_info(stdClass $stage) {
  *
  * @param int $stageid
  * @param stdClass $data {establishmentname, establishmentaddress, establishmentrepresentative,
- *                        establishmentrepresentativetitle, establishmentphone, establishmentemail}
+ *                        establishmentrepresentativetitle, establishmentphone, establishmentemail,
+ *                        establishmentsignatory}
  * @return void
  */
 function stage_save_establishment_info($stageid, stdClass $data) {
@@ -2241,6 +2694,7 @@ function stage_save_establishment_info($stageid, stdClass $data) {
         'establishmentrepresentativetitle' => $data->establishmentrepresentativetitle,
         'establishmentphone' => $data->establishmentphone,
         'establishmentemail' => $data->establishmentemail,
+        'establishmentsignatory' => $data->establishmentsignatory,
         'timemodified' => time(),
     ]);
 }
@@ -2291,6 +2745,246 @@ function stage_get_importable_stage_instances($excludestageid) {
         $options[$otherstage->id] = format_string($course->fullname) . ' - ' . format_string($otherstage->name);
     }
     return $options;
+}
+
+/**
+ * Liste les autres instances de mod_stage vers lesquelles l'utilisateur courant peut transférer
+ * un étudiant et ses stages (voir transfer.php) : celles où il/elle a la capacité d'enregistrer
+ * les stages, sans laquelle il ne pourrait de toute façon rien y gérer ensuite.
+ *
+ * @param int $excludestageid Instance courante, à exclure de la liste.
+ * @return array int (stageid) => string (libellé "Cours - Activité")
+ */
+function stage_get_transfer_target_instances($excludestageid) {
+    global $DB;
+
+    $options = [];
+    $stages = $DB->get_records_select('stage', 'id != :id', ['id' => $excludestageid], 'id ASC');
+    foreach ($stages as $otherstage) {
+        $cm = get_coursemodule_from_instance('stage', $otherstage->id, 0, false, IGNORE_MISSING);
+        if (!$cm) {
+            continue;
+        }
+        if (!has_capability('mod/stage:registerstages', context_module::instance($cm->id))) {
+            continue;
+        }
+        $course = get_course($cm->course);
+        $options[$otherstage->id] = format_string($course->fullname) . ' - ' . format_string($otherstage->name);
+    }
+    return $options;
+}
+
+/**
+ * Prépare le transfert d'un étudiant et de ses stages vers une autre instance de l'activité
+ * (généralement dans un autre cours) : établit la correspondance des références propres à
+ * l'instance source, et relève ce qui empêche ou complique le transfert.
+ *
+ * Les stages sont déplacés, non copiés : leurs identifiants sont conservés, si bien que tout ce
+ * qui y est rattaché (plages, jours de stage, détails de convention, réponses) suit sans être
+ * recopié. Doivent en revanche être retraduites les références qui appartiennent à l'instance
+ * source et n'ont pas le même identifiant dans la cible : thématique, gabarit de convention, et
+ * questions auxquelles répondent les évaluations. Le rapprochement se fait sur le nom, normalisé
+ * comme à l'import StageVet (voir stage_normalize_name()).
+ *
+ * Rien n'est modifié ici : la fonction ne fait que calculer le plan, que transfer.php montre à la
+ * DEVE avant confirmation et que stage_execute_student_transfer() applique tel quel.
+ *
+ * @param stdClass $sourcestage
+ * @param stdClass $targetstage
+ * @param int $userid Étudiant à transférer.
+ * @return stdClass {entries, thememap, templatemap, questionmap, unmatchedthemes,
+ *                  unmatchedtemplates, droppedanswers, referentteachers, blockers, warnings}
+ */
+function stage_plan_student_transfer(stdClass $sourcestage, stdClass $targetstage, $userid) {
+    global $DB;
+
+    $plan = (object) [
+        'entries' => stage_get_student_entries($sourcestage->id, $userid),
+        'thememap' => [],
+        'templatemap' => [],
+        'questionmap' => [],
+        'unmatchedthemes' => [],
+        'unmatchedtemplates' => [],
+        'droppedanswers' => 0,
+        'referentteachers' => [],
+        'blockers' => [],
+        'warnings' => [],
+    ];
+
+    if (empty($plan->entries)) {
+        $plan->blockers[] = get_string('transfernoentries', 'mod_stage');
+        return $plan;
+    }
+
+    // L'étudiant doit être inscrit au cours cible : les tableaux de bord et le bilan de promotion
+    // parcourent les inscrits, des stages rattachés à un non-inscrit n'y apparaîtraient nulle part.
+    $targetcm = get_coursemodule_from_instance('stage', $targetstage->id, 0, false, MUST_EXIST);
+    $targetcontext = context_module::instance($targetcm->id);
+    $targetcourse = get_course($targetcm->course);
+    if (!is_enrolled($targetcontext, $userid)) {
+        $plan->blockers[] = get_string('transfernotenrolled', 'mod_stage', format_string($targetcourse->fullname));
+    }
+
+    // Thématiques : rapprochées par nom. Sans correspondance, le stage perdrait son rattachement
+    // et fausserait le bilan de l'étudiant dans la cible : le transfert est refusé plutôt que
+    // d'être fait à moitié.
+    $targetthemesbyname = [];
+    foreach (stage_get_themes($targetstage->id) as $targettheme) {
+        $targetthemesbyname[stage_normalize_name($targettheme->name)] = $targettheme;
+    }
+    $sourcethemes = stage_get_themes($sourcestage->id);
+    foreach ($plan->entries as $entry) {
+        if (array_key_exists($entry->themeid, $plan->thememap)) {
+            continue;
+        }
+        $sourcetheme = $sourcethemes[$entry->themeid] ?? null;
+        $match = $sourcetheme ? ($targetthemesbyname[stage_normalize_name($sourcetheme->name)] ?? null) : null;
+        $plan->thememap[$entry->themeid] = $match ? $match->id : null;
+        if (!$match) {
+            $plan->unmatchedthemes[] = $sourcetheme ? format_string($sourcetheme->name) : (string) $entry->themeid;
+        }
+    }
+    if (!empty($plan->unmatchedthemes)) {
+        $plan->blockers[] = get_string('transferunmatchedthemes', 'mod_stage',
+            implode(', ', $plan->unmatchedthemes));
+    }
+
+    // Gabarits de convention : rapprochés par nom et langue. Sans correspondance, le gabarit est
+    // simplement oublié — la convention déjà signée reste disponible, seule sa regénération en PDF
+    // ne serait plus possible sans rechoisir un gabarit.
+    $targettemplatesbyname = [];
+    foreach (stage_get_convention_templates($targetstage->id) as $targettemplate) {
+        $targettemplatesbyname[stage_normalize_name($targettemplate->name) . '|' . $targettemplate->lang] =
+            $targettemplate;
+    }
+    $sourcetemplates = stage_get_convention_templates($sourcestage->id);
+    foreach ($plan->entries as $entry) {
+        if (empty($entry->conventiontemplateid) || array_key_exists($entry->conventiontemplateid, $plan->templatemap)) {
+            continue;
+        }
+        $sourcetemplate = $sourcetemplates[$entry->conventiontemplateid] ?? null;
+        $key = $sourcetemplate
+            ? stage_normalize_name($sourcetemplate->name) . '|' . $sourcetemplate->lang : null;
+        $match = $key !== null ? ($targettemplatesbyname[$key] ?? null) : null;
+        $plan->templatemap[$entry->conventiontemplateid] = $match ? $match->id : null;
+        if (!$match) {
+            $plan->unmatchedtemplates[] = $sourcetemplate
+                ? format_string($sourcetemplate->name) : (string) $entry->conventiontemplateid;
+        }
+    }
+    if (!empty($plan->unmatchedtemplates)) {
+        $plan->warnings[] = get_string('transferunmatchedtemplates', 'mod_stage',
+            implode(', ', array_unique($plan->unmatchedtemplates)));
+    }
+
+    // Questions d'évaluation : les réponses déjà saisies pointent vers les questions de la
+    // thématique source. Elles sont rapprochées, dans la thématique cible correspondante, sur le
+    // type d'évaluation et le nom ; celles qui n'ont pas d'équivalent sont supprimées, faute de
+    // quoi elles renverraient à des questions d'une autre instance.
+    foreach ($plan->thememap as $sourcethemeid => $targetthemeid) {
+        if (!$targetthemeid) {
+            continue;
+        }
+        foreach (['student', 'teacher'] as $evaltype) {
+            $targetquestions = [];
+            foreach (stage_get_questions($targetthemeid, $evaltype) as $targetquestion) {
+                $targetquestions[stage_normalize_name($targetquestion->name)] = $targetquestion;
+            }
+            foreach (stage_get_questions($sourcethemeid, $evaltype) as $sourcequestion) {
+                $match = $targetquestions[stage_normalize_name($sourcequestion->name)] ?? null;
+                $plan->questionmap[$sourcequestion->id] = $match ? $match->id : null;
+            }
+        }
+    }
+    $entryids = array_keys($plan->entries);
+    if (!empty($entryids)) {
+        [$insql, $inparams] = $DB->get_in_or_equal($entryids, SQL_PARAMS_NAMED);
+        foreach ($DB->get_records_select('stage_answer', "entryid $insql", $inparams) as $answer) {
+            if (empty($plan->questionmap[$answer->questionid])) {
+                $plan->droppedanswers++;
+            }
+        }
+    }
+    if ($plan->droppedanswers > 0) {
+        $plan->warnings[] = get_string('transferdroppedanswers', 'mod_stage', $plan->droppedanswers);
+    }
+
+    // L'attribution des enseignants référents est propre au cours : elle n'est pas transférée,
+    // les enseignants de la source n'étant en général pas inscrits au cours cible.
+    $plan->referentteachers = array_map('fullname', stage_get_student_teachers($sourcestage->id, $userid));
+    if (!empty($plan->referentteachers)) {
+        $plan->warnings[] = get_string('transferreferentteachers', 'mod_stage',
+            implode(', ', $plan->referentteachers));
+    }
+
+    return $plan;
+}
+
+/**
+ * Exécute le transfert préparé par stage_plan_student_transfer() : rattache les stages de
+ * l'étudiant à l'instance cible, retraduit les références propres à l'instance et déplace les
+ * conventions signées vers le contexte du module cible.
+ *
+ * Le tout dans une transaction : un transfert à moitié appliqué laisserait des stages rattachés à
+ * une instance mais pointant vers les thématiques d'une autre.
+ *
+ * @param stdClass $sourcestage
+ * @param context $sourcecontext Contexte du module source.
+ * @param stdClass $targetstage
+ * @param context $targetcontext Contexte du module cible.
+ * @param int $userid
+ * @param stdClass $plan Plan calculé par stage_plan_student_transfer(), sans bloquant.
+ * @return int Nombre de stages transférés.
+ */
+function stage_execute_student_transfer(stdClass $sourcestage, context $sourcecontext, stdClass $targetstage,
+        context $targetcontext, $userid, stdClass $plan) {
+    global $DB;
+
+    $transaction = $DB->start_delegated_transaction();
+    $fs = get_file_storage();
+    $now = time();
+
+    foreach ($plan->entries as $entry) {
+        $update = (object) [
+            'id' => $entry->id,
+            'stageid' => $targetstage->id,
+            'themeid' => $plan->thememap[$entry->themeid],
+            'timemodified' => $now,
+        ];
+        if (!empty($entry->conventiontemplateid)) {
+            $update->conventiontemplateid = $plan->templatemap[$entry->conventiontemplateid] ?: null;
+        }
+        $DB->update_record('stage_entry', $update);
+
+        // Les réponses suivent le stage (même entryid) mais doivent désigner les questions de
+        // l'instance cible ; celles sans équivalent sont supprimées.
+        foreach ($DB->get_records('stage_answer', ['entryid' => $entry->id]) as $answer) {
+            $targetquestionid = $plan->questionmap[$answer->questionid] ?? null;
+            if ($targetquestionid) {
+                $DB->update_record('stage_answer', (object) [
+                    'id' => $answer->id, 'questionid' => $targetquestionid, 'timemodified' => $now,
+                ]);
+            } else {
+                $DB->delete_records('stage_answer', ['id' => $answer->id]);
+            }
+        }
+
+        // La convention signée est stockée dans le contexte du module : elle deviendrait
+        // inaccessible depuis la cible si elle restait dans celui de la source.
+        foreach ($fs->get_area_files($sourcecontext->id, 'mod_stage', 'signedconvention', $entry->id, 'itemid', false)
+                as $file) {
+            $fs->create_file_from_storedfile(['contextid' => $targetcontext->id], $file);
+            $file->delete();
+        }
+    }
+
+    // L'attribution des enseignants référents est propre au cours : elle reste dans la source,
+    // où elle continue de décrire l'année passée, et n'est pas recréée dans la cible.
+    $DB->delete_records('stage_entry_teacher', ['stageid' => $sourcestage->id, 'studentid' => $userid]);
+
+    $transaction->allow_commit();
+
+    return count($plan->entries);
 }
 
 /**
@@ -2969,10 +3663,14 @@ function stage_stored_file_to_temp(\stored_file $file) {
  * @param stdClass $stage
  * @param stdClass $entry
  * @param context $context Contexte du module stage.
+ * @param bool $withsignatures Ajoute un cadre de signatures (stagiaire, maître de stage,
+ *                              responsable de l'organisme d'accueil, enseignant.e référent.e,
+ *                              établissement) en bas de la page 1, pour une convention imprimée
+ *                              destinée à être signée à la main.
  * @return array ['error' => string|null (clé de chaîne de langue mod_stage), 'pdf' => objet FPDI
  *               prêt pour Output(), ou null en cas d'erreur, 'filename' => string|null]
  */
-function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context) {
+function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context, $withsignatures = false) {
     global $DB, $CFG;
 
     if (empty($entry->conventiontemplateid)) {
@@ -3035,6 +3733,7 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
             'representativetitle' => $establishmentinfo->representativetitle,
             'phone' => $establishmentinfo->phone,
             'email' => $establishmentinfo->email,
+            'signatory' => $establishmentinfo->signatory,
         ],
         'hoststructure' => (string) $entry->structure,
         'yearlabel' => $theme ? stage_convention_year_label($theme->minstudyyear, $detail->yearsituation, $conventionlang)
@@ -3063,6 +3762,9 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
             'start' => $entry->datestart ? userdate($entry->datestart, $dateformat) : '-',
             'end' => $entry->dateend ? userdate($entry->dateend, $dateformat) : '-',
         ],
+        'periods' => array_map(function($period) use ($dateformat) {
+            return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
+        }, stage_get_or_seed_entry_periods($entry)),
         'duration' => [
             'declared' => $entry->declaredduration,
             'retained' => $entry->retainedduration,
@@ -3115,7 +3817,7 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
     // Page 1 : générée dynamiquement avec la classe \pdf de Moodle (TCPDF), en PDF brut (chaîne),
     // pour être réimportée ci-dessous comme un PDF source parmi d'autres.
     $page1 = new \mod_stage\pdf\convention_pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-    $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang);
+    $page1->generate_page1($stagedata, $logoleftpath, $logorightpath, $conventionlang, $withsignatures);
     $page1pdf = $page1->Output('', 'S');
 
     // Assemblage final : la page 1 générée ci-dessus, suivie des pages du gabarit choisi par

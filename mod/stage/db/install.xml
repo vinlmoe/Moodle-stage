@@ -18,6 +18,8 @@
         <FIELD NAME="establishmentrepresentativetitle" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="establishmentphone" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="establishmentemail" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="establishmentsignatory" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Nom de la personne ayant délégation de signature du chef d'établissement, affiché dans le cadre de signatures de la convention imprimée"/>
         <FIELD NAME="conventionrequireteachervalidation" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"
             COMMENT="Si 1, une demande de convention doit être validée par l'enseignant.e référent.e avant d'être visible par la DEVE (voir STAGE_CONVENTION_TEACHERPENDING)"/>
         <FIELD NAME="currentstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"

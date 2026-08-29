@@ -51,31 +51,48 @@ class entry_form extends \moodleform {
         // Informations fixées par la DEVE : l'étudiant les consulte sans pouvoir les modifier.
         // Affichage statique doublé d'un champ caché, et non freeze() : un élément gelé est
         // retiré du formulaire sans que sa règle "required" le soit, ce qui bloque la soumission.
+        //
+        // 'hidestatic' supprime le seul affichage statique, en gardant les champs cachés qui
+        // portent les valeurs à la soumission : la page appelante rappelle déjà ces informations
+        // au-dessus du formulaire (voir stage_render_entry_summary()), les répéter ici n'ajoute
+        // rien et allonge le formulaire.
         if ($locked) {
-            $mform->addElement('static', 'themeidstatic', get_string('theme', 'mod_stage'),
-                $this->_customdata['themename'] ?? '');
+            $showstatic = empty($this->_customdata['hidestatic']);
+
+            if ($showstatic) {
+                $mform->addElement('static', 'themeidstatic', get_string('theme', 'mod_stage'),
+                    $this->_customdata['themename'] ?? '');
+            }
             $mform->addElement('hidden', 'themeid');
             $mform->setType('themeid', PARAM_INT);
 
-            $mform->addElement('static', 'structurestatic', get_string('structure', 'mod_stage'),
-                s($this->_customdata['structure'] ?? ''));
+            if ($showstatic) {
+                $mform->addElement('static', 'structurestatic', get_string('structure', 'mod_stage'),
+                    s($this->_customdata['structure'] ?? ''));
+            }
             $mform->addElement('hidden', 'structure');
             $mform->setType('structure', PARAM_TEXT);
 
-            $mform->addElement('static', 'datestartstatic', get_string('datestart', 'mod_stage'),
-                !empty($this->_customdata['datestart']) ? userdate($this->_customdata['datestart'],
-                    get_string('strftimedate', 'langconfig')) : '-');
+            if ($showstatic) {
+                $mform->addElement('static', 'datestartstatic', get_string('datestart', 'mod_stage'),
+                    !empty($this->_customdata['datestart']) ? userdate($this->_customdata['datestart'],
+                        get_string('strftimedate', 'langconfig')) : '-');
+            }
             $mform->addElement('hidden', 'datestart');
             $mform->setType('datestart', PARAM_INT);
 
-            $mform->addElement('static', 'dateendstatic', get_string('dateend', 'mod_stage'),
-                !empty($this->_customdata['dateend']) ? userdate($this->_customdata['dateend'],
-                    get_string('strftimedate', 'langconfig')) : '-');
+            if ($showstatic) {
+                $mform->addElement('static', 'dateendstatic', get_string('dateend', 'mod_stage'),
+                    !empty($this->_customdata['dateend']) ? userdate($this->_customdata['dateend'],
+                        get_string('strftimedate', 'langconfig')) : '-');
+            }
             $mform->addElement('hidden', 'dateend');
             $mform->setType('dateend', PARAM_INT);
 
-            $mform->addElement('static', 'declareddurationstatic', get_string('declaredduration', 'mod_stage'),
-                $this->_customdata['declaredduration'] ?? 0);
+            if ($showstatic) {
+                $mform->addElement('static', 'declareddurationstatic', get_string('declaredduration', 'mod_stage'),
+                    $this->_customdata['declaredduration'] ?? 0);
+            }
             $mform->addElement('hidden', 'declaredduration');
             $mform->setType('declaredduration', PARAM_INT);
         } else {
