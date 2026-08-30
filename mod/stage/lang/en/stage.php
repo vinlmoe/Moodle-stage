@@ -190,6 +190,9 @@ $string['conventionfollowup'] = 'Agreement follow-up';
 $string['stagestoevaluate'] = 'Internships to evaluate';
 $string['adminsectionrequirements'] = 'What students have to do';
 $string['adminsectionconventions'] = 'Internship agreements';
+$string['adminsectionnotifications'] = 'Notifications';
+$string['notifications_desc'] = 'Enable evaluation by the workplace tutor and customize the text of the '
+    . 'emails sent by the activity.';
 $string['adminsectionteachers'] = 'Student supervision';
 $string['adminsectionsetup'] = 'Setting up the activity';
 $string['adminsectionpage'] = 'Page';
@@ -544,3 +547,39 @@ $string['numstages'] = '{$a} internship(s) declared';
 // Headings.
 $string['evaluatestage'] = 'Evaluate the internship of {$a}';
 $string['validatestage'] = 'Validate the internship of {$a}';
+
+// Workplace tutor evaluation and email customization.
+$string['tutorevaluationenabled'] = 'Enable evaluation by the workplace tutor';
+$string['tutorevaluationenabled_help'] = "If enabled, the workplace tutor (the student's supervisor in the "
+    . "host organisation, who has no Moodle account) receives an email with a unique token link letting them "
+    . "answer the evaluation questionnaire defined for the internship's theme, as soon as the student "
+    . "self-assesses. Their answer is then displayed to the referent teacher and to the administration "
+    . "office when they carry out their own evaluation.";
+$string['emailkeyselfeval'] = 'Self-assessment notification (to the referent teacher)';
+$string['emailkeyteacherpending'] = 'Agreement pending validation notification (to the referent teacher)';
+$string['emailkeystudentrejected'] = 'Agreement rejected notification (to the student)';
+$string['emailkeytutorrequest'] = 'Invitation to evaluate the internship (to the workplace tutor)';
+$string['tutorevalnotifsubject'] = 'Evaluation of {$a}\'s internship';
+$string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} during their internship '
+    . '"{$a->stage}". Please evaluate this internship by following this link, which does not require an '
+    . "account:\n{\$a->url}";
+$string['evaltype_tutor'] = 'Workplace tutor';
+$string['tutorevalheading'] = 'Workplace tutor evaluation';
+$string['notutoreval'] = 'The workplace tutor has not yet answered their evaluation questionnaire.';
+$string['tutorevalpagetitle'] = 'Internship evaluation';
+$string['tutorevalinvalidtoken'] = 'This evaluation link is no longer valid.';
+$string['tutorevalalreadysubmitted'] = 'Your evaluation has been recorded, thank you.';
+$string['tutorevalsubmit'] = 'Submit my evaluation';
+$string['tutorevalintro'] = 'You are supervising {$a->student} during their internship "{$a->stage}". '
+    . 'Please answer the evaluation questionnaire below.';
+$string['notifications'] = 'Notifications and emails';
+$string['notificationssettings'] = 'Customize the emails sent';
+$string['notificationssettings_help'] = "For each email sent by the activity, you can replace the subject "
+    . "and body with custom text. Leave both fields empty to use the default text. Custom text is not a "
+    . "language string: use the {{variable}} syntax (double curly braces) to insert the available variables, "
+    . "listed under each email.";
+$string['notificationssaved'] = 'The custom emails have been saved.';
+$string['emailsubject'] = 'Subject';
+$string['emailbody'] = 'Message body';
+$string['emailavailablevars'] = 'Available variables: {$a}';
+$string['emailresettodefault'] = 'Leave both fields empty to use the default text.';

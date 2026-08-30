@@ -79,6 +79,13 @@ if ($canmanagethemes) {
             new moodle_url('/mod/stage/convention_templates.php', ['id' => $cm->id]),
         ],
     ]];
+    $sections[] = [get_string('adminsectionnotifications', 'mod_stage'), [
+        [
+            get_string('notifications', 'mod_stage'),
+            get_string('notifications_desc', 'mod_stage'),
+            new moodle_url('/mod/stage/notifications.php', ['id' => $cm->id]),
+        ],
+    ]];
 }
 if ($canmanageteachers) {
     $sections[] = [get_string('adminsectionteachers', 'mod_stage'), [

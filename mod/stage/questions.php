@@ -79,7 +79,7 @@ if ($action === 'edit') {
 
     $formurl = new moodle_url('/mod/stage/questions.php',
         ['id' => $cm->id, 'themeid' => $theme->id, 'action' => 'edit', 'questionid' => $questionid]);
-    $mform = new question_form($formurl, ['themes' => $themeoptions]);
+    $mform = new question_form($formurl, ['themes' => $themeoptions, 'tutorenabled' => !empty($stage->tutorevaluationenabled)]);
     $question = null;
     if ($questionid) {
         $question = $DB->get_record('stage_question', ['id' => $questionid, 'stageid' => $stage->id], '*', MUST_EXIST);
@@ -143,8 +143,7 @@ if (!empty($reusable)) {
     foreach ($reusable as $reusablequestion) {
         $typelabel = $reusablequestion->qtype === 'choice'
             ? get_string('qtype_choice', 'mod_stage') : get_string('qtype_text', 'mod_stage');
-        $evallabel = $reusablequestion->evaltype === 'student'
-            ? get_string('evaltype_student', 'mod_stage') : get_string('evaltype_teacher', 'mod_stage');
+        $evallabel = stage_evaltype_label($reusablequestion->evaltype);
         $options[$reusablequestion->id] = format_string($reusablequestion->name) . ' (' . $evallabel . ', ' . $typelabel . ')';
     }
 
@@ -160,9 +159,12 @@ if (!empty($reusable)) {
     echo html_writer::end_tag('form');
 }
 
-foreach (['student' => get_string('evaltype_student', 'mod_stage'), 'teacher' => get_string('evaltype_teacher', 'mod_stage')]
-        as $evaltype => $label) {
-    echo $OUTPUT->heading($label, 4);
+$evaltypes = ['student', 'teacher'];
+if (!empty($stage->tutorevaluationenabled)) {
+    $evaltypes[] = 'tutor';
+}
+foreach ($evaltypes as $evaltype) {
+    echo $OUTPUT->heading(stage_evaltype_label($evaltype), 4);
     $questions = stage_get_questions($theme->id, $evaltype);
 
     if (empty($questions)) {

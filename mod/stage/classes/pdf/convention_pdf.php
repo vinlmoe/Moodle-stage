@@ -68,8 +68,10 @@ class convention_pdf extends \pdf {
      *                         host{address, representative, representativetitle, service,
      *                         phone, email, location}, student{fullname, email, birthdate,
      *                         address, phone}, theme{name}, dates{start, end},
-     *                         duration{declared, retained}, statuslabel, referentteacher
-     *                         {name, email}, tutor{name, function, phone, email},
+     *                         duration{declared} (retained et statuslabel sont sans objet à ce
+     *                         stade : la convention se signe avant toute évaluation, la durée
+     *                         retenue et le statut de la saisie y sont donc encore à leur valeur
+     *                         initiale), referentteacher{name, email}, tutor{name, function, phone, email},
      *                         modalities{night, sunday, holiday, homebased (bool), other
      *                         (texte)}, gratification (texte), leave{has (bool), days,
      *                         modalities (texte)}.
@@ -157,8 +159,6 @@ class convention_pdf extends \pdf {
             $this->field_row($this->str('periods'), implode("\n", $stagedata['periods']));
         }
         $this->field_row($this->str('declaredduration'), $stagedata['duration']['declared']);
-        $this->field_row($this->str('retainedduration'), $stagedata['duration']['retained']);
-        $this->field_row($this->str('status'), $stagedata['statuslabel']);
         $this->Ln(3);
 
         $this->section_heading($this->str('conventionsupervision'));

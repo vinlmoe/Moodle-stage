@@ -109,6 +109,20 @@ if ($entryid) {
         echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
     }
 
+    // Évaluation du maître de stage, si l'option est activée : mêmes modalités que
+    // l'auto-évaluation de l'étudiant, affichée en lecture seule.
+    if (!empty($stage->tutorevaluationenabled)) {
+        echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
+        $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
+        if (!empty($tutorquestions) && $entry->tutortime) {
+            echo stage_render_answers_readonly($tutorquestions, stage_get_answers($entry->id));
+        } else if ($entry->tutoreval) {
+            echo html_writer::div(format_text($entry->tutoreval, FORMAT_PLAIN));
+        } else {
+            echo $OUTPUT->notification(get_string('notutoreval', 'mod_stage'), 'info');
+        }
+    }
+
     if (!empty($periods)) {
         echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);
         if ($editable) {

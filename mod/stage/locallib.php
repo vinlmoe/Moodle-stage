@@ -173,6 +173,23 @@ function stage_save_convention_teacher_validation_setting($stageid, $require) {
 }
 
 /**
+ * Active ou désactive l'évaluation par le maître de stage pour l'activité.
+ *
+ * @param int $stageid
+ * @param bool $enabled
+ * @return void
+ */
+function stage_save_tutor_evaluation_setting($stageid, $enabled) {
+    global $DB;
+
+    $DB->update_record('stage', (object) [
+        'id' => $stageid,
+        'tutorevaluationenabled' => $enabled ? 1 : 0,
+        'timemodified' => time(),
+    ]);
+}
+
+/**
  * Liste les thématiques d'une activité stage, triées par année d'étude puis par ordre défini.
  *
  * @param int $stageid
@@ -1400,6 +1417,152 @@ function stage_get_student_teachers($stageid, $studentid) {
 }
 
 /**
+ * Décrit chaque e-mail envoyé par l'activité, personnalisable par la DEVE (voir
+ * notifications.php, stage_email_template) : la clé sert d'identifiant stable en base, les
+ * chaînes de langue portent le texte par défaut (dans le format {$a->xxx} habituel de Moodle), et
+ * "vars" liste les variables disponibles pour la personnalisation, sous la forme {{xxx}} (une
+ * syntaxe volontairement différente de celle des chaînes de langue : le texte personnalisé n'est
+ * pas une chaîne de langue et ne bénéficie pas de son mécanisme de substitution).
+ *
+ * @return array emailkey => ['label' => string, 'subjectstring' => string, 'bodystring' => string,
+ *               'vars' => string[]]
+ */
+function stage_get_email_definitions() {
+    return [
+        'selfeval' => [
+            'label' => get_string('emailkeyselfeval', 'mod_stage'),
+            'subjectstring' => 'selfevalnotifsubject',
+            'bodystring' => 'selfevalnotifbody',
+            'vars' => ['student', 'stage', 'url'],
+        ],
+        'teacherpending' => [
+            'label' => get_string('emailkeyteacherpending', 'mod_stage'),
+            'subjectstring' => 'conventionteacherpendingnotifsubject',
+            'bodystring' => 'conventionteacherpendingnotifbody',
+            'vars' => ['stage', 'url'],
+        ],
+        'studentrejected' => [
+            'label' => get_string('emailkeystudentrejected', 'mod_stage'),
+            'subjectstring' => 'conventionrejectednotifsubject',
+            'bodystring' => 'conventionrejectednotifbody',
+            'vars' => ['stage', 'comment', 'url'],
+        ],
+        'tutorrequest' => [
+            'label' => get_string('emailkeytutorrequest', 'mod_stage'),
+            'subjectstring' => 'tutorevalnotifsubject',
+            'bodystring' => 'tutorevalnotifbody',
+            'vars' => ['student', 'stage', 'url'],
+        ],
+    ];
+}
+
+/**
+ * Retourne la personnalisation éventuelle (sujet/corps) d'un e-mail pour un stage donné, ou null
+ * si la DEVE n'a rien personnalisé (ou a vidé les deux champs, ce qui revient à revenir au texte
+ * par défaut).
+ *
+ * @param int $stageid
+ * @param string $emailkey
+ * @return stdClass|null {subject, body}, l'un ou l'autre pouvant être vide pour ne personnaliser
+ *                       que l'autre.
+ */
+function stage_get_custom_email_template($stageid, $emailkey) {
+    global $DB;
+
+    return $DB->get_record('stage_email_template', ['stageid' => $stageid, 'emailkey' => $emailkey]) ?: null;
+}
+
+/**
+ * Enregistre (ou efface, si les deux champs sont vides) la personnalisation d'un e-mail pour un
+ * stage donné.
+ *
+ * @param int $stageid
+ * @param string $emailkey
+ * @param string $subject
+ * @param string $body
+ * @return void
+ */
+function stage_save_email_template($stageid, $emailkey, $subject, $body) {
+    global $DB;
+
+    $existing = $DB->get_record('stage_email_template', ['stageid' => $stageid, 'emailkey' => $emailkey]);
+    if (trim($subject) === '' && trim($body) === '') {
+        if ($existing) {
+            $DB->delete_records('stage_email_template', ['id' => $existing->id]);
+        }
+        return;
+    }
+
+    if ($existing) {
+        $existing->subject = $subject;
+        $existing->body = $body;
+        $existing->timemodified = time();
+        $DB->update_record('stage_email_template', $existing);
+    } else {
+        $DB->insert_record('stage_email_template', (object) [
+            'stageid' => $stageid,
+            'emailkey' => $emailkey,
+            'subject' => $subject,
+            'body' => $body,
+            'timemodified' => time(),
+        ]);
+    }
+}
+
+/**
+ * Remplace dans un texte personnalisé les jetons {{cle}} par les valeurs fournies. Utilisée
+ * uniquement pour un texte personnalisé par la DEVE (notifications.php) : le texte par défaut,
+ * lui, est une chaîne de langue et passe par le mécanisme habituel de get_string().
+ *
+ * @param string $text
+ * @param array $vars cle => valeur
+ * @return string
+ */
+function stage_render_email_placeholders($text, array $vars) {
+    $search = [];
+    $replace = [];
+    foreach ($vars as $key => $value) {
+        $search[] = '{{' . $key . '}}';
+        $replace[] = (string) $value;
+    }
+    return str_replace($search, $replace, $text);
+}
+
+/**
+ * Résout le sujet et le corps d'un e-mail de l'activité : le texte personnalisé par la DEVE s'il
+ * existe (voir stage_get_custom_email_template()), sinon le texte par défaut (chaîne de langue).
+ *
+ * @param int $stageid
+ * @param string $emailkey Voir stage_get_email_definitions().
+ * @param array $vars Valeurs des variables listées dans la définition de cet e-mail (voir
+ *                    stage_get_email_definitions()['vars']), utilisées à la fois pour le texte
+ *                    par défaut ({$a->xxx}) et pour un texte personnalisé ({{xxx}}).
+ * @return stdClass {subject, body}
+ */
+function stage_resolve_email_text($stageid, $emailkey, array $vars) {
+    $definitions = stage_get_email_definitions();
+    $definition = $definitions[$emailkey];
+    $custom = stage_get_custom_email_template($stageid, $emailkey);
+
+    if ($custom && trim((string) $custom->subject) !== '') {
+        $subject = stage_render_email_placeholders($custom->subject, $vars);
+    } else {
+        // Les sujets par défaut existants n'utilisent qu'une seule variable (le nom du stage),
+        // passée directement plutôt qu'en objet : on respecte ce format pour ne pas retoucher
+        // ces chaînes de langue.
+        $subject = get_string($definition['subjectstring'], 'mod_stage', $vars['stage'] ?? null);
+    }
+
+    if ($custom && trim((string) $custom->body) !== '') {
+        $body = stage_render_email_placeholders($custom->body, $vars);
+    } else {
+        $body = get_string($definition['bodystring'], 'mod_stage', (object) $vars);
+    }
+
+    return (object) ['subject' => $subject, 'body' => $body];
+}
+
+/**
  * Envoie un e-mail aux enseignants référents d'un étudiant lorsque celui-ci vient de
  * s'auto-évaluer, pour qu'ils sachent qu'une saisie attend leur évaluation.
  *
@@ -1416,16 +1579,15 @@ function stage_notify_teachers_selfeval(stdClass $stage, stdClass $cm, stdClass 
     }
 
     $url = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-    $subject = get_string('selfevalnotifsubject', 'mod_stage', format_string($stage->name));
+    $text = stage_resolve_email_text($stage->id, 'selfeval', [
+        'student' => fullname($student),
+        'stage' => format_string($stage->name),
+        'url' => $url->out(false),
+    ]);
     $noreply = core_user::get_noreply_user();
 
     foreach ($teachers as $teacher) {
-        $body = get_string('selfevalnotifbody', 'mod_stage', (object) [
-            'student' => fullname($student),
-            'stage' => format_string($stage->name),
-            'url' => $url->out(false),
-        ]);
-        email_to_user($teacher, $noreply, $subject, $body);
+        email_to_user($teacher, $noreply, $text->subject, $text->body);
     }
 }
 
@@ -3587,13 +3749,13 @@ function stage_notify_teacher_convention_pending(stdClass $stage, stdClass $cm, 
     }
 
     $url = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
-    $subject = get_string('conventionteacherpendingnotifsubject', 'mod_stage', format_string($stage->name));
+    $text = stage_resolve_email_text($stage->id, 'teacherpending', [
+        'stage' => format_string($stage->name),
+        'url' => $url->out(false),
+    ]);
+    $noreply = core_user::get_noreply_user();
     foreach ($teachers as $teacher) {
-        $body = get_string('conventionteacherpendingnotifbody', 'mod_stage', (object) [
-            'stage' => format_string($stage->name),
-            'url' => $url->out(false),
-        ]);
-        email_to_user($teacher, core_user::get_noreply_user(), $subject, $body);
+        email_to_user($teacher, $noreply, $text->subject, $text->body);
     }
 }
 
@@ -3672,13 +3834,144 @@ function stage_notify_student_convention_rejected(stdClass $stage, stdClass $cm,
     }
 
     $url = new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]);
-    $subject = get_string('conventionrejectednotifsubject', 'mod_stage', format_string($stage->name));
-    $body = get_string('conventionrejectednotifbody', 'mod_stage', (object) [
+    $text = stage_resolve_email_text($stage->id, 'studentrejected', [
         'stage' => format_string($stage->name),
         'comment' => $comment,
         'url' => $url->out(false),
     ]);
-    email_to_user($student, core_user::get_noreply_user(), $subject, $body);
+    email_to_user($student, core_user::get_noreply_user(), $text->subject, $text->body);
+}
+
+/**
+ * Envoie au maître de stage (personne extérieure, sans compte Moodle) le lien à jeton lui
+ * permettant de répondre au questionnaire d'évaluation de la thématique.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @param string $tutorname
+ * @param string $tutoremail
+ * @return void
+ */
+function stage_notify_tutor_evaluation_request(stdClass $stage, stdClass $cm, stdClass $entry, $tutorname,
+        $tutoremail) {
+    global $DB;
+
+    $student = $DB->get_record('user', ['id' => $entry->userid]);
+    if (!$student) {
+        return;
+    }
+
+    $url = new moodle_url('/mod/stage/tutor_eval.php', ['token' => $entry->tutortoken]);
+    $text = stage_resolve_email_text($stage->id, 'tutorrequest', [
+        'student' => fullname($student),
+        'stage' => format_string($stage->name),
+        'url' => $url->out(false),
+    ]);
+
+    $names = explode(' ', trim($tutorname), 2);
+    $tutoruser = (object) [
+        'id' => -1,
+        'email' => $tutoremail,
+        'firstname' => $names[0] !== '' ? $names[0] : $tutorname,
+        'lastname' => $names[1] ?? '',
+        'maildisplay' => true,
+        'mailformat' => 1,
+        'auth' => 'manual',
+        'confirmed' => 1,
+        'suspended' => 0,
+        'deleted' => 0,
+        'emailstop' => 0,
+        'lang' => current_language(),
+    ];
+
+    email_to_user($tutoruser, core_user::get_noreply_user(), $text->subject, $text->body);
+}
+
+/**
+ * Si l'évaluation par le maître de stage est activée pour l'activité, génère (si besoin) un
+ * jeton d'accès et envoie l'invitation par courriel au maître de stage. N'envoie jamais deux
+ * fois l'invitation pour une même saisie (un jeton déjà présent est laissé tel quel).
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @return void
+ */
+function stage_maybe_request_tutor_evaluation(stdClass $stage, stdClass $cm, stdClass $entry) {
+    global $DB;
+
+    if (empty($stage->tutorevaluationenabled) || !empty($entry->tutortoken)) {
+        return;
+    }
+
+    $detail = stage_get_convention_detail($entry->id);
+    if (!$detail || empty($detail->tutoremail)) {
+        return;
+    }
+
+    $token = bin2hex(random_bytes(32));
+    $DB->set_field('stage_entry', 'tutortoken', $token, ['id' => $entry->id]);
+    $entry->tutortoken = $token;
+
+    stage_notify_tutor_evaluation_request($stage, $cm, $entry, $detail->tutorname, $detail->tutoremail);
+}
+
+/**
+ * Récupère une saisie de stage à partir du jeton d'accès du maître de stage.
+ *
+ * @param string $token
+ * @return stdClass|false
+ */
+function stage_get_entry_by_tutor_token($token) {
+    global $DB;
+    if (empty($token)) {
+        return false;
+    }
+    return $DB->get_record('stage_entry', ['tutortoken' => $token]);
+}
+
+/**
+ * Enregistre l'évaluation en texte libre du maître de stage (utilisée quand la thématique ne
+ * définit aucune question de type "tutor" : les réponses au questionnaire, elles, sont déjà
+ * enregistrées via stage_save_answers()).
+ *
+ * @param stdClass $entry
+ * @param string|null $comment
+ * @return void
+ */
+function stage_apply_tutor_eval(stdClass $entry, $comment = null) {
+    global $DB;
+
+    $update = (object) [
+        'id' => $entry->id,
+        'tutortime' => time(),
+        'timemodified' => time(),
+    ];
+    if ($comment !== null) {
+        $update->tutoreval = $comment;
+    }
+    $DB->update_record('stage_entry', $update);
+}
+
+/**
+ * Libellé lisible d'un type d'évaluation (student/teacher/tutor), pour l'affichage dans
+ * questions.php.
+ *
+ * @param string $evaltype
+ * @return string
+ */
+function stage_evaltype_label($evaltype) {
+    switch ($evaltype) {
+        case 'student':
+            return get_string('evaltype_student', 'mod_stage');
+        case 'teacher':
+            return get_string('evaltype_teacher', 'mod_stage');
+        case 'tutor':
+            return get_string('evaltype_tutor', 'mod_stage');
+        default:
+            return $evaltype;
+    }
 }
 
 /**
@@ -3850,11 +4143,12 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
         'periods' => array_map(function($period) use ($dateformat) {
             return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
         }, stage_get_or_seed_entry_periods($entry)),
+        // Ni la durée retenue ni le statut de la saisie ne figurent sur la convention : elle se
+        // signe avant toute évaluation, l'une est donc encore à zéro et l'autre à son état
+        // initial, deux informations qui n'ont pas leur place sur ce document.
         'duration' => [
             'declared' => $entry->declaredduration,
-            'retained' => $entry->retainedduration,
         ],
-        'statuslabel' => stage_status_label($entry->status, $conventionlang),
         'referentteacher' => [
             'name' => $referentteacher ? fullname($referentteacher) : '-',
             'email' => $referentteacher ? $referentteacher->email : '-',

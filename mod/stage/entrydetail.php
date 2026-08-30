@@ -218,6 +218,20 @@ if (!empty($teacherquestions) || $entry->teachereval) {
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
 }
 
+if (!empty($stage->tutorevaluationenabled)) {
+    $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
+    if (!empty($tutorquestions) || $entry->tutoreval) {
+        echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
+        if ($entry->tutortime) {
+            echo html_writer::tag('p', html_writer::tag('strong', get_string('evaluatedby', 'mod_stage') . ' : ')
+                . userdate($entry->tutortime, $datetimeformat), ['class' => 'text-muted']);
+        }
+        echo (!empty($tutorquestions) && $entry->tutortime)
+            ? stage_render_answers_readonly($tutorquestions, $answers)
+            : html_writer::div(format_text((string) $entry->tutoreval, FORMAT_PLAIN));
+    }
+}
+
 if ($entry->devecomment || !empty($entry->deveuserid)) {
     echo $OUTPUT->heading(get_string('devecomment', 'mod_stage'), 4);
     if (!empty($entry->deveuserid)) {
