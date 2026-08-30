@@ -22,6 +22,8 @@
             COMMENT="Nom de la personne ayant délégation de signature du chef d'établissement, affiché dans le cadre de signatures de la convention imprimée"/>
         <FIELD NAME="conventionrequireteachervalidation" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"
             COMMENT="Si 1, une demande de convention doit être validée par l'enseignant.e référent.e avant d'être visible par la DEVE (voir STAGE_CONVENTION_TEACHERPENDING)"/>
+        <FIELD NAME="tutorevaluationenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"
+            COMMENT="Si 1, le maître de stage est invité par courriel (lien à jeton, sans compte Moodle) à répondre au questionnaire d'évaluation de la thématique (evaltype 'tutor'), affiché à l'enseignant référent et à la DEVE lors de leur propre évaluation"/>
         <FIELD NAME="currentstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
             COMMENT="Année d'étude courante des étudiants (0 = non spécifiée) : sert de référence N pour les stages en année N-1 (dette) et N+1 (anticipation)"/>
         <FIELD NAME="requiredabroaddays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"
@@ -133,6 +135,12 @@
         <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Enseignant ayant evalue"/>
         <FIELD NAME="teachereval" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="teachertime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="tutortoken" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Jeton d'accès sans compte Moodle à l'évaluation du maître de stage (tutor_eval.php)"/>
+        <FIELD NAME="tutoreval" TYPE="text" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Réponse libre du maître de stage, si aucune question n'est définie pour la thématique"/>
+        <FIELD NAME="tutortime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Date de soumission de l'évaluation du maître de stage"/>
         <FIELD NAME="deveuserid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Utilisateur DEVE ayant valide"/>
         <FIELD NAME="devecomment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="devetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
@@ -180,6 +188,7 @@
       <INDEXES>
         <INDEX NAME="stageid-userid" UNIQUE="false" FIELDS="stageid, userid"/>
         <INDEX NAME="status" UNIQUE="false" FIELDS="status"/>
+        <INDEX NAME="tutortoken" UNIQUE="true" FIELDS="tutortoken"/>
       </INDEXES>
     </TABLE>
 
@@ -334,6 +343,25 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="entryid-questionid" UNIQUE="true" FIELDS="entryid, questionid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="stage_email_template" COMMENT="Personnalisation par la DEVE du sujet/corps d'un des e-mails envoyés par l'activité (voir stage_get_email_definitions()) ; une ligne absente pour une clé donnée signifie que le texte par défaut est utilisé">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="stageid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="emailkey" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false"
+            COMMENT="Identifiant de l'e-mail personnalisé, voir stage_get_email_definitions()"/>
+        <FIELD NAME="subject" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="body" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="stageid" TYPE="foreign" FIELDS="stageid" REFTABLE="stage" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="stageid-emailkey" UNIQUE="true" FIELDS="stageid, emailkey"/>
       </INDEXES>
     </TABLE>
   </TABLES>

@@ -14,18 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_stage\form;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . '/formslib.php');
+
 /**
- * Version details for mod_stage.
+ * Active ou désactive l'évaluation par le maître de stage (DEVE).
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class notifications_settings_form extends \moodleform {
 
-defined('MOODLE_INTERNAL') || die();
+    /**
+     * Defines the form fields.
+     */
+    public function definition() {
+        $mform = $this->_form;
 
-$plugin->component = 'mod_stage';
-$plugin->version   = 2026082423;
-$plugin->requires  = 2022041900; // Moodle 4.0+.
-$plugin->maturity  = MATURITY_BETA;
-$plugin->release   = '0.2.1';
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
+
+        $mform->addElement('advcheckbox', 'tutorevaluationenabled',
+            get_string('tutorevaluationenabled', 'mod_stage'));
+        $mform->addHelpButton('tutorevaluationenabled', 'tutorevaluationenabled', 'mod_stage');
+
+        $this->add_action_buttons();
+    }
+}

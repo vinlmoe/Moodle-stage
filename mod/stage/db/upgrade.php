@@ -591,5 +591,51 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082422, 'stage');
     }
 
+    if ($oldversion < 2026082423) {
+        // Évaluation du maître de stage (questionnaire par thématique, comme pour l'étudiant et
+        // l'enseignant référent, accessible sans compte Moodle via un lien à jeton) et
+        // personnalisation des e-mails envoyés par l'activité.
+        $stagetable = new xmldb_table('stage');
+        $field = new xmldb_field('tutorevaluationenabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0',
+            'conventionrequireteachervalidation');
+        if (!$dbman->field_exists($stagetable, $field)) {
+            $dbman->add_field($stagetable, $field);
+        }
+
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('tutortoken', XMLDB_TYPE_CHAR, '64', null, null, null, null, 'teachertime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('tutoreval', XMLDB_TYPE_TEXT, null, null, null, null, null, 'tutortoken');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $field = new xmldb_field('tutortime', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'tutoreval');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+        $index = new xmldb_index('tutortoken', XMLDB_INDEX_UNIQUE, ['tutortoken']);
+        if (!$dbman->index_exists($entrytable, $index)) {
+            $dbman->add_index($entrytable, $index);
+        }
+
+        $emailtable = new xmldb_table('stage_email_template');
+        if (!$dbman->table_exists($emailtable)) {
+            $emailtable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $emailtable->add_field('stageid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+            $emailtable->add_field('emailkey', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null);
+            $emailtable->add_field('subject', XMLDB_TYPE_TEXT, null, null, null, null);
+            $emailtable->add_field('body', XMLDB_TYPE_TEXT, null, null, null, null);
+            $emailtable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null);
+            $emailtable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $emailtable->add_key('stageid', XMLDB_KEY_FOREIGN, ['stageid'], 'stage', ['id']);
+            $emailtable->add_index('stageid-emailkey', XMLDB_INDEX_UNIQUE, ['stageid', 'emailkey']);
+            $dbman->create_table($emailtable);
+        }
+
+        upgrade_mod_savepoint(true, 2026082423, 'stage');
+    }
+
     return true;
 }

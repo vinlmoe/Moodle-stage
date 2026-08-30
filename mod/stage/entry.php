@@ -81,6 +81,7 @@ if ($editable && !empty($questions) && data_submitted() && confirm_sesskey()) {
     stage_save_answers($entry->id, $questions, stage_get_submitted_answers($questions));
     stage_apply_student_eval($entry);
     stage_notify_teachers_selfeval($stage, $cm, $entry, $USER);
+    stage_maybe_request_tutor_evaluation($stage, $cm, $entry);
 
     redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
         get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
@@ -106,6 +107,7 @@ if ($editable && empty($questions)) {
         $selfeval = is_array($data->studentselfeval) ? $data->studentselfeval['text'] : $data->studentselfeval;
         stage_apply_student_eval($entry, $selfeval);
         stage_notify_teachers_selfeval($stage, $cm, $entry, $USER);
+        stage_maybe_request_tutor_evaluation($stage, $cm, $entry);
 
         redirect(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
             get_string('stagesaved', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);

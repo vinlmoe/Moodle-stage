@@ -113,6 +113,18 @@ if ($entryid) {
             : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
     }
 
+    if (!empty($stage->tutorevaluationenabled)) {
+        $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
+        echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
+        if (!empty($tutorquestions) && $entry->tutortime) {
+            echo stage_render_answers_readonly($tutorquestions, $answers);
+        } else if ($entry->tutoreval) {
+            echo html_writer::div(format_text($entry->tutoreval, FORMAT_PLAIN));
+        } else {
+            echo $OUTPUT->notification(get_string('notutoreval', 'mod_stage'), 'info');
+        }
+    }
+
     if (!empty($periods)) {
         echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);
         $workdaysformurl = new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]);

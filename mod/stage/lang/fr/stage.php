@@ -196,6 +196,9 @@ $string['conventionfollowup'] = "Suivi de la convention";
 $string['stagestoevaluate'] = 'Stages à évaluer';
 $string['adminsectionrequirements'] = "Ce que les étudiants doivent faire";
 $string['adminsectionconventions'] = 'Conventions de stage';
+$string['adminsectionnotifications'] = 'Notifications';
+$string['notifications_desc'] = "Activer l'évaluation par le maître de stage et personnaliser le "
+    . "texte des e-mails envoyés par l'activité.";
 $string['adminsectionteachers'] = 'Encadrement des étudiants';
 $string['adminsectionsetup'] = "Mise en route de l'activité";
 $string['adminsectionpage'] = 'Page';
@@ -556,3 +559,38 @@ $string['numstages'] = '{$a} stage(s) déclaré(s)';
 // Headings.
 $string['evaluatestage'] = 'Évaluer le stage de {$a}';
 $string['validatestage'] = 'Valider le stage de {$a}';
+
+// Évaluation du maître de stage et personnalisation des e-mails.
+$string['tutorevaluationenabled'] = 'Activer l\'évaluation par le maître de stage';
+$string['tutorevaluationenabled_help'] = "Si activé, le maître de stage (encadrant en entreprise, sans compte "
+    . "Moodle) reçoit par courriel un lien à jeton unique lui permettant de répondre au questionnaire "
+    . "d'évaluation défini pour la thématique du stage, dès que l'étudiant s'auto-évalue. Sa réponse est "
+    . "ensuite affichée à l'enseignant référent et à la DEVE au moment de leur propre évaluation.";
+$string['emailkeyselfeval'] = "Notification d'auto-évaluation (à l'enseignant référent)";
+$string['emailkeyteacherpending'] = "Notification de convention à valider (à l'enseignant référent)";
+$string['emailkeystudentrejected'] = "Notification de convention refusée (à l'étudiant)";
+$string['emailkeytutorrequest'] = "Invitation à évaluer le stage (au maître de stage)";
+$string['tutorevalnotifsubject'] = 'Évaluation du stage de {$a}';
+$string['tutorevalnotifbody'] = "Vous encadrez actuellement {\$a->student} dans le cadre de son stage "
+    . "\"{\$a->stage}\". Merci de bien vouloir évaluer ce stage en suivant ce lien, qui ne nécessite pas de "
+    . "compte :\n{\$a->url}";
+$string['evaltype_tutor'] = 'Maître de stage';
+$string['tutorevalheading'] = 'Évaluation du maître de stage';
+$string['notutoreval'] = "Le maître de stage n'a pas encore répondu à son questionnaire d'évaluation.";
+$string['tutorevalpagetitle'] = 'Évaluation du stage';
+$string['tutorevalinvalidtoken'] = "Ce lien d'évaluation n'est plus valide.";
+$string['tutorevalalreadysubmitted'] = 'Votre évaluation a bien été enregistrée, merci.';
+$string['tutorevalsubmit'] = 'Envoyer mon évaluation';
+$string['tutorevalintro'] = "Vous encadrez {\$a->student} dans le cadre de son stage \"{\$a->stage}\". "
+    . "Merci de bien vouloir répondre au questionnaire d'évaluation ci-dessous.";
+$string['notifications'] = 'Notifications et e-mails';
+$string['notificationssettings'] = 'Personnalisation des e-mails envoyés';
+$string['notificationssettings_help'] = "Pour chaque e-mail envoyé par l'activité, vous pouvez remplacer le "
+    . "sujet et le corps par un texte personnalisé. Laissez les deux champs vides pour revenir au texte par "
+    . "défaut. Le texte personnalisé n'est pas une chaîne de langue : utilisez la syntaxe {{variable}} (double "
+    . "accolades) pour insérer les variables disponibles, listées sous chaque e-mail.";
+$string['notificationssaved'] = 'Les e-mails personnalisés ont été enregistrés.';
+$string['emailsubject'] = 'Sujet';
+$string['emailbody'] = 'Corps du message';
+$string['emailavailablevars'] = 'Variables disponibles : {$a}';
+$string['emailresettodefault'] = 'Laissez les deux champs vides pour utiliser le texte par défaut.';
