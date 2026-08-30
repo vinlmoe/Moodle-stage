@@ -3850,11 +3850,12 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
         'periods' => array_map(function($period) use ($dateformat) {
             return userdate($period->datestart, $dateformat) . ' - ' . userdate($period->dateend, $dateformat);
         }, stage_get_or_seed_entry_periods($entry)),
+        // Ni la durée retenue ni le statut de la saisie ne figurent sur la convention : elle se
+        // signe avant toute évaluation, l'une est donc encore à zéro et l'autre à son état
+        // initial, deux informations qui n'ont pas leur place sur ce document.
         'duration' => [
             'declared' => $entry->declaredduration,
-            'retained' => $entry->retainedduration,
         ],
-        'statuslabel' => stage_status_label($entry->status, $conventionlang),
         'referentteacher' => [
             'name' => $referentteacher ? fullname($referentteacher) : '-',
             'email' => $referentteacher ? $referentteacher->email : '-',
