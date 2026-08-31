@@ -122,6 +122,45 @@ $string['importstageveterrordates'] = 'Line {$a->line} ({$a->student}): start an
 $string['importstagevetunknownstudentsreport'] = '{$a} student(s) not found among those enrolled on the course';
 $string['importstagevetunknownthemesreport'] = '{$a} theme(s) not found';
 $string['importstagevetreportline'] = '{$a->value} (line(s) {$a->lines})';
+$string['historicalimport'] = 'Import a legacy Excel tracker';
+$string['historicalimport_desc'] = 'Bring validated internships and EP internships over from the legacy tracking '
+    . 'workbook after student email addresses have been added.';
+$string['historicalimport_help'] = 'Imports validated internships only from the “Stages - validation ER” and '
+    . '“Stage EP - validation ER” sheets of the legacy workbook. First add a column named exactly “Email” to row '
+    . '2 of both sheets and fill it in for every student. Internships are created as validated by the academic '
+    . 'office; the number of days becomes both the declared and retained duration. EP internships are stored as '
+    . 'complementary internships under the theme selected below. The academic-credit “EP - saisie DEVE” sheet is '
+    . 'not imported. A preview is always shown before records are inserted.';
+$string['historicalimportfile'] = 'Legacy workbook (.xlsx)';
+$string['historicalimporteptheme'] = 'Moodle theme for EP internships';
+$string['historicalimportpreviewbutton'] = 'Analyse and preview';
+$string['historicalimportpreview'] = 'Preview: {$a} internship(s) ready to import';
+$string['historicalimportconfirm'] = 'Confirm import of these internships';
+$string['historicalimportwarnings'] = '{$a} warning(s) to review';
+$string['historicalimportdone'] = '{$a} legacy internship(s) imported and validated.';
+$string['historicalimportcomment'] = 'Validation carried over from the legacy Excel tracker.';
+$string['historicalimportnodates'] = 'Dates not recognised — original text retained';
+$string['historicalimportnozip'] = 'The PHP ZIP extension required to read XLSX files is unavailable.';
+$string['historicalimportinvalidfile'] = 'The file cannot be read as a valid XLSX workbook.';
+$string['historicalimportnosheets'] = 'The expected legacy sheets are missing from the workbook.';
+$string['historicalimportmissingemail'] = 'Sheet “{$a}”: no “Email” column found in row 2.';
+$string['historicalimportrownoemail'] = '{$a->sheet}, row {$a->line} ({$a->student}): missing email; row skipped.';
+$string['historicalimportnotheme'] = '{$a->sheet}, row {$a->line}: missing theme name.';
+$string['historicalimportdateswarning'] = '{$a->sheet}, row {$a->line}: dates not recognised in “{$a->value}”.';
+$string['historicalimportunknownemail'] = '{$a->source}: no enrolled student with email “{$a->email}”.';
+$string['historicalimportunknownteacher'] = '{$a->source}: referent teacher “{$a->teacher}” was not recognised; '
+    . 'the internship will be imported without a referent.';
+$string['historicalimportunknowntheme'] = '{$a->source}: Moodle theme “{$a->theme}” not found.';
+$string['historicalimportduplicate'] = '{$a}: internship already present or repeated in the workbook; skipped.';
+$string['historicalimportselecteptheme'] = 'Select the Moodle theme into which EP internships will be imported.';
+$string['historicalimportexpired'] = 'The preview has expired. Upload and analyse the workbook again.';
+$string['historicalimportmapthemes'] = 'Map unrecognised themes';
+$string['historicalimportmapthemes_help'] = 'Select a Moodle theme for each Excel column heading. The selection will '
+    . 'be applied to every internship originating from that column.';
+$string['historicalimportexceltheme'] = 'Excel column heading';
+$string['historicalimportmoodletheme'] = 'Matching Moodle theme';
+$string['historicalimportapplymapping'] = 'Apply mappings';
+$string['historicalimportmapallthemes'] = 'A mapping must be selected for every unrecognised theme.';
 $string['importteacherscsv'] = 'Import a CSV file';
 $string['importteacherscsv_help'] = 'Import a CSV file (saved from Excel via "Save As > CSV"), with the following '
     . 'columns, separated by semicolons or commas, with an optional header row: '

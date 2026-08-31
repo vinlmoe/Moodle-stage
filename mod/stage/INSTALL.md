@@ -136,6 +136,18 @@ Les noms de thématiques doivent correspondre exactement aux intitulés StageVet
 rapport d'import liste, groupés par valeur et avec leurs numéros de ligne, les
 étudiants et les thématiques introuvables.
 
+### Import de l'ancien suivi Excel
+
+La page **Importer un ancien suivi Excel** reprend les stages validés des
+feuilles `Stages - validation ER` et `Stage EP - validation ER`. Une colonne
+`Email` doit être ajoutée sur la ligne 2 de chacune de ces feuilles. Les EP sont
+importées comme stages complémentaires dans une thématique choisie au moment de
+l'import. La feuille des EP académiques en crédits n'est pas importée. Une
+prévisualisation signale les courriels, thématiques ou dates non reconnus avant
+la confirmation. Pour chaque intitulé de colonne non reconnu, la DEVE peut
+choisir la thématique Moodle correspondante ; ce choix s'applique à toute la
+colonne.
+
 ### Auto-enregistrement par l'étudiant
 
 Les stages chez les vétérinaires français sont conventionnés par StageVet.

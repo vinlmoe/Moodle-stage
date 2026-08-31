@@ -127,6 +127,46 @@ $string['importstageveterrordates'] = 'Ligne {$a->line} ({$a->student}) : dates 
 $string['importstagevetunknownstudentsreport'] = '{$a} étudiant(s) introuvable(s) parmi les inscrits au cours';
 $string['importstagevetunknownthemesreport'] = '{$a} thématique(s) introuvable(s)';
 $string['importstagevetreportline'] = '{$a->value} (ligne(s) {$a->lines})';
+$string['historicalimport'] = 'Importer un ancien suivi Excel';
+$string['historicalimport_desc'] = 'Reprendre les stages et stages EP validés dans l’ancien classeur de suivi, '
+    . 'après ajout des adresses de courriel des étudiants.';
+$string['historicalimport_help'] = 'Importe uniquement les stages validés des feuilles « Stages - validation ER » '
+    . 'et « Stage EP - validation ER » de l’ancien classeur. Ajoutez auparavant une colonne intitulée exactement '
+    . '« Email » sur la ligne 2 de chacune de ces deux feuilles et renseignez-la pour chaque étudiant. Les stages '
+    . 'sont créés directement au statut validé DEVE ; le nombre de jours devient la durée déclarée et retenue. '
+    . 'Les EP sont enregistrées comme stages complémentaires dans la thématique choisie ci-dessous. La feuille '
+    . '« EP - saisie DEVE », constituée d’enseignements académiques en crédits, n’est pas importée. Une '
+    . 'prévisualisation est toujours affichée avant insertion.';
+$string['historicalimportfile'] = 'Classeur historique (.xlsx)';
+$string['historicalimporteptheme'] = 'Thématique Moodle pour les stages EP';
+$string['historicalimportpreviewbutton'] = 'Analyser et prévisualiser';
+$string['historicalimportpreview'] = 'Prévisualisation : {$a} stage(s) prêt(s) à importer';
+$string['historicalimportconfirm'] = 'Confirmer l’import de ces stages';
+$string['historicalimportwarnings'] = '{$a} avertissement(s) à vérifier';
+$string['historicalimportdone'] = '{$a} ancien(s) stage(s) importé(s) et validé(s).';
+$string['historicalimportcomment'] = 'Validation reprise du suivi Excel historique.';
+$string['historicalimportnodates'] = 'Dates non reconnues — texte original conservé';
+$string['historicalimportnozip'] = 'L’extension PHP ZIP nécessaire à la lecture des fichiers XLSX est indisponible.';
+$string['historicalimportinvalidfile'] = 'Le fichier ne peut pas être lu comme un classeur XLSX valide.';
+$string['historicalimportnosheets'] = 'Les feuilles historiques attendues sont absentes du classeur.';
+$string['historicalimportmissingemail'] = 'Feuille « {$a} » : aucune colonne « Email » trouvée sur la ligne 2.';
+$string['historicalimportrownoemail'] = '{$a->sheet}, ligne {$a->line} ({$a->student}) : email manquant, ligne ignorée.';
+$string['historicalimportnotheme'] = '{$a->sheet}, ligne {$a->line} : intitulé de thématique absent.';
+$string['historicalimportdateswarning'] = '{$a->sheet}, ligne {$a->line} : dates non reconnues dans « {$a->value} ».';
+$string['historicalimportunknownemail'] = '{$a->source} : aucun étudiant inscrit avec l’adresse « {$a->email} ».';
+$string['historicalimportunknownteacher'] = '{$a->source} : enseignant référent « {$a->teacher} » non reconnu ; '
+    . 'le stage sera importé sans référent.';
+$string['historicalimportunknowntheme'] = '{$a->source} : thématique Moodle « {$a->theme} » introuvable.';
+$string['historicalimportduplicate'] = '{$a} : stage déjà présent ou répété dans le classeur, ignoré.';
+$string['historicalimportselecteptheme'] = 'Choisissez la thématique Moodle dans laquelle importer les stages EP.';
+$string['historicalimportexpired'] = 'La prévisualisation a expiré. Téléversez et analysez de nouveau le classeur.';
+$string['historicalimportmapthemes'] = 'Associer les thématiques non reconnues';
+$string['historicalimportmapthemes_help'] = 'Choisissez une thématique Moodle pour chaque intitulé de colonne Excel. '
+    . 'Le choix sera appliqué à tous les stages provenant de cette colonne.';
+$string['historicalimportexceltheme'] = 'Intitulé de la colonne Excel';
+$string['historicalimportmoodletheme'] = 'Thématique Moodle correspondante';
+$string['historicalimportapplymapping'] = 'Appliquer les correspondances';
+$string['historicalimportmapallthemes'] = 'Une correspondance doit être choisie pour chaque thématique non reconnue.';
 $string['importteacherscsv'] = 'Importer un fichier CSV';
 $string['importteacherscsv_help'] = "Importez un fichier CSV (enregistré depuis Excel via « Enregistrer sous > CSV »), avec "
     . 'les colonnes suivantes, séparées par des points-virgules ou des virgules, avec une ligne d\'en-tête facultative : '
