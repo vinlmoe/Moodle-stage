@@ -94,6 +94,12 @@ define('STAGE_REPORT_REQUIRED', 2);
 define('STAGE_REPORT_FILEAREA', 'report');
 
 /**
+ * Nombre de jours avant le début d'un stage à partir duquel l'étudiant est relancé si sa
+ * convention n'est toujours pas signée (voir \mod_stage\task\send_convention_reminders).
+ */
+define('STAGE_CONVENTION_REMINDER_DAYS', 7);
+
+/**
  * Returns the list of features supported by this module.
  *
  * @param string $feature FEATURE_xx constant.

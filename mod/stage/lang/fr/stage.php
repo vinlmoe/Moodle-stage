@@ -283,6 +283,11 @@ $string['removeperiod'] = 'Retirer';
 $string['periods_help'] = "Un stage peut comporter plusieurs plages de dates non contiguës (ex : deux séjours séparés). L'étudiant choisira ses jours de stage effectifs parmi ces plages lors de son auto-évaluation.";
 $string['periodsrequired'] = "Renseignez au moins une plage de dates : les dates du stage en sont déduites.";
 $string['periodendbeforestart'] = "La date de fin d'une plage ne peut pas précéder sa date de début.";
+$string['periodstartinpast'] = "Une convention ne peut pas être demandée pour un stage déjà commencé : la date "
+    . "de début doit être aujourd'hui ou plus tard. Si le stage a déjà commencé, adressez-vous à la DEVE.";
+$string['selfevalnotstartedyet'] = "Votre stage n'a pas encore commencé : l'auto-évaluation sera accessible à "
+    . 'partir de sa date de début.';
+$string['selfevalfrom'] = 'Auto-évaluation à partir du {$a}';
 $string['periodsoverlap'] = 'Deux plages de dates se recoupent ({$a->first} et {$a->second}). Les mêmes journées seraient comptées deux fois : corrigez-les pour qu\'elles ne se chevauchent pas.';
 $string['conventionsignaturedate'] = 'Date : ............................';
 $string['noperiodsdefined'] = "Aucune plage de dates n'a été définie pour ce stage.";
@@ -639,6 +644,13 @@ $string['tutorevalnotifsubject'] = 'Évaluation du stage de {$a}';
 $string['tutorevalnotifbody'] = "Vous encadrez actuellement {\$a->student} dans le cadre de son stage "
     . "\"{\$a->stage}\". Merci de bien vouloir évaluer ce stage en suivant ce lien, qui ne nécessite pas de "
     . "compte :\n{\$a->url}";
+$string['emailkeyconventionreminder'] = "Rappel de convention non signée (à l'étudiant)";
+$string['conventionremindernotifsubject'] = 'Convention de stage non signée : {$a}';
+$string['conventionremindernotifbody'] = "Bonjour {\$a->student},\n\nVotre stage \"{\$a->theme}\" commence le "
+    . "{\$a->datestart}, soit dans moins de {\$a->days} jours, et sa convention n'est toujours pas signée. Sans "
+    . "convention signée, le stage ne peut pas débuter.\n\nMerci de régulariser votre demande de convention au "
+    . "plus vite :\n{\$a->url}";
+$string['taskconventionreminders'] = 'Relance des conventions de stage non signées';
 $string['reportmode'] = 'Rapport de stage';
 $string['reportmode_help'] = "Dépôt de documents demandé à l'étudiant lors de son auto-évaluation, sur le "
     . "modèle d'un devoir. Les documents déposés sont consultables par la DEVE, par l'enseignant référent de "

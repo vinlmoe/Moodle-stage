@@ -980,6 +980,22 @@ function stage_get_or_seed_entry_periods(stdClass $entry) {
  * @param array $periods Liste de tableaux ['datestart' => int, 'dateend' => int]
  * @return void
  */
+/**
+ * Indique si le stage d'une saisie n'a pas encore commencé, c'est-à-dire si sa date de début
+ * (celle de sa première plage, tenue à jour par stage_save_entry_periods()) est postérieure à
+ * aujourd'hui. Le jour même du début compte comme commencé : la comparaison se fait à minuit.
+ *
+ * Une saisie sans date de début connue (enregistrement DEVE sans dates, import) n'est jamais
+ * considérée comme « pas encore commencée » : rien ne permettrait de dire quand elle commence, et
+ * la bloquer sur cette base l'empêcherait d'être auto-évaluée un jour.
+ *
+ * @param stdClass $entry
+ * @return bool
+ */
+function stage_entry_not_started_yet(stdClass $entry) {
+    return !empty($entry->datestart) && $entry->datestart > usergetmidnight(time());
+}
+
 function stage_save_entry_periods($entryid, array $periods) {
     global $DB;
 
@@ -1026,9 +1042,14 @@ function stage_save_entry_periods($entryid, array $periods) {
  *
  * @param array $periods Liste de tableaux ['datestart' => int, 'dateend' => int], telle que
  *                       produite par stage_extract_submitted_periods().
+ * @param bool $nopast Refuse en plus une plage commençant avant aujourd'hui. Réservé aux
+ *                     formulaires par lesquels l'étudiant demande une convention : une convention
+ *                     ne peut pas couvrir un stage déjà commencé, alors que la DEVE enregistre au
+ *                     contraire couramment des stages passés (reprise d'historique, saisie a
+ *                     posteriori) et n'est donc pas soumise à cette règle.
  * @return string|null Message d'erreur à afficher, ou null si les plages sont cohérentes.
  */
-function stage_validate_periods(array $periods) {
+function stage_validate_periods(array $periods, $nopast = false) {
     if (empty($periods)) {
         return get_string('periodsrequired', 'mod_stage');
     }
@@ -1036,6 +1057,18 @@ function stage_validate_periods(array $periods) {
     foreach ($periods as $period) {
         if ($period['dateend'] < $period['datestart']) {
             return get_string('periodendbeforestart', 'mod_stage');
+        }
+    }
+
+    // Une plage commençant aujourd'hui reste acceptée : c'est le jour même, pas le passé. La
+    // comparaison se fait donc à minuit et non à l'heure courante, sans quoi une convention
+    // demandée pour le jour même serait refusée dès la première seconde de la journée écoulée.
+    if ($nopast) {
+        $today = usergetmidnight(time());
+        foreach ($periods as $period) {
+            if ($period['datestart'] < $today) {
+                return get_string('periodstartinpast', 'mod_stage');
+            }
         }
     }
 
@@ -1453,6 +1486,12 @@ function stage_get_email_definitions() {
             'subjectstring' => 'tutorevalnotifsubject',
             'bodystring' => 'tutorevalnotifbody',
             'vars' => ['student', 'stage', 'url'],
+        ],
+        'conventionreminder' => [
+            'label' => get_string('emailkeyconventionreminder', 'mod_stage'),
+            'subjectstring' => 'conventionremindernotifsubject',
+            'bodystring' => 'conventionremindernotifbody',
+            'vars' => ['student', 'stage', 'theme', 'datestart', 'days', 'url'],
         ],
     ];
 }
@@ -2872,10 +2911,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                         get_string('requestconvention', 'mod_stage'), $btn
                     );
                 } else if (stage_convention_is_signed($entry->conventionstatus)) {
-                    $actions .= html_writer::link(
-                        new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
-                        get_string('selfeval', 'mod_stage'), $btn
-                    );
+                    // Avant le début du stage, l'auto-évaluation est refusée par entry.php : la
+                    // date de début est annoncée à la place du bouton, un bouton qui mène à un
+                    // refus étant pire que pas de bouton du tout.
+                    $actions .= stage_entry_not_started_yet($entry)
+                        ? html_writer::span(get_string('selfevalfrom', 'mod_stage',
+                            userdate($entry->datestart, get_string('strftimedate', 'langconfig'))),
+                            'text-muted mr-1 mb-1 d-inline-block')
+                        : html_writer::link(
+                            new moodle_url('/mod/stage/entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                            get_string('selfeval', 'mod_stage'), $btn
+                        );
                     // Le PDF de la convention signée n'existe que pour le circuit de gestion de
                     // convention de ce plugin (STAGE_CONVENTION_SIGNED), et seulement si la DEVE
                     // en a effectivement téléversé un (facultatif, voir convention_sign.php) : les
@@ -3874,6 +3920,75 @@ function stage_notify_student_convention_rejected(stdClass $stage, stdClass $cm,
         'url' => $url->out(false),
     ]);
     email_to_user($student, core_user::get_noreply_user(), $text->subject, $text->body);
+}
+
+/**
+ * Saisies dont le stage commence dans les jours qui viennent alors que la convention n'est
+ * toujours pas signée, et dont l'étudiant n'a pas encore été relancé.
+ *
+ * Les stages annulés ou déjà commencés sont exclus (relancer pour un stage commencé n'aiderait
+ * plus), ainsi que les conventions signées ou dispensées (voir stage_convention_is_signed()).
+ *
+ * @param int $days Fenêtre en jours avant le début du stage.
+ * @return array Saisies (stage_entry) indexées par id.
+ */
+function stage_get_entries_needing_convention_reminder($days = STAGE_CONVENTION_REMINDER_DAYS) {
+    global $DB;
+
+    // La fenêtre va de maintenant à la fin du jour situé $days plus tard : un stage commençant
+    // dans 7 jours doit être relancé quelle que soit l'heure de passage du cron ce jour-là.
+    $from = time();
+    $until = usergetmidnight($from) + ($days + 1) * DAYSECS - 1;
+
+    [$signedsql, $signedparams] = $DB->get_in_or_equal(
+        [STAGE_CONVENTION_SIGNED, STAGE_CONVENTION_SIGNVET, STAGE_CONVENTION_EXEMPT],
+        SQL_PARAMS_NAMED, 'cs', false);
+
+    $params = $signedparams + [
+        'from' => $from, 'until' => $until, 'cancelled' => STAGE_STATUS_ANNULE,
+    ];
+
+    return $DB->get_records_select('stage_entry',
+        "datestart > 0 AND datestart >= :from AND datestart <= :until
+         AND conventionstatus $signedsql
+         AND status <> :cancelled
+         AND conventionremindertime IS NULL", $params, 'datestart ASC');
+}
+
+/**
+ * Envoie à l'étudiant le rappel que son stage commence bientôt alors que sa convention n'est
+ * toujours pas signée. Appelée par la tâche planifiée
+ * \mod_stage\task\send_convention_reminders ; l'envoi n'est marqué que si le courriel part, pour
+ * qu'un échec ponctuel soit retenté au passage suivant.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @param stdClass $student
+ * @param stdClass|null $theme Thématique du stage, pour la variable {{theme}}.
+ * @return bool True si le courriel est parti.
+ */
+function stage_notify_student_convention_reminder(stdClass $stage, stdClass $cm, stdClass $entry,
+        stdClass $student, ?stdClass $theme) {
+    global $DB;
+
+    // Le lien mène là où l'étudiant peut agir : sa demande de convention, à faire ou à corriger.
+    $url = new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    $text = stage_resolve_email_text($stage->id, 'conventionreminder', [
+        'student' => fullname($student),
+        'stage' => format_string($stage->name),
+        'theme' => $theme ? format_string($theme->name) : '',
+        'datestart' => userdate($entry->datestart, get_string('strftimedate', 'langconfig')),
+        'days' => STAGE_CONVENTION_REMINDER_DAYS,
+        'url' => $url->out(false),
+    ]);
+
+    if (!email_to_user($student, core_user::get_noreply_user(), $text->subject, $text->body)) {
+        return false;
+    }
+
+    $DB->set_field('stage_entry', 'conventionremindertime', time(), ['id' => $entry->id]);
+    return true;
 }
 
 /**

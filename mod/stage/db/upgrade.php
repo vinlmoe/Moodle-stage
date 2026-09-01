@@ -682,5 +682,16 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082428, 'stage');
     }
 
+    if ($oldversion < 2026082429) {
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('conventionremindertime', XMLDB_TYPE_INTEGER, '10', null, null, null, null,
+            'conventionrequesttime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082429, 'stage');
+    }
+
     return true;
 }

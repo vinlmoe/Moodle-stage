@@ -275,6 +275,11 @@ $string['removeperiod'] = 'Remove';
 $string['periods_help'] = 'An internship can have several non-contiguous date ranges (e.g. two separate stays). The student will pick their actual working days among these ranges during their self-evaluation.';
 $string['periodsrequired'] = 'Enter at least one date period: the internship dates are derived from them.';
 $string['periodendbeforestart'] = 'The end date of a period cannot come before its start date.';
+$string['periodstartinpast'] = 'An agreement cannot be requested for an internship that has already started: the '
+    . 'start date must be today or later. If the internship has already started, contact the administration office.';
+$string['selfevalnotstartedyet'] = 'Your internship has not started yet: self-assessment will be available from '
+    . 'its start date.';
+$string['selfevalfrom'] = 'Self-assessment from {$a}';
 $string['periodsoverlap'] = 'Two date periods overlap ({$a->first} and {$a->second}). The same days would be counted twice: adjust them so they do not overlap.';
 $string['conventionsignaturedate'] = 'Date: ............................';
 $string['noperiodsdefined'] = 'No date range has been defined for this internship yet.';
@@ -625,6 +630,13 @@ $string['tutorevalnotifsubject'] = 'Evaluation of {$a}\'s internship';
 $string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} during their internship '
     . '"{$a->stage}". Please evaluate this internship by following this link, which does not require an '
     . "account:\n{\$a->url}";
+$string['emailkeyconventionreminder'] = 'Unsigned agreement reminder (to the student)';
+$string['conventionremindernotifsubject'] = 'Internship agreement not signed: {$a}';
+$string['conventionremindernotifbody'] = "Hello {\$a->student},\n\nYour internship \"{\$a->theme}\" starts on "
+    . "{\$a->datestart}, in less than {\$a->days} days, and its agreement is still not signed. Without a signed "
+    . "agreement, the internship cannot start.\n\nPlease sort out your agreement request as soon as "
+    . "possible:\n{\$a->url}";
+$string['taskconventionreminders'] = 'Send unsigned internship agreement reminders';
 $string['reportmode'] = 'Internship report';
 $string['reportmode_help'] = 'Document submission requested from the student during their self-assessment, '
     . 'like an assignment. Submitted documents can be viewed by the administration office, by the student\'s '

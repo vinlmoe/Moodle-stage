@@ -66,9 +66,15 @@ $reportmode = stage_theme_report_mode($theme);
 // encore été soumise : une fois soumise (ou la saisie rejetée), seule la DEVE peut réinitialiser
 // la saisie pour la rouvrir.
 $conventionsigned = stage_convention_is_signed($entry->conventionstatus);
-$editable = $conventionsigned && ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
 
 $periods = stage_get_or_seed_entry_periods($entry);
+
+// Un stage ne s'auto-évalue pas avant d'avoir commencé : tant que la première plage n'a pas
+// débuté, l'étudiant n'a rien à évaluer et une saisie soumise d'avance passerait à l'évaluation
+// enseignant alors que le stage reste à faire. Le jour même du début est ouvert.
+$notstartedyet = stage_entry_not_started_yet($entry);
+
+$editable = $conventionsigned && !$notstartedyet && ((int) $entry->status === STAGE_STATUS_ENREGISTRE);
 
 // Sélection des jours de stage effectifs parmi les plages de la saisie : formulaire distinct de
 // l'auto-évaluation, avec son propre bouton, pour rester simple à intégrer aux deux formulaires
@@ -173,7 +179,13 @@ echo html_writer::link(new moodle_url('/mod/stage/view.php', ['id' => $cm->id]),
 echo stage_render_entry_summary($entry, $theme);
 
 if (!$editable) {
-    $message = !$conventionsigned ? get_string('conventionnotsignedyet', 'mod_stage') : get_string('entrynoteditable', 'mod_stage');
+    if (!$conventionsigned) {
+        $message = get_string('conventionnotsignedyet', 'mod_stage');
+    } else if ($notstartedyet) {
+        $message = get_string('selfevalnotstartedyet', 'mod_stage');
+    } else {
+        $message = get_string('entrynoteditable', 'mod_stage');
+    }
     echo $OUTPUT->notification($message, 'info');
     if (!empty($periods)) {
         echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);

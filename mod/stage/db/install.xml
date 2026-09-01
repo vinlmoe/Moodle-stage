@@ -176,6 +176,8 @@
         <FIELD NAME="conventionrejecttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="conventionrejectcomment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="conventionrequesttime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="conventionremindertime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
+            COMMENT="Date d'envoi du rappel de convention non signée à l'étudiant, pour ne l'envoyer qu'une fois par saisie (voir la tâche planifiée send_convention_reminders)"/>
         <FIELD NAME="conventionteachervalidatedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Enseignant référent ayant validé la demande de convention avant transmission à la DEVE"/>
         <FIELD NAME="conventionteachervalidatetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
