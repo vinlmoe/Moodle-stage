@@ -621,6 +621,16 @@ $string['tutorevalnotifbody'] = "Vous encadrez actuellement {\$a->student} dans 
 $string['evaltype_tutor'] = 'Maître de stage';
 $string['tutorevalheading'] = 'Évaluation du maître de stage';
 $string['notutoreval'] = "Le maître de stage n'a pas encore répondu à son questionnaire d'évaluation.";
+$string['tutorevallink'] = "Lien d'évaluation à transmettre au maître de stage";
+$string['tutorevalresend'] = "Relancer le maître de stage par courriel";
+$string['tutorevalresent'] = 'Le courriel de relance a été envoyé au maître de stage.';
+$string['tutorevalresentfailed'] = "Le courriel n'a pas pu être envoyé : les coordonnées du maître de stage sont inconnues.";
+$string['tutorevalbypass'] = "Ignorer cette évaluation (ne plus bloquer la validation)";
+$string['confirmtutorevalbypass'] = "Ignorer l'évaluation du maître de stage pour ce stage ? "
+    . "La validation par la DEVE ne sera plus bloquée par son absence de réponse.";
+$string['tutorevalbypassed'] = "L'évaluation du maître de stage a été ignorée pour ce stage.";
+$string['tutorevalbypassednotice'] = "L'évaluation du maître de stage a été ignorée par la DEVE et ne "
+    . 'bloque plus la validation de ce stage.';
 $string['tutorevalpagetitle'] = 'Évaluation du stage';
 $string['tutorevalinvalidtoken'] = "Ce lien d'évaluation n'est plus valide.";
 $string['tutorevalalreadysubmitted'] = 'Votre évaluation a bien été enregistrée, merci.';

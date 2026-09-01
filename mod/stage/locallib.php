@@ -1374,6 +1374,7 @@ function stage_reset_entry(stdClass $entry) {
     global $DB;
 
     $entry->status = STAGE_STATUS_ENREGISTRE;
+    $entry->tutorbypassed = 0;
     $entry->timemodified = time();
     $DB->update_record('stage_entry', $entry);
 }
@@ -3929,6 +3930,77 @@ function stage_get_entry_by_tutor_token($token) {
         return false;
     }
     return $DB->get_record('stage_entry', ['tutortoken' => $token]);
+}
+
+/**
+ * URL à jeton permettant au maître de stage de répondre au questionnaire d'évaluation, à
+ * l'usage de la DEVE (récupération du lien pour le transmettre par un autre moyen que le
+ * courriel automatique, par exemple). Génère le jeton si besoin, comme
+ * stage_maybe_request_tutor_evaluation() mais sans envoyer de courriel.
+ *
+ * @param stdClass $entry
+ * @return moodle_url|null Null si l'évaluation par le maître de stage n'est pas activée ou si
+ *                          les coordonnées du maître de stage sont inconnues.
+ */
+function stage_get_tutor_eval_url(stdClass $stage, stdClass $entry) {
+    global $DB;
+
+    if (empty($stage->tutorevaluationenabled)) {
+        return null;
+    }
+
+    if (empty($entry->tutortoken)) {
+        $detail = stage_get_convention_detail($entry->id);
+        if (!$detail || empty($detail->tutoremail)) {
+            return null;
+        }
+        $token = bin2hex(random_bytes(32));
+        $DB->set_field('stage_entry', 'tutortoken', $token, ['id' => $entry->id]);
+        $entry->tutortoken = $token;
+    }
+
+    return new moodle_url('/mod/stage/tutor_eval.php', ['token' => $entry->tutortoken]);
+}
+
+/**
+ * Renvoie (relance) au maître de stage le courriel d'invitation à évaluer le stage, en
+ * réutilisant le jeton déjà généré (ou en le générant si besoin). Contrairement à
+ * stage_maybe_request_tutor_evaluation(), envoie systématiquement le courriel : à l'usage de la
+ * DEVE, qui décide elle-même de relancer.
+ *
+ * @param stdClass $stage
+ * @param stdClass $cm Course module.
+ * @param stdClass $entry
+ * @return bool True si le courriel a pu être envoyé.
+ */
+function stage_resend_tutor_evaluation_request(stdClass $stage, stdClass $cm, stdClass $entry) {
+    $detail = stage_get_convention_detail($entry->id);
+    if (!$detail || empty($detail->tutoremail)) {
+        return false;
+    }
+
+    stage_get_tutor_eval_url($stage, $entry);
+
+    stage_notify_tutor_evaluation_request($stage, $cm, $entry, $detail->tutorname, $detail->tutoremail);
+    return true;
+}
+
+/**
+ * Ignore l'évaluation du maître de stage pour cette saisie (« shunt » DEVE) : marque la saisie
+ * comme telle pour que son absence n'empêche plus la validation finale. Réversible en
+ * réinitialisant la saisie (stage_reset_entry), qui remet tutorbypassed à 0.
+ *
+ * @param stdClass $entry
+ * @return void
+ */
+function stage_bypass_tutor_eval(stdClass $entry) {
+    global $DB;
+
+    $DB->update_record('stage_entry', (object) [
+        'id' => $entry->id,
+        'tutorbypassed' => 1,
+        'timemodified' => time(),
+    ]);
 }
 
 /**

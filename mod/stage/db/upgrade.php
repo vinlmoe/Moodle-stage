@@ -637,5 +637,15 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082423, 'stage');
     }
 
+    if ($oldversion < 2026082426) {
+        $entrytable = new xmldb_table('stage_entry');
+        $field = new xmldb_field('tutorbypassed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'tutortime');
+        if (!$dbman->field_exists($entrytable, $field)) {
+            $dbman->add_field($entrytable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082426, 'stage');
+    }
+
     return true;
 }

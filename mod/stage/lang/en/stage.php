@@ -608,6 +608,16 @@ $string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} dur
 $string['evaltype_tutor'] = 'Workplace tutor';
 $string['tutorevalheading'] = 'Workplace tutor evaluation';
 $string['notutoreval'] = 'The workplace tutor has not yet answered their evaluation questionnaire.';
+$string['tutorevallink'] = 'Evaluation link to send to the workplace tutor';
+$string['tutorevalresend'] = 'Resend the invitation email to the workplace tutor';
+$string['tutorevalresent'] = 'The reminder email was sent to the workplace tutor.';
+$string['tutorevalresentfailed'] = 'The email could not be sent: the workplace tutor\'s contact details are unknown.';
+$string['tutorevalbypass'] = 'Skip this evaluation (stop blocking validation)';
+$string['confirmtutorevalbypass'] = 'Skip the workplace tutor evaluation for this internship? '
+    . 'The DEVE validation will no longer be blocked by the lack of a response.';
+$string['tutorevalbypassed'] = 'The workplace tutor evaluation has been skipped for this internship.';
+$string['tutorevalbypassednotice'] = 'The workplace tutor evaluation was skipped by the administration office '
+    . 'and no longer blocks validation of this internship.';
 $string['tutorevalpagetitle'] = 'Internship evaluation';
 $string['tutorevalinvalidtoken'] = 'This evaluation link is no longer valid.';
 $string['tutorevalalreadysubmitted'] = 'Your evaluation has been recorded, thank you.';

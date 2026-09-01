@@ -57,6 +57,23 @@ if ($entryid && optional_param('resetentry', 0, PARAM_INT) && confirm_sesskey())
     redirect($baseurl, get_string('entryreset', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
+// Relance du courriel au maître de stage, à la demande de la DEVE.
+if ($entryid && optional_param('resendtutor', 0, PARAM_INT) && confirm_sesskey()) {
+    $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
+    $sent = stage_resend_tutor_evaluation_request($stage, $cm, $entry);
+    redirect(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entryid]),
+        get_string($sent ? 'tutorevalresent' : 'tutorevalresentfailed', 'mod_stage'), null,
+        $sent ? \core\output\notification::NOTIFY_SUCCESS : \core\output\notification::NOTIFY_WARNING);
+}
+
+// Contourne l'évaluation du maître de stage (DEVE uniquement) : ne bloque plus la validation.
+if ($entryid && optional_param('bypasstutor', 0, PARAM_INT) && confirm_sesskey()) {
+    $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
+    stage_bypass_tutor_eval($entry);
+    redirect(new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entryid]),
+        get_string('tutorevalbypassed', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
+}
+
 // Validation unitaire (formulaire dédié à une saisie).
 if ($entryid) {
     $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
@@ -120,8 +137,34 @@ if ($entryid) {
             echo stage_render_answers_readonly($tutorquestions, $answers);
         } else if ($entry->tutoreval) {
             echo html_writer::div(format_text($entry->tutoreval, FORMAT_PLAIN));
+        } else if (!empty($entry->tutorbypassed)) {
+            echo $OUTPUT->notification(get_string('tutorevalbypassednotice', 'mod_stage'), 'warning');
         } else {
             echo $OUTPUT->notification(get_string('notutoreval', 'mod_stage'), 'info');
+
+            // Outils DEVE pour ne pas rester bloqué en attente du maître de stage : récupérer le
+            // lien à jeton (pour le transmettre autrement que par courriel), relancer l'envoi, ou
+            // ignorer purement et simplement cette évaluation.
+            $tutorurl = stage_get_tutor_eval_url($stage, $entry);
+            if ($tutorurl) {
+                echo html_writer::tag('label', get_string('tutorevallink', 'mod_stage'), ['for' => 'tutorevallink']);
+                echo html_writer::empty_tag('input', [
+                    'type' => 'text', 'id' => 'tutorevallink', 'value' => $tutorurl->out(false),
+                    'readonly' => 'readonly', 'class' => 'form-control mb-2', 'onclick' => 'this.select();',
+                ]);
+
+                $resendurl = new moodle_url('/mod/stage/deve.php',
+                    ['id' => $cm->id, 'entryid' => $entry->id, 'resendtutor' => 1, 'sesskey' => sesskey()]);
+                echo html_writer::link($resendurl, get_string('tutorevalresend', 'mod_stage'),
+                    ['class' => 'btn btn-sm btn-secondary mr-1 mb-2']);
+            }
+
+            $bypassurl = new moodle_url('/mod/stage/deve.php',
+                ['id' => $cm->id, 'entryid' => $entry->id, 'bypasstutor' => 1, 'sesskey' => sesskey()]);
+            echo html_writer::link($bypassurl, get_string('tutorevalbypass', 'mod_stage'), [
+                'class' => 'btn btn-sm btn-outline-secondary mb-2',
+                'onclick' => "return confirm('" . get_string('confirmtutorevalbypass', 'mod_stage') . "');",
+            ]);
         }
     }
 

@@ -141,6 +141,8 @@
             COMMENT="Réponse libre du maître de stage, si aucune question n'est définie pour la thématique"/>
         <FIELD NAME="tutortime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"
             COMMENT="Date de soumission de l'évaluation du maître de stage"/>
+        <FIELD NAME="tutorbypassed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"
+            COMMENT="L'évaluation du maître de stage a été ignorée par la DEVE (ne bloque plus la validation)"/>
         <FIELD NAME="deveuserid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Utilisateur DEVE ayant valide"/>
         <FIELD NAME="devecomment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="devetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
