@@ -469,6 +469,26 @@ $string['conventionrejectedby'] = 'Refusée par';
 $string['conventionvalidatedby'] = "Validée par l'enseignant.e référent.e";
 $string['conventioneditedby'] = 'Éditée par';
 $string['conventionsignedby'] = 'Signée par';
+// Libellés de colonnes propres à l'export Excel (export.php) : les dates des étapes déjà
+// nommées ci-dessus, et les informations qui n'apparaissent nulle part ailleurs sous forme de
+// colonne.
+$string['conventionteachervalidatedby'] = "Validée par l'enseignant.e référent.e";
+$string['conventionrequesttime'] = 'Date de demande de convention';
+$string['conventionteachervalidatetime'] = 'Date de validation enseignant.e';
+$string['conventionedittime'] = "Date d'édition de la convention";
+$string['conventionsigntime'] = 'Date de signature de la convention';
+$string['conventionrejecttime'] = 'Date de refus de la convention';
+$string['workdayscount'] = 'Nombre de jours effectifs sélectionnés';
+$string['teachervalidationtime'] = "Date d'évaluation enseignant.e";
+$string['tutorevaltime'] = "Date d'évaluation du maître de stage";
+$string['tutorevalbypassedcolumn'] = 'Évaluation du maître de stage ignorée';
+$string['reportfilescount'] = 'Nombre de documents déposés';
+$string['devevalidatedby'] = 'Validé par la DEVE';
+$string['devevalidationtime'] = 'Date de validation DEVE';
+$string['timecreated'] = "Date d'enregistrement";
+$string['exportanswers'] = 'Réponses aux questionnaires';
+$string['exportentryid'] = 'N° de stage';
+$string['answer'] = 'Réponse';
 $string['conventionrejectedexplain'] = 'Votre demande de convention a été refusée par la DEVE, pour le motif suivant : '
     . '"{$a}". Merci de corriger votre demande ci-dessous et de la soumettre à nouveau.';
 $string['conventionrejectednotifsubject'] = 'Convention de stage refusée : {$a}';

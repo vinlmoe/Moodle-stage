@@ -456,6 +456,25 @@ $string['conventionrejectedby'] = 'Rejected by';
 $string['conventionvalidatedby'] = 'Validated by the referent teacher';
 $string['conventioneditedby'] = 'Edited by';
 $string['conventionsignedby'] = 'Signed by';
+// Column labels specific to the Excel export (export.php): the dates of the steps already named
+// above, and the information that appears nowhere else as a column.
+$string['conventionteachervalidatedby'] = 'Validated by the referent teacher';
+$string['conventionrequesttime'] = 'Agreement request date';
+$string['conventionteachervalidatetime'] = 'Referent teacher validation date';
+$string['conventionedittime'] = 'Agreement editing date';
+$string['conventionsigntime'] = 'Agreement signature date';
+$string['conventionrejecttime'] = 'Agreement rejection date';
+$string['workdayscount'] = 'Number of selected working days';
+$string['teachervalidationtime'] = 'Teacher evaluation date';
+$string['tutorevaltime'] = 'Workplace tutor evaluation date';
+$string['tutorevalbypassedcolumn'] = 'Workplace tutor evaluation skipped';
+$string['reportfilescount'] = 'Number of submitted documents';
+$string['devevalidatedby'] = 'Validated by the administration office';
+$string['devevalidationtime'] = 'Administration office validation date';
+$string['timecreated'] = 'Registration date';
+$string['exportanswers'] = 'Questionnaire answers';
+$string['exportentryid'] = 'Internship ID';
+$string['answer'] = 'Answer';
 $string['conventionrejectedexplain'] = 'Your agreement request was rejected by the DEVE, for the following '
     . 'reason: "{$a}". Please correct your request below and submit it again.';
 $string['conventionrejectednotifsubject'] = 'Internship agreement rejected: {$a}';
