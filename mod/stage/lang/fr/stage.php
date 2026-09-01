@@ -619,6 +619,10 @@ $string['tutorevalnotifbody'] = "Vous encadrez actuellement {\$a->student} dans 
     . "\"{\$a->stage}\". Merci de bien vouloir évaluer ce stage en suivant ce lien, qui ne nécessite pas de "
     . "compte :\n{\$a->url}";
 $string['evaltype_tutor'] = 'Maître de stage';
+$string['tutorevaluationenabledtheme'] = 'Évaluation par le maître de stage pour cette thématique';
+$string['tutorevaluationenabledtheme_help'] = "N'a d'effet que si l'évaluation par le maître de stage est "
+    . 'aussi activée globalement pour cette activité (page « Notifications »). Permet, une fois cette option '
+    . "globale activée, de ne la proposer que pour certaines thématiques plutôt que pour toutes.";
 $string['tutorevalheading'] = 'Évaluation du maître de stage';
 $string['notutoreval'] = "Le maître de stage n'a pas encore répondu à son questionnaire d'évaluation.";
 $string['tutorevallink'] = "Lien d'évaluation à transmettre au maître de stage";

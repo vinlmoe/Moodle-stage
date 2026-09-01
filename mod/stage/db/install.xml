@@ -54,6 +54,8 @@
         <FIELD NAME="maxstudyyear" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" COMMENT="Année d'étude maximale concernée (0 = non spécifiée)"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="tutorevaluationenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"
+            COMMENT="Évaluation par le maître de stage proposée pour cette thématique (tant que l'option est aussi activée globalement pour l'activité)"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>

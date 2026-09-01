@@ -647,5 +647,16 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082426, 'stage');
     }
 
+    if ($oldversion < 2026082427) {
+        $themetable = new xmldb_table('stage_theme');
+        $field = new xmldb_field('tutorevaluationenabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1',
+            'visible');
+        if (!$dbman->field_exists($themetable, $field)) {
+            $dbman->add_field($themetable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082427, 'stage');
+    }
+
     return true;
 }

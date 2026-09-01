@@ -79,7 +79,8 @@ if ($action === 'edit') {
 
     $formurl = new moodle_url('/mod/stage/questions.php',
         ['id' => $cm->id, 'themeid' => $theme->id, 'action' => 'edit', 'questionid' => $questionid]);
-    $mform = new question_form($formurl, ['themes' => $themeoptions, 'tutorenabled' => !empty($stage->tutorevaluationenabled)]);
+    $mform = new question_form($formurl,
+        ['themes' => $themeoptions, 'tutorenabled' => stage_tutor_evaluation_enabled($stage, $theme)]);
     $question = null;
     if ($questionid) {
         $question = $DB->get_record('stage_question', ['id' => $questionid, 'stageid' => $stage->id], '*', MUST_EXIST);
@@ -160,7 +161,7 @@ if (!empty($reusable)) {
 }
 
 $evaltypes = ['student', 'teacher'];
-if (!empty($stage->tutorevaluationenabled)) {
+if (stage_tutor_evaluation_enabled($stage, $theme)) {
     $evaltypes[] = 'tutor';
 }
 foreach ($evaltypes as $evaltype) {

@@ -606,6 +606,10 @@ $string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} dur
     . '"{$a->stage}". Please evaluate this internship by following this link, which does not require an '
     . "account:\n{\$a->url}";
 $string['evaltype_tutor'] = 'Workplace tutor';
+$string['tutorevaluationenabledtheme'] = 'Workplace tutor evaluation for this theme';
+$string['tutorevaluationenabledtheme_help'] = 'Only takes effect if workplace tutor evaluation is also enabled '
+    . 'globally for this activity (the "Notifications" page). Once that global option is enabled, this lets '
+    . 'you offer it for only some themes rather than all of them.';
 $string['tutorevalheading'] = 'Workplace tutor evaluation';
 $string['notutoreval'] = 'The workplace tutor has not yet answered their evaluation questionnaire.';
 $string['tutorevallink'] = 'Evaluation link to send to the workplace tutor';

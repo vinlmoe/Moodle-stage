@@ -111,7 +111,7 @@ if ($entryid) {
 
     // Évaluation du maître de stage, si l'option est activée : mêmes modalités que
     // l'auto-évaluation de l'étudiant, affichée en lecture seule.
-    if (!empty($stage->tutorevaluationenabled)) {
+    if (stage_tutor_evaluation_enabled($stage, $theme)) {
         echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
         $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
         if (!empty($tutorquestions) && $entry->tutortime) {

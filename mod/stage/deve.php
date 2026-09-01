@@ -130,7 +130,7 @@ if ($entryid) {
             : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
     }
 
-    if (!empty($stage->tutorevaluationenabled)) {
+    if (stage_tutor_evaluation_enabled($stage, $theme)) {
         $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
         echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
         if (!empty($tutorquestions) && $entry->tutortime) {

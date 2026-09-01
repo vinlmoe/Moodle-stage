@@ -3890,6 +3890,20 @@ function stage_notify_tutor_evaluation_request(stdClass $stage, stdClass $cm, st
 }
 
 /**
+ * Indique si l'évaluation par le maître de stage est active pour une thématique donnée :
+ * l'option doit être activée à la fois globalement pour l'activité (notifications.php) et pour
+ * cette thématique (themes.php), la seconde n'ayant de sens que si la première l'est aussi.
+ *
+ * @param stdClass $stage
+ * @param stdClass|null $theme Thématique de la saisie concernée ; null (thématique supprimée
+ *                              entretemps, par exemple) est traité comme désactivé.
+ * @return bool
+ */
+function stage_tutor_evaluation_enabled(stdClass $stage, ?stdClass $theme) {
+    return !empty($stage->tutorevaluationenabled) && $theme !== null && !empty($theme->tutorevaluationenabled);
+}
+
+/**
  * Si l'évaluation par le maître de stage est activée pour l'activité, génère (si besoin) un
  * jeton d'accès et envoie l'invitation par courriel au maître de stage. N'envoie jamais deux
  * fois l'invitation pour une même saisie (un jeton déjà présent est laissé tel quel).
@@ -3902,7 +3916,8 @@ function stage_notify_tutor_evaluation_request(stdClass $stage, stdClass $cm, st
 function stage_maybe_request_tutor_evaluation(stdClass $stage, stdClass $cm, stdClass $entry) {
     global $DB;
 
-    if (empty($stage->tutorevaluationenabled) || !empty($entry->tutortoken)) {
+    $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
+    if (!stage_tutor_evaluation_enabled($stage, $theme) || !empty($entry->tutortoken)) {
         return;
     }
 
@@ -3945,7 +3960,8 @@ function stage_get_entry_by_tutor_token($token) {
 function stage_get_tutor_eval_url(stdClass $stage, stdClass $entry) {
     global $DB;
 
-    if (empty($stage->tutorevaluationenabled)) {
+    $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
+    if (!stage_tutor_evaluation_enabled($stage, $theme)) {
         return null;
     }
 
@@ -3979,7 +3995,9 @@ function stage_resend_tutor_evaluation_request(stdClass $stage, stdClass $cm, st
         return false;
     }
 
-    stage_get_tutor_eval_url($stage, $entry);
+    if (!stage_get_tutor_eval_url($stage, $entry)) {
+        return false;
+    }
 
     stage_notify_tutor_evaluation_request($stage, $cm, $entry, $detail->tutorname, $detail->tutoremail);
     return true;

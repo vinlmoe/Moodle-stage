@@ -110,6 +110,7 @@ if ($action === 'edit') {
         $record->maxstudyyear = $data->maxstudyyear;
         $record->sortorder = $data->sortorder;
         $record->visible = !empty($data->visible) ? 1 : 0;
+        $record->tutorevaluationenabled = !empty($data->tutorevaluationenabled) ? 1 : 0;
         $record->timemodified = time();
 
         if (!empty($data->themeid)) {
@@ -136,9 +137,11 @@ if ($action === 'bulksave' && data_submitted() && confirm_sesskey()) {
         $mandatory = optional_param('mandatory_' . $theme->id, 0, PARAM_INT);
         $minstudyyear = optional_param('minstudyyear_' . $theme->id, 0, PARAM_INT);
         $maxstudyyear = optional_param('maxstudyyear_' . $theme->id, 0, PARAM_INT);
+        $tutorevaluationenabled = optional_param('tutorevaluationenabled_' . $theme->id, 0, PARAM_INT);
         $theme->mandatory = $mandatory ? 1 : 0;
         $theme->minstudyyear = $minstudyyear;
         $theme->maxstudyyear = $maxstudyyear;
+        $theme->tutorevaluationenabled = $tutorevaluationenabled ? 1 : 0;
         $theme->timemodified = time();
         $DB->update_record('stage_theme', $theme);
     }
@@ -164,6 +167,11 @@ if (empty($themes)) {
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'action', 'value' => 'bulksave']);
 
+    // La colonne d'activation par thématique n'a de sens que si l'évaluation par le maître de
+    // stage est elle-même activée globalement pour l'activité (notifications.php) ; sinon elle ne
+    // ferait qu'ajouter une case à cocher inopérante.
+    $showtutorevalcolumn = !empty($stage->tutorevaluationenabled);
+
     $table = new html_table();
     $table->head = [
         get_string('theme', 'mod_stage'),
@@ -172,8 +180,11 @@ if (empty($themes)) {
         get_string('mandatory', 'mod_stage'),
         get_string('requiredduration', 'mod_stage'),
         get_string('visible'),
-        get_string('actions', 'mod_stage'),
     ];
+    if ($showtutorevalcolumn) {
+        $table->head[] = get_string('tutorevaluationenabledtheme', 'mod_stage');
+    }
+    $table->head[] = get_string('actions', 'mod_stage');
     foreach ($themes as $theme) {
         $mandatorycb = html_writer::checkbox('mandatory_' . $theme->id, 1, (bool) $theme->mandatory, '');
         $durationlabel = !empty($theme->requiredduration)
@@ -188,6 +199,8 @@ if (empty($themes)) {
         $visible = html_writer::link($togglevisibleurl,
             $theme->visible ? get_string('yes') : get_string('no'),
             ['class' => $theme->visible ? 'badge badge-success' : 'badge badge-secondary']);
+        $tutorevalcb = html_writer::checkbox('tutorevaluationenabled_' . $theme->id, 1,
+            (bool) $theme->tutorevaluationenabled, '');
 
         $editurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $theme->id]);
         $toggleurl = new moodle_url('/mod/stage/themes.php',
@@ -209,8 +222,13 @@ if (empty($themes)) {
             'onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');",
         ]);
 
-        $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
-            $durationlabel, $visible, $actions];
+        $row = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
+            $durationlabel, $visible];
+        if ($showtutorevalcolumn) {
+            $row[] = $tutorevalcb;
+        }
+        $row[] = $actions;
+        $table->data[] = $row;
     }
     echo html_writer::table($table);
 

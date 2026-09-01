@@ -218,7 +218,7 @@ if (!empty($teacherquestions) || $entry->teachereval) {
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
 }
 
-if (!empty($stage->tutorevaluationenabled)) {
+if (stage_tutor_evaluation_enabled($stage, $theme)) {
     $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
     if (!empty($tutorquestions) || $entry->tutoreval) {
         echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
