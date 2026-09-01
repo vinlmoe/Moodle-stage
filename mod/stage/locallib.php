@@ -3433,21 +3433,61 @@ function stage_import_establishment_info($sourcestageid, $targetstageid) {
 }
 
 /**
- * Importe, selon les options choisies, les thématiques, gabarits de convention, logos et/ou
- * informations d'établissement d'une autre instance de mod_stage vers l'instance courante (voir
- * administration_import.php). L'appelant est responsable de vérifier au préalable que
- * l'utilisateur a la capacité de gérer les thématiques sur les deux instances.
+ * Copie les textes personnalisés des courriels (voir stage_get_email_definitions()) d'une
+ * instance source vers une instance cible.
+ *
+ * Contrairement aux thématiques et aux gabarits, ces textes ne s'ajoutent pas : il n'existe qu'un
+ * texte par courriel et par instance. Chaque courriel personnalisé dans la source remplace donc
+ * celui de la cible ; ceux que la source n'a pas personnalisés sont laissés tels quels dans la
+ * cible plutôt que d'y effacer une personnalisation existante.
+ *
+ * @param int $sourcestageid
+ * @param int $targetstageid
+ * @return int Nombre de courriels personnalisés copiés.
+ */
+function stage_import_email_templates($sourcestageid, $targetstageid) {
+    global $DB;
+
+    $definitions = stage_get_email_definitions();
+    $copied = 0;
+    foreach ($DB->get_records('stage_email_template', ['stageid' => $sourcestageid]) as $template) {
+        // Une clé inconnue est ignorée : elle proviendrait d'une version du plugin définissant un
+        // courriel que celle-ci ne connaît pas, et n'aurait aucun effet dans la cible.
+        if (!isset($definitions[$template->emailkey])) {
+            continue;
+        }
+        // Une ligne source vide des deux côtés ne personnalise rien : la recopier effacerait la
+        // personnalisation de la cible (stage_save_email_template() supprime alors la ligne),
+        // c'est-à-dire l'inverse de ce que l'import annonce.
+        if (trim((string) $template->subject) === '' && trim((string) $template->body) === '') {
+            continue;
+        }
+        stage_save_email_template($targetstageid, $template->emailkey, (string) $template->subject,
+            (string) $template->body);
+        $copied++;
+    }
+
+    return $copied;
+}
+
+/**
+ * Importe, selon les options choisies, les thématiques, gabarits de convention, logos, textes
+ * de courriels et/ou informations d'établissement d'une autre instance de mod_stage vers
+ * l'instance courante (voir administration_import.php). L'appelant est responsable de vérifier au
+ * préalable que l'utilisateur a la capacité de gérer les thématiques sur les deux instances.
  *
  * @param stdClass $sourcestage
  * @param context $sourcecontext
  * @param stdClass $targetstage
  * @param context $targetcontext
- * @param array $options ['themes' => bool, 'templates' => bool, 'logos' => bool, 'establishment' => bool]
- * @return stdClass Résumé : {themes: int, templates: int, logos: int, establishment: bool}
+ * @param array $options ['themes' => bool, 'templates' => bool, 'logos' => bool, 'emails' => bool,
+ *                        'establishment' => bool]
+ * @return stdClass Résumé : {themes: int, templates: int, logos: int, emails: int,
+ *                  establishment: bool}
  */
 function stage_import_from_stage(stdClass $sourcestage, context $sourcecontext, stdClass $targetstage,
         context $targetcontext, array $options) {
-    $result = (object) ['themes' => 0, 'templates' => 0, 'logos' => 0, 'establishment' => false];
+    $result = (object) ['themes' => 0, 'templates' => 0, 'logos' => 0, 'emails' => 0, 'establishment' => false];
 
     if (!empty($options['themes'])) {
         $result->themes = stage_import_themes($sourcestage->id, $targetstage->id);
@@ -3458,6 +3498,9 @@ function stage_import_from_stage(stdClass $sourcestage, context $sourcecontext, 
     }
     if (!empty($options['logos'])) {
         $result->logos = stage_import_convention_logos($sourcecontext, $targetcontext);
+    }
+    if (!empty($options['emails'])) {
+        $result->emails = stage_import_email_templates($sourcestage->id, $targetstage->id);
     }
     if (!empty($options['establishment'])) {
         stage_import_establishment_info($sourcestage->id, $targetstage->id);
