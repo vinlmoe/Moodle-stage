@@ -72,6 +72,11 @@ class theme_form extends \moodleform {
         $mform->setDefault('tutorevaluationenabled', 1);
         $mform->addHelpButton('tutorevaluationenabled', 'tutorevaluationenabledtheme', 'mod_stage');
 
+        $mform->addElement('select', 'reportmode', get_string('reportmode', 'mod_stage'),
+            stage_report_mode_options());
+        $mform->setDefault('reportmode', STAGE_REPORT_NONE);
+        $mform->addHelpButton('reportmode', 'reportmode', 'mod_stage');
+
         $this->add_action_buttons();
     }
 

@@ -56,6 +56,8 @@
         <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="tutorevaluationenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"
             COMMENT="Évaluation par le maître de stage proposée pour cette thématique (tant que l'option est aussi activée globalement pour l'activité)"/>
+        <FIELD NAME="reportmode" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0"
+            COMMENT="Dépôt du rapport de stage lors de l'auto-évaluation : 0 aucun, 1 facultatif, 2 obligatoire"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -63,6 +65,23 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="stageid" TYPE="foreign" FIELDS="stageid" REFTABLE="stage" REFFIELDS="id"/>
       </KEYS>
+    </TABLE>
+
+    <TABLE NAME="stage_theme_teacher" COMMENT="Enseignant responsable d'une thématique de stage : accède aux stages faits sur cette thématique et aux rapports déposés">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="themeid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="themeid" TYPE="foreign" FIELDS="themeid" REFTABLE="stage_theme" REFFIELDS="id"/>
+        <KEY NAME="teacherid" TYPE="foreign" FIELDS="teacherid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="themeid-teacherid" UNIQUE="true" FIELDS="themeid, teacherid"/>
+      </INDEXES>
     </TABLE>
 
     <TABLE NAME="stage_theme_duration" COMMENT="Durée de stage obligatoire requise pour une thématique, par année d'étude">

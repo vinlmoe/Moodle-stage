@@ -2418,6 +2418,8 @@ function stage_get_promotion_report(stdClass $stage, context $context, ?array $r
  * @return string HTML, chaîne vide si l'utilisateur n'a accès à aucun lien.
  */
 function stage_render_navlinks(stdClass $cm, context $context) {
+    global $USER;
+
     // Les destinations sont rendues en boutons, dans l'ordre du travail quotidien (enregistrer,
     // suivre les conventions, valider, piloter) puis les usages ponctuels (export, administration)
     // en fin de barre : en simples liens séparés par des barres verticales, elles se lisaient
@@ -2438,6 +2440,15 @@ function stage_render_navlinks(stdClass $cm, context $context) {
     }
     if (has_capability('mod/stage:viewall', $context) || has_capability('mod/stage:evaluateteacher', $context)) {
         $links[get_string('pilotage', 'mod_stage')] = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id]);
+    }
+    // Vue par thématique : ouverte à la DEVE et à tout enseignant responsable d'au moins une
+    // thématique, y compris s'il n'est référent d'aucun étudiant. La requête n'est faite que pour
+    // les enseignants (seuls affectables comme responsables), et pas à chaque page d'un étudiant.
+    if (has_capability('mod/stage:viewall', $context)
+            || (has_capability('mod/stage:evaluateteacher', $context)
+                && stage_get_teacher_themes($cm->instance, $USER->id))) {
+        $links[get_string('mythemestages', 'mod_stage')] =
+            new moodle_url('/mod/stage/theme_stages.php', ['id' => $cm->id]);
     }
     if (has_capability('mod/stage:viewall', $context)) {
         $links[get_string('exportexcel', 'mod_stage')] = new moodle_url('/mod/stage/export.php', ['id' => $cm->id]);
@@ -4104,6 +4115,219 @@ function stage_get_signed_convention_file(context $context, $entryid) {
     $fs = get_file_storage();
     $files = $fs->get_area_files($context->id, 'mod_stage', 'signedconvention', $entryid, 'itemid', false);
     return $files ? reset($files) : null;
+}
+
+/**
+ * Rapports de stage (documents déposés par l'étudiant lors de son auto-évaluation) pour une
+ * saisie donnée.
+ *
+ * @param context $context Contexte du module stage.
+ * @param int $entryid
+ * @return \stored_file[] Indexés par pathnamehash, éventuellement vide.
+ */
+function stage_get_report_files(context $context, $entryid) {
+    $fs = get_file_storage();
+    return $fs->get_area_files($context->id, 'mod_stage', STAGE_REPORT_FILEAREA, $entryid, 'filename', false);
+}
+
+/**
+ * Mode de dépôt du rapport de stage défini pour une thématique (aucun / facultatif / obligatoire).
+ *
+ * @param stdClass|null $theme
+ * @return int Une des constantes STAGE_REPORT_*.
+ */
+function stage_theme_report_mode(?stdClass $theme) {
+    return $theme === null ? STAGE_REPORT_NONE : (int) $theme->reportmode;
+}
+
+/**
+ * Libellés des modes de dépôt du rapport de stage, pour les listes déroulantes de themes.php.
+ *
+ * @return array int => libellé
+ */
+function stage_report_mode_options() {
+    return [
+        STAGE_REPORT_NONE => get_string('reportmode_none', 'mod_stage'),
+        STAGE_REPORT_OPTIONAL => get_string('reportmode_optional', 'mod_stage'),
+        STAGE_REPORT_REQUIRED => get_string('reportmode_required', 'mod_stage'),
+    ];
+}
+
+/**
+ * Enseignants responsables d'une thématique (distincts des enseignants référents d'un étudiant) :
+ * ils accèdent aux stages faits sur leur thématique et aux rapports qui y sont déposés.
+ *
+ * @param int $themeid
+ * @return array userid => objet utilisateur, trié par nom.
+ */
+function stage_get_theme_teachers($themeid) {
+    global $DB;
+
+    $userfields = 'u.' . implode(', u.', \core_user\fields::get_name_fields());
+    return $DB->get_records_sql(
+        "SELECT u.id, $userfields
+           FROM {stage_theme_teacher} tt
+           JOIN {user} u ON u.id = tt.teacherid
+          WHERE tt.themeid = :themeid
+       ORDER BY u.lastname ASC, u.firstname ASC", ['themeid' => $themeid]);
+}
+
+/**
+ * Enregistre la liste des enseignants responsables d'une thématique, en remplacement de la
+ * précédente. Comme stage_set_student_teachers(), ne réécrit rien si la liste est inchangée.
+ *
+ * @param int $themeid
+ * @param array $teacherids
+ * @return void
+ */
+function stage_set_theme_teachers($themeid, array $teacherids) {
+    global $DB;
+
+    $teacherids = array_filter(array_unique(array_map('intval', $teacherids)));
+
+    $existing = array_map('intval',
+        $DB->get_fieldset_select('stage_theme_teacher', 'teacherid', 'themeid = ?', [$themeid]));
+    sort($existing);
+    $wanted = array_values($teacherids);
+    sort($wanted);
+    if ($existing === $wanted) {
+        return;
+    }
+
+    $DB->delete_records('stage_theme_teacher', ['themeid' => $themeid]);
+    foreach ($teacherids as $teacherid) {
+        $DB->insert_record('stage_theme_teacher', (object) [
+            'themeid' => $themeid,
+            'teacherid' => $teacherid,
+            'timecreated' => time(),
+        ]);
+    }
+}
+
+/**
+ * Thématiques d'une activité dont un utilisateur est enseignant responsable.
+ *
+ * @param int $stageid
+ * @param int $userid
+ * @return array themeid => objet thématique, dans l'ordre d'affichage habituel.
+ */
+function stage_get_teacher_themes($stageid, $userid) {
+    global $DB;
+
+    return $DB->get_records_sql(
+        "SELECT t.*
+           FROM {stage_theme} t
+           JOIN {stage_theme_teacher} tt ON tt.themeid = t.id
+          WHERE t.stageid = :stageid AND tt.teacherid = :userid
+       ORDER BY t.minstudyyear ASC, t.maxstudyyear ASC, t.sortorder ASC, t.name ASC",
+        ['stageid' => $stageid, 'userid' => $userid]);
+}
+
+/**
+ * Indique si un utilisateur est enseignant responsable d'une thématique donnée.
+ *
+ * @param int $themeid
+ * @param int $userid
+ * @return bool
+ */
+function stage_is_theme_teacher($themeid, $userid) {
+    global $DB;
+
+    return $DB->record_exists('stage_theme_teacher', ['themeid' => $themeid, 'teacherid' => $userid]);
+}
+
+/**
+ * Indique si un utilisateur a le droit de consulter les rapports de stage déposés pour une
+ * saisie : l'étudiant qui les a déposés, la DEVE, l'enseignant référent de l'étudiant et les
+ * enseignants responsables de la thématique du stage.
+ *
+ * @param stdClass $stage
+ * @param stdClass $entry
+ * @param context $context Contexte du module stage.
+ * @param int|null $userid Utilisateur concerné, l'utilisateur courant par défaut.
+ * @return bool
+ */
+function stage_can_access_reports(stdClass $stage, stdClass $entry, context $context, $userid = null) {
+    global $USER;
+
+    $userid = $userid ?: $USER->id;
+
+    if ((int) $entry->userid === (int) $userid && has_capability('mod/stage:submit', $context, $userid)) {
+        return true;
+    }
+    if (has_capability('mod/stage:viewall', $context, $userid)) {
+        return true;
+    }
+    if (has_capability('mod/stage:evaluateteacher', $context, $userid)
+            && array_key_exists($entry->userid, stage_get_assigned_students($stage->id, $userid))) {
+        return true;
+    }
+
+    return stage_is_theme_teacher($entry->themeid, $userid);
+}
+
+/**
+ * Liens de téléchargement des rapports de stage d'une saisie, pour les pages de consultation
+ * (détail d'une saisie, évaluation enseignant, validation DEVE). Chaîne vide si aucun document
+ * n'a été déposé.
+ *
+ * @param stdClass $cm Course module.
+ * @param context $context Contexte du module stage.
+ * @param stdClass $entry
+ * @return string HTML
+ */
+function stage_render_report_links(stdClass $cm, context $context, stdClass $entry) {
+    $files = stage_get_report_files($context, $entry->id);
+    if (empty($files)) {
+        return '';
+    }
+
+    $items = [];
+    foreach ($files as $file) {
+        $url = new moodle_url('/mod/stage/report_file.php', [
+            'id' => $cm->id, 'entryid' => $entry->id, 'pathnamehash' => $file->get_pathnamehash(),
+        ]);
+        $items[] = html_writer::link($url, $file->get_filename())
+            . html_writer::span(' (' . display_size($file->get_filesize()) . ')', 'text-muted');
+    }
+
+    return html_writer::alist($items);
+}
+
+/**
+ * Construit et envoie au navigateur une archive ZIP des rapports de stage des saisies données,
+ * un dossier par étudiant pour que les fichiers de même nom ne s'écrasent pas. Ne revient pas :
+ * termine la requête en envoyant le fichier.
+ *
+ * @param context $context Contexte du module stage.
+ * @param array $entries Saisies concernées (objets stage_entry).
+ * @param array $students Étudiants indexés par id, tels que renvoyés par stage_get_entry_users().
+ * @param string $zipname Nom de l'archive envoyée (sans extension).
+ * @return void
+ */
+function stage_send_reports_zip(context $context, array $entries, array $students, $zipname) {
+    $filesforzipping = [];
+    foreach ($entries as $entry) {
+        $student = $students[$entry->userid] ?? null;
+        $foldername = clean_filename(($student ? fullname($student) : 'etudiant-' . $entry->userid)
+            . '-' . $entry->id);
+        foreach (stage_get_report_files($context, $entry->id) as $file) {
+            $filesforzipping[$foldername . '/' . clean_filename($file->get_filename())] = $file;
+        }
+    }
+
+    if (empty($filesforzipping)) {
+        throw new moodle_exception('noreportstozip', 'mod_stage');
+    }
+
+    $tmpfile = tempnam(make_temp_directory('mod_stage'), 'stagereports_');
+    $packer = get_file_packer('application/zip');
+    if (!$packer->archive_to_pathname($filesforzipping, $tmpfile)) {
+        @unlink($tmpfile);
+        throw new moodle_exception('reportszipfailed', 'mod_stage');
+    }
+
+    send_temp_file($tmpfile, clean_filename($zipname) . '.zip');
 }
 
 /**

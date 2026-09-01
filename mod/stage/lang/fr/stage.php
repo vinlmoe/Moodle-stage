@@ -618,6 +618,39 @@ $string['tutorevalnotifsubject'] = 'Évaluation du stage de {$a}';
 $string['tutorevalnotifbody'] = "Vous encadrez actuellement {\$a->student} dans le cadre de son stage "
     . "\"{\$a->stage}\". Merci de bien vouloir évaluer ce stage en suivant ce lien, qui ne nécessite pas de "
     . "compte :\n{\$a->url}";
+$string['reportmode'] = 'Rapport de stage';
+$string['reportmode_help'] = "Dépôt de documents demandé à l'étudiant lors de son auto-évaluation, sur le "
+    . "modèle d'un devoir. Les documents déposés sont consultables par la DEVE, par l'enseignant référent de "
+    . "l'étudiant et par les enseignants responsables de la thématique. « Obligatoire » empêche l'étudiant de "
+    . "soumettre son auto-évaluation tant qu'il n'a déposé aucun document.";
+$string['reportmode_none'] = 'Aucun';
+$string['reportmode_optional'] = 'Facultatif';
+$string['reportmode_required'] = 'Obligatoire';
+$string['reportfiles'] = 'Rapport de stage';
+$string['reportfiles_help'] = "Déposez ici votre rapport de stage et les éventuelles pièces jointes. Vous "
+    . "pouvez y revenir tant que vous n'avez pas soumis votre auto-évaluation.";
+$string['savereportfiles'] = 'Enregistrer les documents';
+$string['reportfilessaved'] = 'Les documents de votre rapport de stage ont été enregistrés.';
+$string['noreportfiles'] = 'Aucun document déposé.';
+$string['reportfilemissing'] = "Ce document n'existe pas ou n'est plus disponible.";
+$string['reportrequirednotice'] = "Le dépôt d'au moins un document est nécessaire pour pouvoir soumettre "
+    . 'votre auto-évaluation.';
+$string['reportrequiredmissing'] = "Votre auto-évaluation n'a pas été soumise : le dépôt d'au moins un "
+    . "document est exigé pour cette thématique. Déposez votre rapport de stage ci-dessous, puis soumettez à "
+    . 'nouveau votre auto-évaluation.';
+$string['downloadallreports'] = 'Télécharger tous les rapports (.zip)';
+$string['reportszipname'] = 'rapports-de-stage-{$a}';
+$string['noreportstozip'] = "Aucun document n'a été déposé pour cette thématique.";
+$string['reportszipfailed'] = "L'archive des rapports de stage n'a pas pu être construite.";
+$string['themeteachers'] = 'Enseignants responsables';
+$string['themeteachers_help'] = "Les enseignants responsables d'une thématique accèdent à tous les stages "
+    . "faits sur cette thématique (onglet « Stages par thématique ») et aux rapports qui y sont déposés, quels "
+    . "que soient les enseignants référents des étudiants concernés. Ils n'évaluent pas les stages : "
+    . "l'évaluation reste le rôle de l'enseignant référent de chaque étudiant.";
+$string['themeteacherssaved'] = 'Les enseignants responsables de la thématique ont été enregistrés.';
+$string['themeteacherscount'] = '{$a} enseignant(s)';
+$string['mythemestages'] = 'Stages par thématique';
+$string['nostagesfortheme'] = 'Aucun stage ne correspond à cette thématique.';
 $string['evaltype_tutor'] = 'Maître de stage';
 $string['tutorevaluationenabledtheme'] = 'Évaluation par le maître de stage pour cette thématique';
 $string['tutorevaluationenabledtheme_help'] = "N'a d'effet que si l'évaluation par le maître de stage est "

@@ -73,6 +73,27 @@ define('STAGE_CONVENTION_TEACHERPENDING', 5);
 define('STAGE_CONVENTION_EXEMPT', 6);
 
 /**
+ * Rapport de stage : aucun dépôt de document n'est demandé à l'étudiant sur cette thématique.
+ */
+define('STAGE_REPORT_NONE', 0);
+/**
+ * Rapport de stage : le dépôt de documents est proposé lors de l'auto-évaluation, mais
+ * l'étudiant peut soumettre son auto-évaluation sans avoir rien déposé.
+ */
+define('STAGE_REPORT_OPTIONAL', 1);
+/**
+ * Rapport de stage : le dépôt d'au moins un document est exigé pour pouvoir soumettre
+ * l'auto-évaluation.
+ */
+define('STAGE_REPORT_REQUIRED', 2);
+
+/**
+ * Zone de fichiers (file area) des rapports de stage déposés par les étudiants, l'itemid étant
+ * l'identifiant de la saisie (stage_entry.id).
+ */
+define('STAGE_REPORT_FILEAREA', 'report');
+
+/**
  * Returns the list of features supported by this module.
  *
  * @param string $feature FEATURE_xx constant.
@@ -155,6 +176,11 @@ function stage_delete_instance($id) {
         $DB->delete_records_select('stage_question_theme', "questionid $insql", $inparams);
     }
     $DB->delete_records('stage_question', ['stageid' => $id]);
+    $themeids = $DB->get_fieldset_select('stage_theme', 'id', 'stageid = ?', [$id]);
+    if ($themeids) {
+        [$insql, $inparams] = $DB->get_in_or_equal($themeids);
+        $DB->delete_records_select('stage_theme_teacher', "themeid $insql", $inparams);
+    }
     $DB->delete_records('stage_theme', ['stageid' => $id]);
     $DB->delete_records('stage_convention_template', ['stageid' => $id]);
     $DB->delete_records('stage', ['id' => $id]);

@@ -44,7 +44,10 @@ $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->
 $isdeve = has_capability('mod/stage:viewall', $context);
 $isassignedteacher = has_capability('mod/stage:evaluateteacher', $context)
     && in_array($entry->userid, array_keys(stage_get_assigned_students($stage->id, $USER->id)));
-if (!$isdeve && !$isassignedteacher) {
+// L'enseignant responsable de la thématique du stage y a accès au même titre que l'enseignant
+// référent de l'étudiant : c'est sa vue de détail depuis theme_stages.php.
+$isthemeteacher = stage_is_theme_teacher($entry->themeid, $USER->id);
+if (!$isdeve && !$isassignedteacher && !$isthemeteacher) {
     throw new moodle_exception('nopermissions', 'error', '', get_string('viewdetails', 'mod_stage'));
 }
 
@@ -216,6 +219,12 @@ if (!empty($teacherquestions) || $entry->teachereval) {
     echo !empty($teacherquestions)
         ? stage_render_answers_readonly($teacherquestions, $answers)
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
+}
+
+if (stage_theme_report_mode($theme) != STAGE_REPORT_NONE) {
+    echo $OUTPUT->heading(get_string('reportfiles', 'mod_stage'), 4);
+    $reportlinks = stage_render_report_links($cm, $context, $entry);
+    echo $reportlinks !== '' ? $reportlinks : $OUTPUT->notification(get_string('noreportfiles', 'mod_stage'), 'info');
 }
 
 if (stage_tutor_evaluation_enabled($stage, $theme)) {

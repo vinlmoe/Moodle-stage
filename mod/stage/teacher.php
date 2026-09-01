@@ -109,6 +109,16 @@ if ($entryid) {
         echo html_writer::div(format_text($entry->studentselfeval, FORMAT_HTML));
     }
 
+    // Rapport de stage déposé par l'étudiant, si la thématique en demande un : l'enseignant
+    // référent évalue sur pièces autant que sur l'auto-évaluation.
+    if (stage_theme_report_mode($theme) != STAGE_REPORT_NONE) {
+        echo $OUTPUT->heading(get_string('reportfiles', 'mod_stage'), 4);
+        $reportlinks = stage_render_report_links($cm, $context, $entry);
+        echo $reportlinks !== ''
+            ? $reportlinks
+            : $OUTPUT->notification(get_string('noreportfiles', 'mod_stage'), 'info');
+    }
+
     // Évaluation du maître de stage, si l'option est activée : mêmes modalités que
     // l'auto-évaluation de l'étudiant, affichée en lecture seule.
     if (stage_tutor_evaluation_enabled($stage, $theme)) {

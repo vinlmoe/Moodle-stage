@@ -605,6 +605,38 @@ $string['tutorevalnotifsubject'] = 'Evaluation of {$a}\'s internship';
 $string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} during their internship '
     . '"{$a->stage}". Please evaluate this internship by following this link, which does not require an '
     . "account:\n{\$a->url}";
+$string['reportmode'] = 'Internship report';
+$string['reportmode_help'] = 'Document submission requested from the student during their self-assessment, '
+    . 'like an assignment. Submitted documents can be viewed by the administration office, by the student\'s '
+    . 'referent teacher and by the teachers responsible for the theme. "Required" prevents the student from '
+    . 'submitting their self-assessment until they have submitted at least one document.';
+$string['reportmode_none'] = 'None';
+$string['reportmode_optional'] = 'Optional';
+$string['reportmode_required'] = 'Required';
+$string['reportfiles'] = 'Internship report';
+$string['reportfiles_help'] = 'Submit your internship report and any supporting documents here. You can come '
+    . 'back to them until you submit your self-assessment.';
+$string['savereportfiles'] = 'Save documents';
+$string['reportfilessaved'] = 'The documents of your internship report have been saved.';
+$string['noreportfiles'] = 'No document submitted.';
+$string['reportfilemissing'] = 'This document does not exist or is no longer available.';
+$string['reportrequirednotice'] = 'At least one document must be submitted before you can submit your '
+    . 'self-assessment.';
+$string['reportrequiredmissing'] = 'Your self-assessment was not submitted: at least one document is required '
+    . 'for this theme. Submit your internship report below, then submit your self-assessment again.';
+$string['downloadallreports'] = 'Download all reports (.zip)';
+$string['reportszipname'] = 'internship-reports-{$a}';
+$string['noreportstozip'] = 'No document has been submitted for this theme.';
+$string['reportszipfailed'] = 'The archive of internship reports could not be built.';
+$string['themeteachers'] = 'Responsible teachers';
+$string['themeteachers_help'] = 'Teachers responsible for a theme have access to every internship carried out '
+    . 'on that theme (the "Internships by theme" tab) and to the reports submitted for them, whoever the '
+    . 'students\' referent teachers are. They do not evaluate the internships: evaluation remains the role of '
+    . 'each student\'s referent teacher.';
+$string['themeteacherssaved'] = 'The teachers responsible for the theme have been saved.';
+$string['themeteacherscount'] = '{$a} teacher(s)';
+$string['mythemestages'] = 'Internships by theme';
+$string['nostagesfortheme'] = 'No internship matches this theme.';
 $string['evaltype_tutor'] = 'Workplace tutor';
 $string['tutorevaluationenabledtheme'] = 'Workplace tutor evaluation for this theme';
 $string['tutorevaluationenabledtheme_help'] = 'Only takes effect if workplace tutor evaluation is also enabled '
