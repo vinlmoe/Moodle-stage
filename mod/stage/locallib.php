@@ -3065,6 +3065,7 @@ function stage_plan_student_transfer(stdClass $sourcestage, stdClass $targetstag
         'unmatchedthemes' => [],
         'unmatchedtemplates' => [],
         'droppedanswers' => 0,
+        'reportfiles' => 0,
         'referentteachers' => [],
         'blockers' => [],
         'warnings' => [],
@@ -3144,7 +3145,9 @@ function stage_plan_student_transfer(stdClass $sourcestage, stdClass $targetstag
         if (!$targetthemeid) {
             continue;
         }
-        foreach (['student', 'teacher'] as $evaltype) {
+        // Les trois types d'évaluation, le maître de stage compris : ses réponses sont des
+        // réponses comme les autres et seraient sinon supprimées faute d'équivalent trouvé.
+        foreach (['student', 'teacher', 'tutor'] as $evaltype) {
             $targetquestions = [];
             foreach (stage_get_questions($targetthemeid, $evaltype) as $targetquestion) {
                 $targetquestions[stage_normalize_name($targetquestion->name)] = $targetquestion;
@@ -3166,6 +3169,16 @@ function stage_plan_student_transfer(stdClass $sourcestage, stdClass $targetstag
     }
     if ($plan->droppedanswers > 0) {
         $plan->warnings[] = get_string('transferdroppedanswers', 'mod_stage', $plan->droppedanswers);
+    }
+
+    // Rapports de stage déposés : ils suivent la saisie (leur zone de fichiers est indexée sur
+    // l'identifiant de la saisie) mais changent de contexte de module, ce que fait
+    // stage_execute_student_transfer(). Leur nombre est annoncé au récapitulatif, le transfert
+    // n'étant pas réversible.
+    $sourcecm = get_coursemodule_from_instance('stage', $sourcestage->id, 0, false, MUST_EXIST);
+    $sourcecontext = context_module::instance($sourcecm->id);
+    foreach ($plan->entries as $entry) {
+        $plan->reportfiles += count(stage_get_report_files($sourcecontext, $entry->id));
     }
 
     // L'attribution des enseignants référents est propre au cours : elle n'est pas transférée,
@@ -3228,12 +3241,14 @@ function stage_execute_student_transfer(stdClass $sourcestage, context $sourceco
             }
         }
 
-        // La convention signée est stockée dans le contexte du module : elle deviendrait
-        // inaccessible depuis la cible si elle restait dans celui de la source.
-        foreach ($fs->get_area_files($sourcecontext->id, 'mod_stage', 'signedconvention', $entry->id, 'itemid', false)
-                as $file) {
-            $fs->create_file_from_storedfile(['contextid' => $targetcontext->id], $file);
-            $file->delete();
+        // La convention signée et le rapport de stage sont stockés dans le contexte du module :
+        // ils deviendraient inaccessibles depuis la cible s'ils restaient dans celui de la source.
+        foreach (['signedconvention', STAGE_REPORT_FILEAREA] as $filearea) {
+            foreach ($fs->get_area_files($sourcecontext->id, 'mod_stage', $filearea, $entry->id, 'itemid', false)
+                    as $file) {
+                $fs->create_file_from_storedfile(['contextid' => $targetcontext->id], $file);
+                $file->delete();
+            }
         }
     }
 
@@ -3270,6 +3285,13 @@ function stage_import_themes($sourcestageid, $targetstageid) {
             'maxstudyyear' => $theme->maxstudyyear,
             'sortorder' => $theme->sortorder,
             'visible' => $theme->visible,
+            // Les réglages d'évaluation par le maître de stage et de dépôt du rapport font partie
+            // de la définition de la thématique : sans eux, la copie repartirait des valeurs par
+            // défaut (évaluation réactivée, rapport plus demandé) sans que rien ne le signale.
+            // Les enseignants responsables, eux, ne sont pas copiés : comme les enseignants
+            // référents, ils sont propres au cours (voir stage_execute_student_transfer()).
+            'tutorevaluationenabled' => $theme->tutorevaluationenabled,
+            'reportmode' => $theme->reportmode,
             'timecreated' => time(),
             'timemodified' => time(),
         ]);
@@ -4292,6 +4314,35 @@ function stage_render_report_links(stdClass $cm, context $context, stdClass $ent
     }
 
     return html_writer::alist($items);
+}
+
+/**
+ * Section « Rapport de stage » des pages de consultation d'une saisie (détail, évaluation
+ * enseignant, validation DEVE) : titre et liens de téléchargement, ou mention qu'aucun document
+ * n'a été déposé.
+ *
+ * La section est affichée dès qu'un document existe, même si la thématique ne demande plus de
+ * rapport : la DEVE peut avoir changé la thématique de la saisie (register.php) ou le mode de
+ * dépôt de la thématique depuis le dépôt, et des documents déjà déposés ne doivent pas
+ * disparaître de la vue pour autant.
+ *
+ * @param stdClass $cm Course module.
+ * @param context $context Contexte du module stage.
+ * @param stdClass $entry
+ * @param stdClass|null $theme Thématique de la saisie.
+ * @return string HTML, chaîne vide si la thématique ne demande aucun rapport et qu'aucun
+ *                document n'a été déposé.
+ */
+function stage_render_report_section(stdClass $cm, context $context, stdClass $entry, ?stdClass $theme) {
+    global $OUTPUT;
+
+    $links = stage_render_report_links($cm, $context, $entry);
+    if ($links === '' && stage_theme_report_mode($theme) == STAGE_REPORT_NONE) {
+        return '';
+    }
+
+    return $OUTPUT->heading(get_string('reportfiles', 'mod_stage'), 4)
+        . ($links !== '' ? $links : $OUTPUT->notification(get_string('noreportfiles', 'mod_stage'), 'info'));
 }
 
 /**

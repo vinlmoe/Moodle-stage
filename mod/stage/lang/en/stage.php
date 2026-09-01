@@ -254,6 +254,7 @@ $string['transferpreview'] = 'Prepare the transfer';
 $string['transfersummary'] = 'Transfer to perform';
 $string['transferentries'] = 'Internships that will be transferred';
 $string['transferentrycount'] = 'Number of internships';
+$string['transferreportcount'] = 'Internship report documents transferred';
 $string['transferconfirm'] = 'Confirm the transfer';
 $string['transferirreversible'] = 'The transfer cannot be undone: to bring the student back to this course, you will have to transfer them back from the destination activity.';
 $string['transferdone'] = '{$a->count} internship(s) of {$a->student} transferred to "{$a->target}".';

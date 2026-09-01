@@ -262,6 +262,7 @@ $string['transferpreview'] = 'Préparer le transfert';
 $string['transfersummary'] = 'Transfert à effectuer';
 $string['transferentries'] = 'Stages qui seront transférés';
 $string['transferentrycount'] = 'Nombre de stages';
+$string['transferreportcount'] = 'Documents de rapport de stage transférés';
 $string['transferconfirm'] = 'Confirmer le transfert';
 $string['transferirreversible'] = "Le transfert n'est pas réversible : pour ramener l'étudiant dans ce cours, il faudra refaire un transfert en sens inverse depuis l'activité de destination.";
 $string['transferdone'] = '{$a->count} stage(s) de {$a->student} transféré(s) vers « {$a->target} ».';

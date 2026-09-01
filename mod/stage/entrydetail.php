@@ -221,11 +221,7 @@ if (!empty($teacherquestions) || $entry->teachereval) {
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
 }
 
-if (stage_theme_report_mode($theme) != STAGE_REPORT_NONE) {
-    echo $OUTPUT->heading(get_string('reportfiles', 'mod_stage'), 4);
-    $reportlinks = stage_render_report_links($cm, $context, $entry);
-    echo $reportlinks !== '' ? $reportlinks : $OUTPUT->notification(get_string('noreportfiles', 'mod_stage'), 'info');
-}
+echo stage_render_report_section($cm, $context, $entry, $theme);
 
 if (stage_tutor_evaluation_enabled($stage, $theme)) {
     $tutorquestions = stage_get_questions($entry->themeid, 'tutor');

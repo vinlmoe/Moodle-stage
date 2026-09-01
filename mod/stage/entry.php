@@ -179,11 +179,7 @@ if (!$editable) {
         echo $OUTPUT->heading(get_string('workdays', 'mod_stage'), 4);
         echo stage_render_workday_picker($periods, stage_get_entry_workdays($entry->id), false);
     }
-    if ($reportmode != STAGE_REPORT_NONE) {
-        echo $OUTPUT->heading(get_string('reportfiles', 'mod_stage'), 4);
-        $reportlinks = stage_render_report_links($cm, $context, $entry);
-        echo $reportlinks !== '' ? $reportlinks : $OUTPUT->notification(get_string('noreportfiles', 'mod_stage'), 'info');
-    }
+    echo stage_render_report_section($cm, $context, $entry, $theme);
     $answers = stage_get_answers($entry->id);
     if (!empty($questions)) {
         echo stage_render_answers_readonly($questions, $answers);

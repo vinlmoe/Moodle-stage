@@ -53,6 +53,10 @@ if ($action === 'delete' && $themeid) {
     require_sesskey();
     $theme = $DB->get_record('stage_theme', ['id' => $themeid, 'stageid' => $stage->id], '*', MUST_EXIST);
     if (!$DB->record_exists('stage_entry', ['themeid' => $theme->id])) {
+        // Les enseignants responsables sont rattachés à la thématique : sans cette suppression,
+        // leurs lignes survivraient à la thématique et resteraient comptées par
+        // stage_get_teacher_themes() (jointure sur une thématique disparue mise à part).
+        $DB->delete_records('stage_theme_teacher', ['themeid' => $theme->id]);
         $DB->delete_records('stage_theme', ['id' => $theme->id]);
         redirect($baseurl, get_string('themedeleted', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     } else {
