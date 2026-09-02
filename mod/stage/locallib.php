@@ -4191,9 +4191,41 @@ function stage_tutor_evaluation_enabled(stdClass $stage, ?stdClass $theme) {
 }
 
 /**
- * Si l'évaluation par le maître de stage est activée pour l'activité, génère (si besoin) un
- * jeton d'accès et envoie l'invitation par courriel au maître de stage. N'envoie jamais deux
- * fois l'invitation pour une même saisie (un jeton déjà présent est laissé tel quel).
+ * Liste les saisies dont le stage a commencé et dont le maître de stage n'a pas encore reçu son
+ * invitation à évaluer, filtrée directement en SQL sur les mêmes conditions que
+ * stage_maybe_request_tutor_evaluation() (évaluation activée, coordonnées connues) pour ne pas
+ * représenter indéfiniment, à chaque passage du cron, les saisies qui n'y sont pas éligibles.
+ *
+ * @return array stdClass[] Saisies (stage_entry), triées par date de début.
+ */
+function stage_get_entries_needing_tutor_request() {
+    global $DB;
+
+    $sql = "SELECT e.*
+              FROM {stage_entry} e
+              JOIN {stage} s ON s.id = e.stageid
+              JOIN {stage_theme} t ON t.id = e.themeid
+              JOIN {stage_convention_detail} d ON d.entryid = e.id
+             WHERE e.datestart > 0 AND e.datestart <= :now
+               AND e.status <> :cancelled
+               AND e.tutortoken IS NULL
+               AND s.tutorevaluationenabled = 1
+               AND t.tutorevaluationenabled = 1
+               AND d.tutoremail IS NOT NULL AND " . $DB->sql_compare_text('d.tutoremail') . " <> ''
+          ORDER BY e.datestart ASC";
+
+    return $DB->get_records_sql($sql, ['now' => time(), 'cancelled' => STAGE_STATUS_ANNULE]);
+}
+
+/**
+ * Si l'évaluation par le maître de stage est activée pour l'activité et le stage a commencé,
+ * génère (si besoin) un jeton d'accès et envoie l'invitation par courriel au maître de stage.
+ * N'envoie jamais deux fois l'invitation pour une même saisie (un jeton déjà présent est laissé
+ * tel quel). Appelée par la tâche planifiée \mod_stage\task\send_tutor_evaluation_requests, qui
+ * s'appuie sur stage_get_entries_needing_tutor_request() pour ne cibler que les saisies dont le
+ * premier jour de stage est arrivé : envoyer l'invitation dès l'auto-évaluation de l'étudiant (qui
+ * peut être saisie bien avant le début du stage) enverrait le questionnaire au maître de stage
+ * avant même que le stage ait commencé.
  *
  * @param stdClass $stage
  * @param stdClass $cm Course module.
@@ -4202,6 +4234,10 @@ function stage_tutor_evaluation_enabled(stdClass $stage, ?stdClass $theme) {
  */
 function stage_maybe_request_tutor_evaluation(stdClass $stage, stdClass $cm, stdClass $entry) {
     global $DB;
+
+    if (empty($entry->datestart) || $entry->datestart > time()) {
+        return;
+    }
 
     $theme = $DB->get_record('stage_theme', ['id' => $entry->themeid]);
     if (!stage_tutor_evaluation_enabled($stage, $theme) || !empty($entry->tutortoken)) {

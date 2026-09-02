@@ -36,4 +36,15 @@ $tasks = [
         'month' => '*',
         'dayofweek' => '*',
     ],
+    [
+        // Même logique qu'au-dessus : l'invitation part le jour même du début du stage, une seule
+        // fois, quelle que soit l'heure exacte de passage du cron ce jour-là.
+        'classname' => 'mod_stage\task\send_tutor_evaluation_requests',
+        'blocking' => 0,
+        'minute' => '45',
+        'hour' => '6',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

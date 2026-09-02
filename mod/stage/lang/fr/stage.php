@@ -677,6 +677,7 @@ $string['conventionremindernotifbody'] = "Bonjour {\$a->student},\n\nVotre stage
     . "convention signée, le stage ne peut pas débuter.\n\nMerci de régulariser votre demande de convention au "
     . "plus vite :\n{\$a->url}";
 $string['taskconventionreminders'] = 'Relance des conventions de stage non signées';
+$string['tasktutorevaluationrequests'] = 'Envoi des invitations à évaluer le stage aux maîtres de stage';
 $string['reportmode'] = 'Rapport de stage';
 $string['reportmode_help'] = "Dépôt de documents demandé à l'étudiant lors de son auto-évaluation, sur le "
     . "modèle d'un devoir. Les documents déposés sont consultables par la DEVE, par l'enseignant référent de "

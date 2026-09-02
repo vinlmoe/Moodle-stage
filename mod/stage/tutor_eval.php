@@ -16,9 +16,9 @@
 
 /**
  * Évaluation du stage par le maître de stage (encadrant en entreprise, sans compte Moodle),
- * accessible uniquement via le jeton unique envoyé par courriel (voir
- * stage_maybe_request_tutor_evaluation()). Aucune authentification Moodle : la validité du
- * jeton, à lui seul, fait foi.
+ * accessible uniquement via le jeton unique envoyé par courriel le jour du début du stage (voir
+ * \mod_stage\task\send_tutor_evaluation_requests et stage_maybe_request_tutor_evaluation()).
+ * Aucune authentification Moodle : la validité du jeton, à lui seul, fait foi.
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
