@@ -219,7 +219,10 @@ class student_register_form extends \moodleform {
         // Les dates du stage étant déduites des plages, leur cohérence conditionne tout le reste :
         // le contrôle de doublon ci-dessous s'appuie sur elles.
         $periods = stage_extract_submitted_periods((object) $data);
-        $perioderror = stage_validate_periods($periods);
+        // L'étudiant enregistre ici son stage et demande sa convention dans la foulée : une
+        // convention ne pouvant pas couvrir un stage déjà commencé, les dates passées sont
+        // refusées (contrairement aux formulaires de la DEVE, voir stage_validate_periods()).
+        $perioderror = stage_validate_periods($periods, true);
         if ($perioderror !== null) {
             $errors['perioddatestart[0]'] = $perioderror;
             return $errors;

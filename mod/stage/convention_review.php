@@ -127,13 +127,21 @@ if ($mform->is_cancelled()) {
         // Génère et télécharge immédiatement le PDF de la convention, plutôt que d'obliger la
         // DEVE à revenir ensuite sur la liste pour cliquer "Générer la convention" séparément.
         $entry = $DB->get_record('stage_entry', ['id' => $entry->id], '*', MUST_EXIST);
-        $result = stage_build_convention_pdf($stage, $entry, $context, !empty($data->withsignatures));
-        if ($result['error']) {
-            redirect($backurl, get_string('conventionvalidatedpdferror', 'mod_stage', get_string($result['error'], 'mod_stage')),
+        $error = stage_check_convention_pdf_prerequisites($entry, $context);
+        if ($error !== null) {
+            redirect($backurl, get_string('conventionvalidatedpdferror', 'mod_stage', get_string($error, 'mod_stage')),
                 null, \core\output\notification::NOTIFY_WARNING);
         }
-        $result['pdf']->Output($result['filename'], 'D');
-        exit;
+        // Le téléchargement passe par convention.php, qui lance le fichier puis ramène à la liste
+        // des conventions : envoyer le PDF directement en réponse à ce formulaire laisserait la
+        // DEVE sur l'écran de validation, cette convention étant pourtant traitée.
+        redirect(new moodle_url('/mod/stage/convention.php', [
+            'id' => $cm->id,
+            'entryid' => $entry->id,
+            'confirmgenerate' => 1,
+            'withsignatures' => !empty($data->withsignatures) ? 1 : 0,
+            'returnurl' => $backurl->out_as_local_url(false),
+        ]));
     } else if (!empty($data->rejectconvention)) {
         stage_reject_convention($entry, $USER->id, $data->rejectcomment);
         stage_notify_student_convention_rejected($stage, $cm, $entry, $data->rejectcomment);

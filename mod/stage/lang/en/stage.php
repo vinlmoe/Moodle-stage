@@ -48,20 +48,25 @@ $string['stage:manageteachers'] = 'Assign referent teachers';
 $string['managethemes'] = 'Manage themes';
 $string['administration'] = 'Administration';
 $string['importfromcourse'] = 'Import from another course';
-$string['importfromcourse_help'] = 'Copy the themes, agreement templates, logos and/or establishment information from '
-    . "another instance of the activity (usually in another course) into this one, so you don't have to redo "
-    . "everything for each new course. Only instances where you yourself can manage themes are offered as a "
-    . 'source. Imported items are added to what is already here (themes and templates are not merged with '
-    . 'existing ones; logos and establishment information already set here are replaced).';
+$string['importfromcourse_help'] = 'Copy the themes, agreement templates, logos, email texts and/or establishment '
+    . "information from another instance of the activity (usually in another course) into this one, so you don't "
+    . 'have to redo everything for each new course. Only instances where you yourself can manage themes are '
+    . 'offered as a source. Imported items are added to what is already here (themes and templates are not '
+    . 'merged with existing ones; logos, email texts and establishment information already set here are '
+    . 'replaced).';
 $string['importsource'] = 'Source instance';
 $string['importthemes'] = 'Themes';
 $string['importtemplates'] = 'Agreement templates';
 $string['importlogos'] = 'Logos';
+$string['importemails'] = 'Email texts';
+$string['importemails_help'] = 'Copies the email subjects and bodies customised in the source instance (the '
+    . '"Notifications" page). Each email customised in the source replaces the one in this instance; emails the '
+    . 'source has not customised are left as they are here.';
 $string['importestablishment'] = 'Educational establishment information';
 $string['importnothingselected'] = 'Select at least one item to import.';
 $string['noimportsources'] = 'No other instance of the activity where you can manage themes was found.';
 $string['importdone'] = 'Import complete: {$a->themes} theme(s), {$a->templates} agreement template(s), '
-    . '{$a->logos} logo(s), establishment {$a->establishmenttext}.';
+    . '{$a->logos} logo(s), {$a->emails} email text(s), establishment {$a->establishmenttext}.';
 $string['importdoneestablishmentyes'] = 'imported';
 $string['importdoneestablishmentno'] = 'not imported';
 $string['manageteachers'] = 'Assign referent teachers';
@@ -254,6 +259,7 @@ $string['transferpreview'] = 'Prepare the transfer';
 $string['transfersummary'] = 'Transfer to perform';
 $string['transferentries'] = 'Internships that will be transferred';
 $string['transferentrycount'] = 'Number of internships';
+$string['transferreportcount'] = 'Internship report documents transferred';
 $string['transferconfirm'] = 'Confirm the transfer';
 $string['transferirreversible'] = 'The transfer cannot be undone: to bring the student back to this course, you will have to transfer them back from the destination activity.';
 $string['transferdone'] = '{$a->count} internship(s) of {$a->student} transferred to "{$a->target}".';
@@ -274,6 +280,11 @@ $string['removeperiod'] = 'Remove';
 $string['periods_help'] = 'An internship can have several non-contiguous date ranges (e.g. two separate stays). The student will pick their actual working days among these ranges during their self-evaluation.';
 $string['periodsrequired'] = 'Enter at least one date period: the internship dates are derived from them.';
 $string['periodendbeforestart'] = 'The end date of a period cannot come before its start date.';
+$string['periodstartinpast'] = 'An agreement cannot be requested for an internship that has already started: the '
+    . 'start date must be today or later. If the internship has already started, contact the administration office.';
+$string['selfevalnotstartedyet'] = 'Your internship has not started yet: self-assessment will be available from '
+    . 'its start date.';
+$string['selfevalfrom'] = 'Self-assessment from {$a}';
 $string['periodsoverlap'] = 'Two date periods overlap ({$a->first} and {$a->second}). The same days would be counted twice: adjust them so they do not overlap.';
 $string['conventionsignaturedate'] = 'Date: ............................';
 $string['noperiodsdefined'] = 'No date range has been defined for this internship yet.';
@@ -373,6 +384,9 @@ $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review -
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
     . 'You can view and evaluate this entry here: {$a->url}';
 $string['generateconvention'] = 'Generate the convention';
+$string['downloadstarting'] = 'The download is starting. You will be taken back to the previous page.';
+$string['downloadrestart'] = 'Restart the download';
+$string['backtolist'] = 'Back to the list';
 $string['includesignatureblock'] = 'Add a signature block (student, workplace supervisor, host '
     . 'organisation representative, referent teacher, establishment) at the bottom of the first '
     . 'page, for a printed convention to be signed by hand.';
@@ -455,6 +469,25 @@ $string['conventionrejectedby'] = 'Rejected by';
 $string['conventionvalidatedby'] = 'Validated by the referent teacher';
 $string['conventioneditedby'] = 'Edited by';
 $string['conventionsignedby'] = 'Signed by';
+// Column labels specific to the Excel export (export.php): the dates of the steps already named
+// above, and the information that appears nowhere else as a column.
+$string['conventionteachervalidatedby'] = 'Validated by the referent teacher';
+$string['conventionrequesttime'] = 'Agreement request date';
+$string['conventionteachervalidatetime'] = 'Referent teacher validation date';
+$string['conventionedittime'] = 'Agreement editing date';
+$string['conventionsigntime'] = 'Agreement signature date';
+$string['conventionrejecttime'] = 'Agreement rejection date';
+$string['workdayscount'] = 'Number of selected working days';
+$string['teachervalidationtime'] = 'Teacher evaluation date';
+$string['tutorevaltime'] = 'Workplace tutor evaluation date';
+$string['tutorevalbypassedcolumn'] = 'Workplace tutor evaluation skipped';
+$string['reportfilescount'] = 'Number of submitted documents';
+$string['devevalidatedby'] = 'Validated by the administration office';
+$string['devevalidationtime'] = 'Administration office validation date';
+$string['timecreated'] = 'Registration date';
+$string['exportanswers'] = 'Questionnaire answers';
+$string['exportentryid'] = 'Internship ID';
+$string['answer'] = 'Answer';
 $string['conventionrejectedexplain'] = 'Your agreement request was rejected by the DEVE, for the following '
     . 'reason: "{$a}". Please correct your request below and submit it again.';
 $string['conventionrejectednotifsubject'] = 'Internship agreement rejected: {$a}';
@@ -605,9 +638,62 @@ $string['tutorevalnotifsubject'] = 'Evaluation of {$a}\'s internship';
 $string['tutorevalnotifbody'] = 'You are currently supervising {$a->student} during their internship '
     . '"{$a->stage}". Please evaluate this internship by following this link, which does not require an '
     . "account:\n{\$a->url}";
+$string['emailkeyconventionreminder'] = 'Unsigned agreement reminder (to the student)';
+$string['conventionremindernotifsubject'] = 'Internship agreement not signed: {$a}';
+$string['conventionremindernotifbody'] = "Hello {\$a->student},\n\nYour internship \"{\$a->theme}\" starts on "
+    . "{\$a->datestart}, in less than {\$a->days} days, and its agreement is still not signed. Without a signed "
+    . "agreement, the internship cannot start.\n\nPlease sort out your agreement request as soon as "
+    . "possible:\n{\$a->url}";
+$string['taskconventionreminders'] = 'Send unsigned internship agreement reminders';
+$string['reportmode'] = 'Internship report';
+$string['reportmode_help'] = 'Document submission requested from the student during their self-assessment, '
+    . 'like an assignment. Submitted documents can be viewed by the administration office, by the student\'s '
+    . 'referent teacher and by the teachers responsible for the theme. "Required" prevents the student from '
+    . 'submitting their self-assessment until they have submitted at least one document.';
+$string['reportmode_none'] = 'None';
+$string['reportmode_optional'] = 'Optional';
+$string['reportmode_required'] = 'Required';
+$string['reportfiles'] = 'Internship report';
+$string['reportfiles_help'] = 'Submit your internship report and any supporting documents here. You can come '
+    . 'back to them until you submit your self-assessment.';
+$string['savereportfiles'] = 'Save documents';
+$string['reportfilessaved'] = 'The documents of your internship report have been saved.';
+$string['noreportfiles'] = 'No document submitted.';
+$string['reportfilemissing'] = 'This document does not exist or is no longer available.';
+$string['reportrequirednotice'] = 'At least one document must be submitted before you can submit your '
+    . 'self-assessment.';
+$string['reportrequiredmissing'] = 'Your self-assessment was not submitted: at least one document is required '
+    . 'for this theme. Submit your internship report below, then submit your self-assessment again.';
+$string['downloadallreports'] = 'Download all reports (.zip)';
+$string['reportszipname'] = 'internship-reports-{$a}';
+$string['noreportstozip'] = 'No document has been submitted for this theme.';
+$string['reportszipfailed'] = 'The archive of internship reports could not be built.';
+$string['themeteachers'] = 'Responsible teachers';
+$string['themeteachers_help'] = 'Teachers responsible for a theme have access to every internship carried out '
+    . 'on that theme (the "Internships by theme" tab) and to the reports submitted for them, whoever the '
+    . 'students\' referent teachers are. They do not evaluate the internships: evaluation remains the role of '
+    . 'each student\'s referent teacher.';
+$string['themeteacherssaved'] = 'The teachers responsible for the theme have been saved.';
+$string['themeteacherscount'] = '{$a} teacher(s)';
+$string['mythemestages'] = 'Internships by theme';
+$string['nostagesfortheme'] = 'No internship matches this theme.';
 $string['evaltype_tutor'] = 'Workplace tutor';
+$string['tutorevaluationenabledtheme'] = 'Workplace tutor evaluation for this theme';
+$string['tutorevaluationenabledtheme_help'] = 'Only takes effect if workplace tutor evaluation is also enabled '
+    . 'globally for this activity (the "Notifications" page). Once that global option is enabled, this lets '
+    . 'you offer it for only some themes rather than all of them.';
 $string['tutorevalheading'] = 'Workplace tutor evaluation';
 $string['notutoreval'] = 'The workplace tutor has not yet answered their evaluation questionnaire.';
+$string['tutorevallink'] = 'Evaluation link to send to the workplace tutor';
+$string['tutorevalresend'] = 'Resend the invitation email to the workplace tutor';
+$string['tutorevalresent'] = 'The reminder email was sent to the workplace tutor.';
+$string['tutorevalresentfailed'] = 'The email could not be sent: the workplace tutor\'s contact details are unknown.';
+$string['tutorevalbypass'] = 'Skip this evaluation (stop blocking validation)';
+$string['confirmtutorevalbypass'] = 'Skip the workplace tutor evaluation for this internship? '
+    . 'The DEVE validation will no longer be blocked by the lack of a response.';
+$string['tutorevalbypassed'] = 'The workplace tutor evaluation has been skipped for this internship.';
+$string['tutorevalbypassednotice'] = 'The workplace tutor evaluation was skipped by the administration office '
+    . 'and no longer blocks validation of this internship.';
 $string['tutorevalpagetitle'] = 'Internship evaluation';
 $string['tutorevalinvalidtoken'] = 'This evaluation link is no longer valid.';
 $string['tutorevalalreadysubmitted'] = 'Your evaluation has been recorded, thank you.';

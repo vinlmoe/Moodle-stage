@@ -34,6 +34,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
+$returnurlparam = optional_param('returnurl', '', PARAM_LOCALURL);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -48,8 +49,13 @@ require_capability('mod/stage:registerstages', $context);
 
 $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->id], '*', MUST_EXIST);
 
-$backurl = new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
-$baseurl = new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entryid]);
+// L'écran de retour est celui d'où l'on vient (liste des conventions, enregistrement des stages,
+// tableau de pilotage...), à défaut la liste des conventions.
+$backurl = $returnurlparam !== ''
+    ? new moodle_url($returnurlparam)
+    : new moodle_url('/mod/stage/conventions.php', ['id' => $cm->id]);
+$baseurl = new moodle_url('/mod/stage/convention.php',
+    ['id' => $cm->id, 'entryid' => $entryid, 'returnurl' => $returnurlparam]);
 
 // Demande d'abord si un cadre de signatures (stagiaire, maître de stage, responsable de
 // l'organisme d'accueil, enseignant.e référent.e, établissement) doit être ajouté en bas de la
@@ -85,13 +91,43 @@ if (!$confirmed) {
 
 $withsignatures = optional_param('withsignatures', 0, PARAM_BOOL);
 
-$result = stage_build_convention_pdf($stage, $entry, $context, $withsignatures);
-if ($result['error']) {
+// Second temps : le fichier lui-même, demandé par le cadre invisible de la page ci-dessous. Les
+// causes d'échec ayant déjà été écartées à l'affichage de cette page, une erreur ici ne peut plus
+// venir que d'un changement entre-temps : l'exception suffit, il n'y a personne pour la lire dans
+// un cadre invisible de toute façon.
+if (optional_param('download', 0, PARAM_BOOL)) {
+    $result = stage_build_convention_pdf($stage, $entry, $context, $withsignatures);
+    if ($result['error']) {
+        throw new moodle_exception($result['error'], 'mod_stage');
+    }
+    $result['pdf']->Output($result['filename'], 'D');
+    exit;
+}
+
+$PAGE->set_url($baseurl);
+$PAGE->set_title(format_string($stage->name) . ' - ' . get_string('generateconvention', 'mod_stage'));
+$PAGE->set_heading(format_string($course->fullname));
+$PAGE->set_context($context);
+
+// Ce qui empêcherait de construire le PDF est vérifié avant de lancer quoi que ce soit : une
+// erreur survenant dans le cadre de téléchargement ne serait jamais montrée à la DEVE.
+$error = stage_check_convention_pdf_prerequisites($entry, $context);
+if ($error !== null) {
     echo $OUTPUT->header();
-    echo $OUTPUT->notification(get_string($result['error'], 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
+    echo $OUTPUT->notification(get_string($error, 'mod_stage'), \core\output\notification::NOTIFY_ERROR);
     echo html_writer::link($backurl, get_string('back'));
     echo $OUTPUT->footer();
     exit;
 }
 
-$result['pdf']->Output($result['filename'], 'D');
+// Premier temps : la convention se télécharge en pièce jointe, ce qui ne fait pas changer de
+// page ; sans cette étape, la DEVE resterait sur le formulaire ci-dessus au lieu de revenir à sa
+// liste.
+$downloadurl = new moodle_url($baseurl, [
+    'confirmgenerate' => 1, 'withsignatures' => $withsignatures ? 1 : 0, 'download' => 1,
+]);
+
+echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('generateconvention', 'mod_stage'));
+echo stage_render_download_and_return($downloadurl, $backurl);
+echo $OUTPUT->footer();

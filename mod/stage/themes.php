@@ -53,6 +53,10 @@ if ($action === 'delete' && $themeid) {
     require_sesskey();
     $theme = $DB->get_record('stage_theme', ['id' => $themeid, 'stageid' => $stage->id], '*', MUST_EXIST);
     if (!$DB->record_exists('stage_entry', ['themeid' => $theme->id])) {
+        // Les enseignants responsables sont rattachés à la thématique : sans cette suppression,
+        // leurs lignes survivraient à la thématique et resteraient comptées par
+        // stage_get_teacher_themes() (jointure sur une thématique disparue mise à part).
+        $DB->delete_records('stage_theme_teacher', ['themeid' => $theme->id]);
         $DB->delete_records('stage_theme', ['id' => $theme->id]);
         redirect($baseurl, get_string('themedeleted', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     } else {
@@ -110,6 +114,8 @@ if ($action === 'edit') {
         $record->maxstudyyear = $data->maxstudyyear;
         $record->sortorder = $data->sortorder;
         $record->visible = !empty($data->visible) ? 1 : 0;
+        $record->tutorevaluationenabled = !empty($data->tutorevaluationenabled) ? 1 : 0;
+        $record->reportmode = (int) $data->reportmode;
         $record->timemodified = time();
 
         if (!empty($data->themeid)) {
@@ -136,9 +142,14 @@ if ($action === 'bulksave' && data_submitted() && confirm_sesskey()) {
         $mandatory = optional_param('mandatory_' . $theme->id, 0, PARAM_INT);
         $minstudyyear = optional_param('minstudyyear_' . $theme->id, 0, PARAM_INT);
         $maxstudyyear = optional_param('maxstudyyear_' . $theme->id, 0, PARAM_INT);
+        $tutorevaluationenabled = optional_param('tutorevaluationenabled_' . $theme->id, 0, PARAM_INT);
+        $reportmode = optional_param('reportmode_' . $theme->id, $theme->reportmode, PARAM_INT);
         $theme->mandatory = $mandatory ? 1 : 0;
         $theme->minstudyyear = $minstudyyear;
         $theme->maxstudyyear = $maxstudyyear;
+        $theme->tutorevaluationenabled = $tutorevaluationenabled ? 1 : 0;
+        $theme->reportmode = array_key_exists($reportmode, stage_report_mode_options())
+            ? $reportmode : STAGE_REPORT_NONE;
         $theme->timemodified = time();
         $DB->update_record('stage_theme', $theme);
     }
@@ -164,6 +175,11 @@ if (empty($themes)) {
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'action', 'value' => 'bulksave']);
 
+    // La colonne d'activation par thématique n'a de sens que si l'évaluation par le maître de
+    // stage est elle-même activée globalement pour l'activité (notifications.php) ; sinon elle ne
+    // ferait qu'ajouter une case à cocher inopérante.
+    $showtutorevalcolumn = !empty($stage->tutorevaluationenabled);
+
     $table = new html_table();
     $table->head = [
         get_string('theme', 'mod_stage'),
@@ -172,8 +188,14 @@ if (empty($themes)) {
         get_string('mandatory', 'mod_stage'),
         get_string('requiredduration', 'mod_stage'),
         get_string('visible'),
-        get_string('actions', 'mod_stage'),
     ];
+    if ($showtutorevalcolumn) {
+        $table->head[] = get_string('tutorevaluationenabledtheme', 'mod_stage');
+    }
+    $table->head[] = get_string('reportmode', 'mod_stage');
+    $table->head[] = get_string('themeteachers', 'mod_stage');
+    $table->head[] = get_string('actions', 'mod_stage');
+    $reportmodeoptions = stage_report_mode_options();
     foreach ($themes as $theme) {
         $mandatorycb = html_writer::checkbox('mandatory_' . $theme->id, 1, (bool) $theme->mandatory, '');
         $durationlabel = !empty($theme->requiredduration)
@@ -188,6 +210,17 @@ if (empty($themes)) {
         $visible = html_writer::link($togglevisibleurl,
             $theme->visible ? get_string('yes') : get_string('no'),
             ['class' => $theme->visible ? 'badge badge-success' : 'badge badge-secondary']);
+        $tutorevalcb = html_writer::checkbox('tutorevaluationenabled_' . $theme->id, 1,
+            (bool) $theme->tutorevaluationenabled, '');
+        $reportmodeselect = html_writer::select($reportmodeoptions, 'reportmode_' . $theme->id,
+            $theme->reportmode, false, ['class' => 'form-control']);
+
+        // Enseignants responsables de la thématique : le nombre actuel plutôt que la liste
+        // complète, qui allongerait démesurément la ligne, et un lien vers la page d'affectation.
+        $themeteachersurl = new moodle_url('/mod/stage/theme_teachers.php',
+            ['id' => $cm->id, 'themeid' => $theme->id]);
+        $themeteachers = html_writer::link($themeteachersurl,
+            get_string('themeteacherscount', 'mod_stage', count(stage_get_theme_teachers($theme->id))));
 
         $editurl = new moodle_url('/mod/stage/themes.php', ['id' => $cm->id, 'action' => 'edit', 'themeid' => $theme->id]);
         $toggleurl = new moodle_url('/mod/stage/themes.php',
@@ -209,8 +242,15 @@ if (empty($themes)) {
             'onclick' => "return confirm('" . get_string('confirmdeletetheme', 'mod_stage') . "');",
         ]);
 
-        $table->data[] = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
-            $durationlabel, $visible, $actions];
+        $row = [format_string($theme->name), $minstudyyearselect, $maxstudyyearselect, $mandatorycb,
+            $durationlabel, $visible];
+        if ($showtutorevalcolumn) {
+            $row[] = $tutorevalcb;
+        }
+        $row[] = $reportmodeselect;
+        $row[] = $themeteachers;
+        $row[] = $actions;
+        $table->data[] = $row;
     }
     echo html_writer::table($table);
 

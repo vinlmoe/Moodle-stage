@@ -182,7 +182,9 @@ class convention_request_form extends \moodleform {
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
-        $perioderror = stage_validate_periods(stage_extract_submitted_periods((object) $data));
+        // Une convention ne se demande pas pour un stage déjà commencé : les dates passées sont
+        // refusées ici, contrairement aux formulaires de la DEVE (voir stage_validate_periods()).
+        $perioderror = stage_validate_periods(stage_extract_submitted_periods((object) $data), true);
         if ($perioderror !== null) {
             $errors['perioddatestart[0]'] = $perioderror;
         }

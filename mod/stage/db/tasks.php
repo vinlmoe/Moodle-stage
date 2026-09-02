@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for mod_stage.
+ * Scheduled tasks for mod_stage.
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
@@ -24,8 +24,16 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_stage';
-$plugin->version   = 2026082429;
-$plugin->requires  = 2022041900; // Moodle 4.0+.
-$plugin->maturity  = MATURITY_BETA;
-$plugin->release   = '0.2.1';
+$tasks = [
+    [
+        // Une fois par jour au petit matin : la relance se joue à la journée près, la faire
+        // tourner plus souvent n'avancerait rien (chaque saisie n'est relancée qu'une fois).
+        'classname' => 'mod_stage\task\send_convention_reminders',
+        'blocking' => 0,
+        'minute' => '30',
+        'hour' => '6',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
+];

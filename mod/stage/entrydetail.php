@@ -44,7 +44,10 @@ $entry = $DB->get_record('stage_entry', ['id' => $entryid, 'stageid' => $stage->
 $isdeve = has_capability('mod/stage:viewall', $context);
 $isassignedteacher = has_capability('mod/stage:evaluateteacher', $context)
     && in_array($entry->userid, array_keys(stage_get_assigned_students($stage->id, $USER->id)));
-if (!$isdeve && !$isassignedteacher) {
+// L'enseignant responsable de la thématique du stage y a accès au même titre que l'enseignant
+// référent de l'étudiant : c'est sa vue de détail depuis theme_stages.php.
+$isthemeteacher = stage_is_theme_teacher($entry->themeid, $USER->id);
+if (!$isdeve && !$isassignedteacher && !$isthemeteacher) {
     throw new moodle_exception('nopermissions', 'error', '', get_string('viewdetails', 'mod_stage'));
 }
 
@@ -218,7 +221,9 @@ if (!empty($teacherquestions) || $entry->teachereval) {
         : html_writer::div(format_text($entry->teachereval, FORMAT_PLAIN));
 }
 
-if (!empty($stage->tutorevaluationenabled)) {
+echo stage_render_report_section($cm, $context, $entry, $theme);
+
+if (stage_tutor_evaluation_enabled($stage, $theme)) {
     $tutorquestions = stage_get_questions($entry->themeid, 'tutor');
     if (!empty($tutorquestions) || $entry->tutoreval) {
         echo $OUTPUT->heading(get_string('tutorevalheading', 'mod_stage'), 4);
