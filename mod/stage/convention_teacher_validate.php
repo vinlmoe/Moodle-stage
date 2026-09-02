@@ -36,6 +36,7 @@ use mod_stage\form\convention_review_form;
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
+$returnurlparam = optional_param('returnurl', '', PARAM_LOCALURL);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -53,7 +54,12 @@ if (!in_array((int) $entry->userid, $assignedids, true)) {
 
 $student = $DB->get_record('user', ['id' => $entry->userid], '*', MUST_EXIST);
 
-$backurl = new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
+// Accessible depuis la liste de teacher.php mais aussi depuis stage_render_entry_management_actions()
+// (résumé de l'étudiant, tableau de pilotage...) : le retour honore l'origine réelle si elle a été
+// transmise, à défaut la liste de teacher.php.
+$backurl = $returnurlparam !== ''
+    ? new moodle_url($returnurlparam)
+    : new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id]);
 
 if ((int) $entry->conventionstatus !== STAGE_CONVENTION_TEACHERPENDING) {
     redirect($backurl);

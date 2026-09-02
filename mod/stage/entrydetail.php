@@ -31,6 +31,7 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $entryid = required_param('entryid', PARAM_INT);
+$returnurlparam = optional_param('returnurl', '', PARAM_LOCALURL);
 
 $cm = get_coursemodule_from_id('stage', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
@@ -79,7 +80,13 @@ $PAGE->set_context($context);
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('viewdetails', 'mod_stage') . ' - ' . fullname($student));
 
-$backurl = new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id, 'studentid' => $student->id]);
+// Cette page est accessible depuis plusieurs origines (tableau de pilotage, résumé de l'étudiant,
+// liste d'un enseignant responsable de thématique...) : le retour honore l'origine réelle si elle
+// a été transmise (voir stage_render_entry_management_actions()), à défaut la vue détaillée de
+// l'étudiant dans le pilotage, seule origine possible pour la DEVE avant l'ajout de ce paramètre.
+$backurl = $returnurlparam !== ''
+    ? new moodle_url($returnurlparam)
+    : new moodle_url('/mod/stage/dashboard.php', ['id' => $cm->id, 'studentid' => $student->id]);
 echo html_writer::link($backurl, get_string('back'));
 
 $dateformat = get_string('strftimedate', 'langconfig');
