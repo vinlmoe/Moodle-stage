@@ -335,7 +335,13 @@ $string['qtype'] = 'Question type';
 $string['qtype_choice'] = 'Multiple choice';
 $string['qtype_text'] = 'Free comment';
 $string['questionlabel'] = 'Question label';
+$string['questionlabelen'] = 'Question label (English, workplace tutor)';
 $string['choiceoptions'] = 'Choice options (one per line)';
+$string['choiceoptionsen'] = 'Choice options in English (one per line, workplace tutor)';
+$string['questionlangen'] = 'English version';
+$string['questionlangen_help'] = "If the student's internship agreement is in English, the workplace tutor sees "
+    . 'this English version instead of the French one. Leave empty to fall back to the French text: there is no '
+    . 'automatic translation.';
 $string['choiceoptionsrequired'] = 'Please enter at least one option, one per line.';
 $string['questionrequired'] = 'Answer required';
 $string['questionsaved'] = 'Question saved.';
@@ -711,6 +717,8 @@ $string['tutorevalalreadysubmitted'] = 'Your evaluation has been recorded, thank
 $string['tutorevalsubmit'] = 'Submit my evaluation';
 $string['tutorevalintro'] = 'You are supervising {$a->student} during their internship "{$a->stage}". '
     . 'Please answer the evaluation questionnaire below.';
+$string['tutorevalstudentlabel'] = 'Student';
+$string['tutorevaldateslabel'] = 'Internship dates';
 $string['notifications'] = 'Notifications and emails';
 $string['notificationssettings'] = 'Customize the emails sent';
 $string['notificationssettings_help'] = "For each email sent by the activity, you can replace the subject "

@@ -343,7 +343,14 @@ $string['qtype'] = 'Type de question';
 $string['qtype_choice'] = 'Choix multiples';
 $string['qtype_text'] = 'Commentaire libre';
 $string['questionlabel'] = 'Intitulé de la question';
+$string['questionlabelen'] = 'Intitulé de la question (anglais, maître de stage)';
 $string['choiceoptions'] = 'Options du QCM (une par ligne)';
+$string['choiceoptionsen'] = 'Options du QCM en anglais (une par ligne, maître de stage)';
+$string['questionlangen'] = 'Version anglaise';
+$string['questionlangen_help'] = "Si la convention de l'étudiant est en anglais, le maître de stage voit "
+    . "cette version anglaise à la place de la version française. Laissez vide pour utiliser une traduction "
+    . 'automatique littérale de la version française n\'est pas prévue : sans traduction, le texte français '
+    . "sera utilisé par défaut.";
 $string['choiceoptionsrequired'] = 'Veuillez saisir au moins une option, une par ligne.';
 $string['questionrequired'] = 'Réponse obligatoire';
 $string['questionsaved'] = 'La question a été enregistrée.';
@@ -726,6 +733,8 @@ $string['tutorevalalreadysubmitted'] = 'Votre évaluation a bien été enregistr
 $string['tutorevalsubmit'] = 'Envoyer mon évaluation';
 $string['tutorevalintro'] = "Vous encadrez {\$a->student} dans le cadre de son stage \"{\$a->stage}\". "
     . "Merci de bien vouloir répondre au questionnaire d'évaluation ci-dessous.";
+$string['tutorevalstudentlabel'] = 'Étudiant';
+$string['tutorevaldateslabel'] = 'Dates du stage';
 $string['notifications'] = 'Notifications et e-mails';
 $string['notificationssettings'] = 'Personnalisation des e-mails envoyés';
 $string['notificationssettings_help'] = "Pour chaque e-mail envoyé par l'activité, vous pouvez remplacer le "

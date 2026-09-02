@@ -709,5 +709,19 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082430, 'stage');
     }
 
+    if ($oldversion < 2026090200) {
+        $questiontable = new xmldb_table('stage_question');
+        $field = new xmldb_field('nameen', XMLDB_TYPE_TEXT, null, null, null, null, null, 'name');
+        if (!$dbman->field_exists($questiontable, $field)) {
+            $dbman->add_field($questiontable, $field);
+        }
+        $field = new xmldb_field('optionsen', XMLDB_TYPE_TEXT, null, null, null, null, null, 'options');
+        if (!$dbman->field_exists($questiontable, $field)) {
+            $dbman->add_field($questiontable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026090200, 'stage');
+    }
+
     return true;
 }

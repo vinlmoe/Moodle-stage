@@ -105,7 +105,9 @@ if ($action === 'edit') {
         $record->evaltype = $data->evaltype;
         $record->qtype = $data->qtype;
         $record->name = $data->name;
+        $record->nameen = $data->nameen ?? null;
         $record->options = $data->qtype === 'choice' ? $data->options : null;
+        $record->optionsen = $data->qtype === 'choice' ? ($data->optionsen ?? null) : null;
         $record->required = !empty($data->required) ? 1 : 0;
         $record->sortorder = $data->sortorder;
         $record->timemodified = time();

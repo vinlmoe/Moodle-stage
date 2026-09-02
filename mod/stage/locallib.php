@@ -1604,9 +1604,13 @@ function stage_render_email_placeholders($text, array $vars) {
  * @param array $vars Valeurs des variables listées dans la définition de cet e-mail (voir
  *                    stage_get_email_definitions()['vars']), utilisées à la fois pour le texte
  *                    par défaut ({$a->xxx}) et pour un texte personnalisé ({{xxx}}).
+ * @param string|null $lang Langue à utiliser pour le texte par défaut ('fr', 'en', ...), en
+ *                    priorité sur la langue courante de la session. N'a d'effet que sur le texte
+ *                    par défaut : un texte personnalisé par la DEVE reste tel quel, quelle que
+ *                    soit la langue.
  * @return stdClass {subject, body}
  */
-function stage_resolve_email_text($stageid, $emailkey, array $vars) {
+function stage_resolve_email_text($stageid, $emailkey, array $vars, $lang = null) {
     $definitions = stage_get_email_definitions();
     $definition = $definitions[$emailkey];
     $custom = stage_get_custom_email_template($stageid, $emailkey);
@@ -1617,13 +1621,13 @@ function stage_resolve_email_text($stageid, $emailkey, array $vars) {
         // Les sujets par défaut existants n'utilisent qu'une seule variable (le nom du stage),
         // passée directement plutôt qu'en objet : on respecte ce format pour ne pas retoucher
         // ces chaînes de langue.
-        $subject = get_string($definition['subjectstring'], 'mod_stage', $vars['stage'] ?? null);
+        $subject = get_string($definition['subjectstring'], 'mod_stage', $vars['stage'] ?? null, $lang);
     }
 
     if ($custom && trim((string) $custom->body) !== '') {
         $body = stage_render_email_placeholders($custom->body, $vars);
     } else {
-        $body = get_string($definition['bodystring'], 'mod_stage', (object) $vars);
+        $body = get_string($definition['bodystring'], 'mod_stage', (object) $vars, $lang);
     }
 
     return (object) ['subject' => $subject, 'body' => $body];
@@ -1770,8 +1774,10 @@ function stage_get_reusable_questions($stageid, $themeid) {
  * @param stdClass $question
  * @return array
  */
-function stage_question_options(stdClass $question) {
-    $lines = preg_split('/\r\n|\r|\n/', (string) $question->options);
+function stage_question_options(stdClass $question, $lang = 'fr') {
+    $raw = $lang === 'en' && trim((string) ($question->optionsen ?? '')) !== ''
+        ? $question->optionsen : $question->options;
+    $lines = preg_split('/\r\n|\r|\n/', (string) $raw);
     $options = [];
     foreach ($lines as $line) {
         $line = trim($line);
@@ -1780,6 +1786,39 @@ function stage_question_options(stdClass $question) {
         }
     }
     return $options;
+}
+
+/**
+ * Intitulé d'une question dans la langue demandée : la version anglaise si elle a été saisie et
+ * demandée (maître de stage dont la convention est en anglais), la version française sinon.
+ *
+ * @param stdClass $question
+ * @param string $lang 'fr' ou 'en'
+ * @return string
+ */
+function stage_question_name(stdClass $question, $lang = 'fr') {
+    if ($lang === 'en' && trim((string) ($question->nameen ?? '')) !== '') {
+        return $question->nameen;
+    }
+    return $question->name;
+}
+
+/**
+ * Détermine la langue à utiliser pour s'adresser au maître de stage (courriel d'invitation,
+ * page d'évaluation, intitulés des questions) : celle du gabarit de convention utilisé pour la
+ * saisie, ou le français par défaut si la saisie n'a pas de convention ou de gabarit connu.
+ *
+ * @param stdClass $entry
+ * @return string 'fr' ou 'en'
+ */
+function stage_get_entry_convention_lang(stdClass $entry) {
+    global $DB;
+
+    if (empty($entry->conventiontemplateid)) {
+        return 'fr';
+    }
+    $lang = $DB->get_field('stage_convention_template', 'lang', ['id' => $entry->conventiontemplateid]);
+    return $lang === 'en' ? 'en' : 'fr';
 }
 
 /**
@@ -1851,7 +1890,7 @@ function stage_get_submitted_answers(array $questions) {
  * @param array $answers Réponses existantes, indexées par questionid
  * @return string
  */
-function stage_render_question_fields(array $questions, array $answers) {
+function stage_render_question_fields(array $questions, array $answers, $lang = 'fr') {
     $out = '';
 
     foreach ($questions as $question) {
@@ -1860,11 +1899,11 @@ function stage_render_question_fields(array $questions, array $answers) {
         $required = $question->required ? ['required' => 'required'] : [];
 
         $out .= html_writer::start_tag('div', ['class' => 'form-group mb-3']);
-        $out .= html_writer::tag('label', format_string($question->name) . ($question->required ? ' *' : ''),
+        $out .= html_writer::tag('label', format_string(stage_question_name($question, $lang)) . ($question->required ? ' *' : ''),
             ['for' => $fieldname]);
 
         if ($question->qtype === 'choice') {
-            foreach (stage_question_options($question) as $index => $option) {
+            foreach (stage_question_options($question, $lang) as $index => $option) {
                 $optionid = $fieldname . '_' . $index;
                 $out .= html_writer::start_tag('div', ['class' => 'form-check']);
                 $out .= html_writer::empty_tag('input', array_merge([
@@ -2043,7 +2082,7 @@ function stage_render_entry_summary(stdClass $entry, $theme = null, $student = n
  * @param array $answers Réponses existantes, indexées par questionid
  * @return string
  */
-function stage_render_answers_readonly(array $questions, array $answers) {
+function stage_render_answers_readonly(array $questions, array $answers, $lang = 'fr') {
     if (empty($questions)) {
         return '';
     }
@@ -2051,7 +2090,7 @@ function stage_render_answers_readonly(array $questions, array $answers) {
     $out = html_writer::start_tag('dl', ['class' => 'stage-answers']);
     foreach ($questions as $question) {
         $current = isset($answers[$question->id]) ? trim((string) $answers[$question->id]->answertext) : '';
-        $out .= html_writer::tag('dt', format_string($question->name));
+        $out .= html_writer::tag('dt', format_string(stage_question_name($question, $lang)));
         $out .= html_writer::tag('dd', $current !== ''
             ? nl2br(s($current))
             : html_writer::tag('em', get_string('noanswer', 'mod_stage')));
@@ -4110,12 +4149,13 @@ function stage_notify_tutor_evaluation_request(stdClass $stage, stdClass $cm, st
         return;
     }
 
+    $lang = stage_get_entry_convention_lang($entry);
     $url = new moodle_url('/mod/stage/tutor_eval.php', ['token' => $entry->tutortoken]);
     $text = stage_resolve_email_text($stage->id, 'tutorrequest', [
         'student' => fullname($student),
         'stage' => format_string($stage->name),
         'url' => $url->out(false),
-    ]);
+    ], $lang);
 
     $names = explode(' ', trim($tutorname), 2);
     $tutoruser = (object) [
@@ -4130,7 +4170,7 @@ function stage_notify_tutor_evaluation_request(stdClass $stage, stdClass $cm, st
         'suspended' => 0,
         'deleted' => 0,
         'emailstop' => 0,
-        'lang' => current_language(),
+        'lang' => $lang,
     ];
 
     email_to_user($tutoruser, core_user::get_noreply_user(), $text->subject, $text->body);
