@@ -148,9 +148,11 @@ if ($mode === 'list') {
         $conventionactions = stage_render_actions([
             get_string('conventionreview', 'mod_stage') => $conventionstatus === STAGE_CONVENTION_REQUESTED
                 ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+            // Le retour après téléchargement ramène sur cette liste, filtres et page compris.
             get_string('generateconvention', 'mod_stage') =>
                 in_array($conventionstatus, [STAGE_CONVENTION_EDITED, STAGE_CONVENTION_SIGNED], true)
-                    ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                    ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                        'returnurl' => (new moodle_url($listurl, ['page' => $page]))->out_as_local_url(false)]) : null,
             get_string('conventionmarksigned', 'mod_stage') => $conventionstatus === STAGE_CONVENTION_EDITED
                 ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
             get_string('downloadsignedconvention', 'mod_stage') =>

@@ -384,6 +384,9 @@ $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review -
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
     . 'You can view and evaluate this entry here: {$a->url}';
 $string['generateconvention'] = 'Generate the convention';
+$string['downloadstarting'] = 'The download is starting. You will be taken back to the previous page.';
+$string['downloadrestart'] = 'Restart the download';
+$string['backtolist'] = 'Back to the list';
 $string['includesignatureblock'] = 'Add a signature block (student, workplace supervisor, host '
     . 'organisation representative, referent teacher, establishment) at the bottom of the first '
     . 'page, for a printed convention to be signed by hand.';

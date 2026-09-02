@@ -2577,6 +2577,8 @@ function stage_progress_table_head() {
  * @return string HTML des boutons d'action, chaîne vide s'il n'y en a aucun.
  */
 function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, context $context, stdClass $rights) {
+    global $PAGE;
+
     $status = (int) $entry->status;
     $conventionstatus = (int) $entry->conventionstatus;
     $out = '';
@@ -2609,9 +2611,12 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
         get_string('edit') => $rights->register
             ? new moodle_url('/mod/stage/register.php',
                 ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]) : null,
+        // Le retour après téléchargement ramène sur la page courante (tableau de pilotage, résumé
+        // d'un étudiant...), et non sur la liste des conventions dont on ne venait pas.
         get_string('generateconvention', 'mod_stage') =>
             $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
-                ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         // Comme convention_signed.php, la convention signée est ouverte à la DEVE et à
         // l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
         get_string('downloadsignedconvention', 'mod_stage') =>
@@ -4554,6 +4559,74 @@ function stage_stored_file_to_temp(\stored_file $file) {
 }
 
 /**
+ * Vérifie ce qui empêcherait de construire le PDF d'une convention (gabarit non choisi, fichier
+ * de gabarit absent, bibliothèque FPDI non installée), sans rien construire.
+ *
+ * Ces contrôles sont ceux de stage_build_convention_pdf(), isolés pour pouvoir être faits avant
+ * de lancer un téléchargement : une erreur survenant pendant le téléchargement lui-même
+ * (convention.php, cadre invisible) ne serait jamais montrée à l'utilisateur.
+ *
+ * @param stdClass $entry
+ * @param context $context Contexte du module stage.
+ * @return string|null Clé de chaîne de langue mod_stage décrivant l'empêchement, ou null si le
+ *                     PDF peut être construit.
+ */
+function stage_check_convention_pdf_prerequisites(stdClass $entry, context $context) {
+    global $CFG;
+
+    if (empty($entry->conventiontemplateid)) {
+        return 'conventionnotemplatechosen';
+    }
+    if (!stage_get_convention_template_file($context, $entry->conventiontemplateid)) {
+        return 'conventiontemplatemissing';
+    }
+    if (!is_readable($CFG->dirroot . '/mod/stage/thirdparty/vendor/autoload.php')) {
+        return 'conventionfpdimissing';
+    }
+
+    return null;
+}
+
+/**
+ * Page intermédiaire qui lance un téléchargement puis ramène l'utilisateur là d'où il venait.
+ *
+ * Un fichier envoyé en pièce jointe ne fait pas changer de page : sans cela, l'utilisateur reste
+ * sur le formulaire qui a déclenché le téléchargement. Le téléchargement est donc lancé dans un
+ * cadre invisible, ce qui laisse la page courante libre de naviguer ensuite vers l'écran de
+ * retour. Les deux liens restent proposés en clair : ils servent de recours si le navigateur
+ * bloque le cadre, si le script est désactivé, ou si le téléchargement tarde.
+ *
+ * @param moodle_url $downloadurl URL renvoyant le fichier en pièce jointe.
+ * @param moodle_url $returnurl Écran sur lequel revenir une fois le téléchargement lancé.
+ * @param int $delay Délai avant le retour, en secondes : le téléchargement doit avoir démarré,
+ *                   un retour trop prompt interromprait une génération encore en cours.
+ * @return string HTML
+ */
+function stage_render_download_and_return(moodle_url $downloadurl, moodle_url $returnurl, $delay = 5) {
+    global $OUTPUT;
+
+    $out = $OUTPUT->notification(get_string('downloadstarting', 'mod_stage'),
+        \core\output\notification::NOTIFY_INFO);
+
+    $out .= html_writer::tag('iframe', '', [
+        'src' => $downloadurl->out(false), 'title' => get_string('downloadstarting', 'mod_stage'),
+        'width' => '0', 'height' => '0', 'style' => 'border:0;position:absolute;visibility:hidden;',
+    ]);
+
+    $out .= html_writer::div(
+        html_writer::link($downloadurl, get_string('downloadrestart', 'mod_stage'),
+            ['class' => 'btn btn-secondary mr-2'])
+        . html_writer::link($returnurl, get_string('backtolist', 'mod_stage'),
+            ['class' => 'btn btn-primary']));
+
+    $out .= html_writer::script(
+        'setTimeout(function() { window.location.href = ' . json_encode($returnurl->out(false)) . '; }, '
+        . ((int) $delay * 1000) . ');');
+
+    return $out;
+}
+
+/**
  * Construit le PDF complet de la convention d'une saisie : une page 1 générée à partir des
  * données de la base (logos et informations d'établissement configurés par la DEVE), suivie des
  * pages du gabarit choisi par l'étudiant, réimportées via FPDI.
@@ -4574,22 +4647,16 @@ function stage_stored_file_to_temp(\stored_file $file) {
 function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $context, $withsignatures = false) {
     global $DB, $CFG;
 
-    if (empty($entry->conventiontemplateid)) {
-        return ['error' => 'conventionnotemplatechosen', 'pdf' => null, 'filename' => null];
+    $error = stage_check_convention_pdf_prerequisites($entry, $context);
+    if ($error !== null) {
+        return ['error' => $error, 'pdf' => null, 'filename' => null];
     }
 
     $conventiontemplate = $DB->get_record('stage_convention_template', ['id' => $entry->conventiontemplateid]);
     $conventionlang = $conventiontemplate ? $conventiontemplate->lang : 'fr';
-
     $templatefile = stage_get_convention_template_file($context, $entry->conventiontemplateid);
-    if (!$templatefile) {
-        return ['error' => 'conventiontemplatemissing', 'pdf' => null, 'filename' => null];
-    }
 
     $fpdiautoload = $CFG->dirroot . '/mod/stage/thirdparty/vendor/autoload.php';
-    if (!is_readable($fpdiautoload)) {
-        return ['error' => 'conventionfpdimissing', 'pdf' => null, 'filename' => null];
-    }
     require_once($fpdiautoload);
     require_once($CFG->dirroot . '/mod/stage/classes/pdf/convention_pdf.php');
 
