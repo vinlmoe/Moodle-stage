@@ -352,6 +352,7 @@ $string['selectexistingquestion'] = 'Reuse an existing question...';
 $string['savebulkchanges'] = 'Save changes';
 $string['toggle'] = 'Toggle mandatory';
 $string['evaluate'] = 'Evaluate';
+$string['viewevaluation'] = 'View the evaluation';
 $string['validate'] = 'Validate';
 $string['selectall'] = 'Select all';
 $string['bulkvalidateselected'] = 'Validate selection';
@@ -437,6 +438,13 @@ $string['conventionrequested'] = 'The agreement request has been sent to the DEV
 $string['conventionnotedited'] = 'The agreement for this internship is not (or no longer) in the "edited" status, '
     . 'so it is not accessible from this link.';
 $string['conventionnotemplatechosen'] = 'No agreement template has been chosen for this internship.';
+$string['conventionpaperrequest'] = 'Paper agreement (signature block)';
+$string['conventionpaperrequest_help'] = 'Tick if a printed copy of the agreement, with a signature block to fill '
+    . 'in by hand, is needed (for example if the host organisation cannot sign electronically). Otherwise, the '
+    . 'electronically signed agreement is enough.';
+$string['conventionpaperrequestedbystudentonly'] = 'Paper agreement requested by the student.';
+$string['conventionpaperrequestedbyteacheronly'] = 'Paper agreement requested by the referent teacher.';
+$string['conventionpaperrequestedbyboth'] = 'Paper agreement requested by both the student and the referent teacher.';
 $string['conventionnotsignedyet'] = 'The internship agreement must be signed by the DEVE before you can '
     . 'self-assess. Check your agreement status on your dashboard.';
 $string['conventionstatus'] = 'Agreement status';

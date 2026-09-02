@@ -360,6 +360,7 @@ $string['selectexistingquestion'] = 'Réutiliser une question existante...';
 $string['savebulkchanges'] = 'Enregistrer les modifications';
 $string['toggle'] = 'Basculer obligatoire';
 $string['evaluate'] = 'Évaluer';
+$string['viewevaluation'] = "Voir l'évaluation";
 $string['validate'] = 'Valider';
 $string['selectall'] = 'Tout sélectionner';
 $string['bulkvalidateselected'] = 'Valider la sélection';
@@ -448,6 +449,13 @@ $string['conventionrequested'] = 'La demande de convention a été envoyée à l
 $string['conventionnotedited'] = "La convention de ce stage n'est pas (ou plus) au statut « éditée » : elle n'est "
     . 'donc pas accessible depuis ce lien.';
 $string['conventionnotemplatechosen'] = "Aucun modèle de convention n'a été choisi pour ce stage.";
+$string['conventionpaperrequest'] = 'Convention papier (cadre de signatures)';
+$string['conventionpaperrequest_help'] = "Cochez si un exemplaire imprimé de la convention, avec un cadre de "
+    . "signatures à remplir à la main, est nécessaire (par exemple si l'organisme d'accueil ne peut pas signer "
+    . 'électroniquement). Sinon, la convention signée électroniquement suffit.';
+$string['conventionpaperrequestedbystudentonly'] = "Convention papier demandée par l'étudiant.";
+$string['conventionpaperrequestedbyteacheronly'] = "Convention papier demandée par l'enseignant référent.";
+$string['conventionpaperrequestedbyboth'] = "Convention papier demandée par l'étudiant et par l'enseignant référent.";
 $string['conventionnotsignedyet'] = "La convention de stage doit être signée par la DEVE avant de pouvoir vous "
     . 'auto-évaluer. Consultez le statut de votre convention sur votre tableau de bord.';
 $string['conventionstatus'] = 'Statut de la convention';

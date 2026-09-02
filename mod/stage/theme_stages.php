@@ -153,8 +153,11 @@ foreach ($entries as $entry) {
     $student = $students[$entry->userid] ?? null;
     $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
     $reportlinks = stage_render_report_links($cm, $context, $entry);
+    // Le retour ramène sur cette liste telle qu'affichée (recherche, statut, tri), pas sur la
+    // vue de pilotage à laquelle l'enseignant responsable de thématique n'a pas forcément accès.
     $action = html_writer::link(
-        new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+        new moodle_url('/mod/stage/entrydetail.php',
+            ['id' => $cm->id, 'entryid' => $entry->id, 'returnurl' => $listurl->out_as_local_url(false)]),
         get_string('viewdetails', 'mod_stage'), ['class' => 'btn btn-sm btn-secondary']);
 
     $table->data[] = [

@@ -117,6 +117,29 @@ function stage_convention_is_signed($status) {
 }
 
 /**
+ * Message d'information à afficher à la DEVE (convention_review.php) quand une convention papier
+ * (cadre de signatures) a été demandée par l'étudiant lors de sa demande (convention_request.php)
+ * et/ou par l'enseignant référent lors de sa validation (convention_teacher_validate.php), pour
+ * qu'elle sache pourquoi la case "withsignatures" est précochée sans avoir à rouvrir leurs
+ * demandes respectives.
+ *
+ * @param stdClass|false $detail Retour de stage_get_convention_detail().
+ * @return string|null Texte, ou null si personne n'a demandé de convention papier.
+ */
+function stage_convention_paper_requested_info($detail) {
+    $bystudent = !empty($detail->paperrequestedbystudent);
+    $byteacher = !empty($detail->paperrequestedbyteacher);
+    if ($bystudent && $byteacher) {
+        return get_string('conventionpaperrequestedbyboth', 'mod_stage');
+    } else if ($bystudent) {
+        return get_string('conventionpaperrequestedbystudentonly', 'mod_stage');
+    } else if ($byteacher) {
+        return get_string('conventionpaperrequestedbyteacheronly', 'mod_stage');
+    }
+    return null;
+}
+
+/**
  * Retourne une classe CSS de badge selon le statut de convention.
  *
  * @param int $status
@@ -2588,35 +2611,42 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
     $out = '';
 
     // Ce qui attend une action de l'utilisateur : mis en avant, c'est ce pour quoi il ouvre cette
-    // page. Chaque état n'en ouvre qu'une seule.
+    // page. Chaque état n'en ouvre qu'une seule. Le retour ramène sur la page courante (tableau de
+    // pilotage, résumé d'un étudiant...), et non sur la liste de teacher.php/deve.php dont on ne
+    // venait pas forcément.
     $out .= stage_render_actions([
         get_string('evaluate', 'mod_stage') =>
             $rights->assignedteacher && $status === STAGE_STATUS_EVAL_ETUDIANT
-                ? new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('conventionteachervalidate', 'mod_stage') =>
             $rights->assignedteacher && $conventionstatus === STAGE_CONVENTION_TEACHERPENDING
-                ? new moodle_url('/mod/stage/convention_teacher_validate.php',
-                    ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/convention_teacher_validate.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('validate', 'mod_stage') =>
             $rights->validatedeve && $status === STAGE_STATUS_EVAL_ENSEIGNANT
-                ? new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/deve.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('conventionreview', 'mod_stage') =>
             $rights->register && $conventionstatus === STAGE_CONVENTION_REQUESTED
-                ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/convention_review.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('conventionmarksigned', 'mod_stage') =>
             $rights->register && $conventionstatus === STAGE_CONVENTION_EDITED
-                ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+                ? new moodle_url('/mod/stage/convention_sign.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
     ], 'btn btn-sm btn-primary mr-1 mb-1', '');
 
-    // Actions disponibles en permanence : consultation et retouches.
+    // Actions disponibles en permanence : consultation et retouches. Le retour ramène sur la page
+    // courante (tableau de pilotage, résumé d'un étudiant...), et non sur une liste fixe dont on
+    // ne venait pas forcément (voir aussi generateconvention/viewconvention ci-dessous).
     $out .= stage_render_actions([
         get_string('viewdetails', 'mod_stage') => $rights->viewdetail
-            ? new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id]) : null,
+            ? new moodle_url('/mod/stage/entrydetail.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('edit') => $rights->register
-            ? new moodle_url('/mod/stage/register.php',
-                ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id]) : null,
-        // Le retour après téléchargement ramène sur la page courante (tableau de pilotage, résumé
-        // d'un étudiant...), et non sur la liste des conventions dont on ne venait pas.
+            ? new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'single', 'entryid' => $entry->id,
+                'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         get_string('generateconvention', 'mod_stage') =>
             $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
                 ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
@@ -2639,11 +2669,12 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
     ], 'btn btn-sm btn-secondary mr-1 mb-1', '');
 
     // Réinitialiser et annuler défont un travail déjà fait : en rouge et en dernier, comme dans la
-    // liste de register.php, pour ne pas être cliquées à la place de « Modifier ».
+    // liste de register.php, pour ne pas être cliquées à la place de « Modifier ». Le retour ramène
+    // sur la page courante, comme les autres actions ci-dessus.
     if ($rights->register && $status !== STAGE_STATUS_ENREGISTRE) {
         $out .= html_writer::link(
-            new moodle_url('/mod/stage/register.php',
-                ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id, 'sesskey' => sesskey()]),
+            new moodle_url('/mod/stage/register.php', ['id' => $cm->id, 'mode' => 'reset', 'entryid' => $entry->id,
+                'sesskey' => sesskey(), 'returnurl' => $PAGE->url->out_as_local_url(false)]),
             get_string('resetentry', 'mod_stage'), [
                 'class' => 'btn btn-sm btn-outline-danger mr-1 mb-1',
                 'onclick' => "return confirm('" . get_string('confirmresetentry', 'mod_stage') . "');",
@@ -2651,7 +2682,8 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
     }
     if ($rights->register && $status !== STAGE_STATUS_ANNULE) {
         $out .= html_writer::link(
-            new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+            new moodle_url('/mod/stage/cancel_entry.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                'returnurl' => $PAGE->url->out_as_local_url(false)]),
             get_string('cancelentry', 'mod_stage'), ['class' => 'btn btn-sm btn-outline-danger mr-1 mb-1']);
     }
 

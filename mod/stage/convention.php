@@ -23,11 +23,13 @@
  * stage_build_convention_pdf() (locallib.php), réutilisée aussi par convention_review.php pour un
  * téléchargement immédiat après validation.
  *
- * Accessible à la DEVE (à tout moment, y compris pour réimprimer une convention déjà signée ou
- * plus tard), et, une fois la convention éditée par la DEVE (STAGE_CONVENTION_EDITED) et tant
- * qu'elle n'est pas encore signée, à l'étudiant propriétaire de la saisie et à son enseignant
- * référent : au-delà (signée), ces deux derniers doivent utiliser convention_signed.php à la
- * place (voir stage_print_student_dashboard()).
+ * Accessible à la DEVE à tout moment (y compris pour réimprimer une convention déjà signée ou
+ * plus tard, avec le choix d'ajouter un cadre de signatures), et, une fois la convention éditée
+ * par la DEVE (STAGE_CONVENTION_EDITED) et tant qu'elle n'est pas encore signée, à l'étudiant
+ * propriétaire de la saisie et à son enseignant référent : ces deux derniers ne font que la
+ * télécharger telle qu'éditée par la DEVE (pas de régénération ni de cadre de signatures), sans
+ * passer par l'écran de choix réservé à la DEVE ; au-delà (signée), ils doivent utiliser
+ * convention_signed.php à la place (voir stage_print_student_dashboard()).
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
@@ -80,9 +82,10 @@ $baseurl = new moodle_url('/mod/stage/convention.php',
 // Demande d'abord si un cadre de signatures (stagiaire, maître de stage, responsable de
 // l'organisme d'accueil, enseignant.e référent.e, établissement) doit être ajouté en bas de la
 // page 1, pour une convention imprimée destinée à être signée à la main, plutôt que de générer
-// systématiquement l'un ou l'autre.
-$confirmed = optional_param('confirmgenerate', 0, PARAM_BOOL);
-if (!$confirmed) {
+// systématiquement l'un ou l'autre. Ce choix ne concerne que la DEVE, seule à imprimer la
+// convention pour la faire signer : l'étudiant et l'enseignant référent ne font que télécharger
+// la convention déjà éditée par la DEVE, sans passer par cet écran intermédiaire.
+if ($isdeve && !optional_param('confirmgenerate', 0, PARAM_BOOL)) {
     $PAGE->set_url($baseurl);
     $PAGE->set_title(format_string($stage->name) . ' - ' . $pagetitle);
     $PAGE->set_heading(format_string($course->fullname));
@@ -109,7 +112,9 @@ if (!$confirmed) {
     exit;
 }
 
-$withsignatures = optional_param('withsignatures', 0, PARAM_BOOL);
+// Le cadre de signatures est une option d'impression réservée à la DEVE (voir ci-dessus) : sans
+// objet pour un simple téléchargement par l'étudiant ou l'enseignant référent.
+$withsignatures = $isdeve && optional_param('withsignatures', 0, PARAM_BOOL);
 
 // Second temps : le fichier lui-même, demandé par le cadre invisible de la page ci-dessous. Les
 // causes d'échec ayant déjà été écartées à l'affichage de cette page, une erreur ici ne peut plus

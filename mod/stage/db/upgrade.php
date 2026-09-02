@@ -693,5 +693,21 @@ function xmldb_stage_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026082429, 'stage');
     }
 
+    if ($oldversion < 2026082430) {
+        $detailtable = new xmldb_table('stage_convention_detail');
+        $field = new xmldb_field('paperrequestedbystudent', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0',
+            'gratificationamount');
+        if (!$dbman->field_exists($detailtable, $field)) {
+            $dbman->add_field($detailtable, $field);
+        }
+        $field = new xmldb_field('paperrequestedbyteacher', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0',
+            'paperrequestedbystudent');
+        if (!$dbman->field_exists($detailtable, $field)) {
+            $dbman->add_field($detailtable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026082430, 'stage');
+    }
+
     return true;
 }
