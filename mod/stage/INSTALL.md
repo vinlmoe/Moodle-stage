@@ -232,7 +232,30 @@ Depuis **Enregistrer des stages**, la DEVE peut annuler un stage à tout moment,
 avec un motif obligatoire. La saisie est conservée en l'état ; seul le statut
 passe définitivement à **Annulé**.
 
-## 8. Suivi et validation
+## 8. Évaluation par le maître de stage et personnalisation des e-mails
+
+Depuis **Administration > Notifications** :
+
+- **Évaluation par le maître de stage** (case à cocher) : une fois activée,
+  dès que l'étudiant s'auto-évalue, son maître de stage (l'encadrant en
+  entreprise, qui n'a pas de compte Moodle) reçoit un courriel contenant un
+  lien à jeton unique vers un questionnaire d'évaluation. Ce questionnaire
+  suit les mêmes règles que ceux de l'étudiant et de l'enseignant référent
+  (voir §4, **Questions d'évaluation**, type « Maître de stage ») : questions
+  définies par thématique, ou à défaut simple commentaire libre. Le lien ne
+  nécessite aucune authentification et n'est utilisable qu'une fois ; la
+  réponse du maître de stage est ensuite affichée, en lecture seule, à
+  l'enseignant référent et à la DEVE au moment de leur propre évaluation, ainsi
+  que dans le détail de la saisie.
+- **Personnalisation des e-mails** : un formulaire par e-mail envoyé par
+  l'activité (auto-évaluation soumise, convention en attente de validation par
+  l'enseignant, convention refusée par la DEVE, invitation du maître de
+  stage), permettant de remplacer le sujet et le corps par un texte propre à
+  l'activité. Les variables disponibles pour chaque e-mail sont rappelées
+  sous son formulaire, à insérer avec la syntaxe `{{variable}}` ; laisser les
+  deux champs vides restaure le texte par défaut.
+
+## 9. Suivi et validation
 
 - **Étudiant** : avancement des thématiques obligatoires par année d'étude et
   liste de ses stages, avec le statut de convention et l'accès à
@@ -240,13 +263,14 @@ passe définitivement à **Annulé**.
   réinitialisation par la DEVE.
 - **Enseignant référent** : liste restreinte à ses étudiants (recherche, filtres,
   tri, pagination). Il valide l'évaluation ou la marque non validée avec un
-  motif.
+  motif. Si l'évaluation du maître de stage est activée, sa réponse est
+  affichée au-dessus de l'auto-évaluation de l'étudiant.
 - **DEVE** : validation unitaire (durée retenue et commentaire) ou en masse,
   possibilité de marquer non validé, et **Réinitialiser** pour rouvrir une
   saisie déjà évaluée. Le tableau de pilotage donne la vue d'ensemble de tous
   les étudiants avec accès au détail de chacun.
 
-## 9. Exports et API
+## 10. Exports et API
 
 **Exporter en Excel** produit un `.xlsx` de tous les stages de l'activité :
 étudiant, thématique, structure d'accueil, dates, durées déclarée et retenue,
