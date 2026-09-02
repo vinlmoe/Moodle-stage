@@ -360,6 +360,7 @@ $string['selectexistingquestion'] = 'Réutiliser une question existante...';
 $string['savebulkchanges'] = 'Enregistrer les modifications';
 $string['toggle'] = 'Basculer obligatoire';
 $string['evaluate'] = 'Évaluer';
+$string['viewevaluation'] = "Voir l'évaluation";
 $string['validate'] = 'Valider';
 $string['selectall'] = 'Tout sélectionner';
 $string['bulkvalidateselected'] = 'Valider la sélection';

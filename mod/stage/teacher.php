@@ -245,8 +245,13 @@ if (empty($assignedids)) {
     ]);
     echo stage_render_list_filters($listurl, $themes, $search, $filterthemeid, $filterstatus);
 
+    // Par défaut (aucun statut choisi dans le filtre), ne montre que les stages effectivement en
+    // attente d'évaluation : un stage déjà évalué (par cet enseignant ou rejeté) n'a plus rien à y
+    // faire. Le filtre de statut reste disponible pour retrouver explicitement un stage par son
+    // statut, y compris déjà évalué.
+    $liststatus = $filterstatus !== '' ? $filterstatus : STAGE_STATUS_EVAL_ETUDIANT;
     $allentries = stage_get_filtered_entries($stage->id,
-        ['search' => $search, 'themeid' => $filterthemeid, 'status' => $filterstatus], $tsort, $tdir, $assignedids);
+        ['search' => $search, 'themeid' => $filterthemeid, 'status' => $liststatus], $tsort, $tdir, $assignedids);
     [$entries, $pagingbarhtml] = stage_paginate($allentries, $page, $listurl);
 
     $table = new html_table();
@@ -264,13 +269,18 @@ if (empty($assignedids)) {
         $badge = html_writer::span(stage_status_label($entry->status), 'badge ' . stage_status_badgeclass($entry->status));
         $signedavailable = (int) $entry->conventionstatus === STAGE_CONVENTION_SIGNED
             && stage_get_signed_convention_file($context, $entry->id);
+        // Une fois le stage évalué (ou rejeté) par l'enseignant référent, il n'est plus modifiable
+        // ici (voir $editable ci-dessus) : le lien mène à une consultation, pas à une évaluation.
+        $actionlabel = (int) $entry->status === STAGE_STATUS_EVAL_ETUDIANT
+            ? get_string('evaluate', 'mod_stage')
+            : get_string('viewevaluation', 'mod_stage');
         $table->data[] = [
             $student ? fullname($student) : '-',
             $themename,
             $entry->declaredduration,
             $badge,
             stage_render_actions([
-                get_string('evaluate', 'mod_stage') =>
+                $actionlabel =>
                     new moodle_url('/mod/stage/teacher.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                 get_string('downloadsignedconvention', 'mod_stage') => $signedavailable
                     ? new moodle_url('/mod/stage/convention_signed.php', ['id' => $cm->id, 'entryid' => $entry->id])

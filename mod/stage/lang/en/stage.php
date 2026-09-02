@@ -352,6 +352,7 @@ $string['selectexistingquestion'] = 'Reuse an existing question...';
 $string['savebulkchanges'] = 'Save changes';
 $string['toggle'] = 'Toggle mandatory';
 $string['evaluate'] = 'Evaluate';
+$string['viewevaluation'] = 'View the evaluation';
 $string['validate'] = 'Validate';
 $string['selectall'] = 'Select all';
 $string['bulkvalidateselected'] = 'Validate selection';
