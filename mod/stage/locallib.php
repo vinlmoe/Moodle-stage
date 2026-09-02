@@ -730,7 +730,11 @@ function stage_get_student_progress($stageid, $userid) {
 
     foreach ($progress->themes as $themeid => $t) {
         if ($t->theme->mandatory) {
-            if (empty($t->requiredyears)) {
+            if (!empty($t->theme->requiredduration)) {
+                // Durée globale (unique pour toute la thématique, quel que soit le nombre
+                // d'années sur lesquelles elle est saisie) : ne pas la sommer par année.
+                $t->requiredduration = (int) $t->theme->requiredduration;
+            } else if (empty($t->requiredyears)) {
                 // Pas encore de saisie sur cette thématique : on affiche la durée requise pour
                 // l'année minimale de sa plage, à titre indicatif.
                 $t->requiredduration = stage_get_theme_duration($themeid, $t->theme->minstudyyear ?: $t->theme->maxstudyyear);
