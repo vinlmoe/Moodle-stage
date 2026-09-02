@@ -285,6 +285,10 @@
         <FIELD NAME="leavemodalities" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="gratificationamount" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false"
             COMMENT="Montant mensuel de la gratification, en euros (art. 5.13)"/>
+        <FIELD NAME="paperrequestedbystudent" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"
+            COMMENT="Convention papier (cadre de signatures) demandée par l'étudiant lors de sa demande de convention"/>
+        <FIELD NAME="paperrequestedbyteacher" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"
+            COMMENT="Convention papier (cadre de signatures) demandée par l'enseignant référent lors de sa validation"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>

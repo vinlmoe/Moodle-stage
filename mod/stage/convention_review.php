@@ -62,6 +62,9 @@ $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('conventionrev
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
+$detail = stage_get_convention_detail($entry->id);
+$paperrequestedinfo = stage_convention_paper_requested_info($detail);
+
 $periods = array_values(stage_get_or_seed_entry_periods($entry));
 $mform = new convention_review_form($baseurl, [
     'referentteachers' => $referentteachers, 'periods' => $periods,
@@ -69,9 +72,12 @@ $mform = new convention_review_form($baseurl, [
     // signatures se fait donc ici, et pas seulement lors d'une regénération ultérieure
     // (convention.php).
     'withsignatureoption' => true,
+    // Rappelle à la DEVE si l'étudiant et/ou l'enseignant référent a déjà demandé une convention
+    // papier, pour expliquer pourquoi la case juste en dessous est précochée le cas échéant.
+    'paperrequestedinfo' => $paperrequestedinfo !== null
+        ? html_writer::div($paperrequestedinfo, 'alert alert-info') : null,
 ]);
 
-$detail = stage_get_convention_detail($entry->id);
 $formdata = (object) ['id' => $cm->id, 'entryid' => $entryid];
 if ($detail) {
     foreach ($detail as $field => $value) {
@@ -86,6 +92,9 @@ $formdata->perioddatestart = array_map(function($period) {
 $formdata->perioddateend = array_map(function($period) {
     return $period->dateend;
 }, $periods);
+// Précoche la case d'impression si l'étudiant et/ou l'enseignant référent a demandé une convention
+// papier : la DEVE peut toujours la décocher si elle juge que ce n'est finalement pas nécessaire.
+$formdata->withsignatures = (!empty($detail->paperrequestedbystudent) || !empty($detail->paperrequestedbyteacher)) ? 1 : 0;
 $mform->set_data($formdata);
 
 if ($mform->is_cancelled()) {
@@ -118,6 +127,11 @@ if ($mform->is_cancelled()) {
     $newdetail->leavedays = $newdetail->hasleave ? $data->leavedays : null;
     $newdetail->leavemodalities = $newdetail->hasleave ? $data->leavemodalities : '';
     $newdetail->gratificationamount = $data->gratificationamount;
+    // Ni l'une ni l'autre de ces deux cases n'est éditable par la DEVE ici (voir
+    // convention_review_form, 'withsignatures' ci-dessous étant la seule à sa disposition) :
+    // reprises telles quelles depuis la demande initiale et sa validation par l'enseignant référent.
+    $newdetail->paperrequestedbystudent = !empty($detail->paperrequestedbystudent) ? 1 : 0;
+    $newdetail->paperrequestedbyteacher = !empty($detail->paperrequestedbyteacher) ? 1 : 0;
     stage_save_convention_detail($entry->id, $newdetail);
     stage_save_entry_periods($entry->id, stage_extract_submitted_periods($data));
 

@@ -117,6 +117,29 @@ function stage_convention_is_signed($status) {
 }
 
 /**
+ * Message d'information à afficher à la DEVE (convention_review.php) quand une convention papier
+ * (cadre de signatures) a été demandée par l'étudiant lors de sa demande (convention_request.php)
+ * et/ou par l'enseignant référent lors de sa validation (convention_teacher_validate.php), pour
+ * qu'elle sache pourquoi la case "withsignatures" est précochée sans avoir à rouvrir leurs
+ * demandes respectives.
+ *
+ * @param stdClass|false $detail Retour de stage_get_convention_detail().
+ * @return string|null Texte, ou null si personne n'a demandé de convention papier.
+ */
+function stage_convention_paper_requested_info($detail) {
+    $bystudent = !empty($detail->paperrequestedbystudent);
+    $byteacher = !empty($detail->paperrequestedbyteacher);
+    if ($bystudent && $byteacher) {
+        return get_string('conventionpaperrequestedbyboth', 'mod_stage');
+    } else if ($bystudent) {
+        return get_string('conventionpaperrequestedbystudentonly', 'mod_stage');
+    } else if ($byteacher) {
+        return get_string('conventionpaperrequestedbyteacheronly', 'mod_stage');
+    }
+    return null;
+}
+
+/**
  * Retourne une classe CSS de badge selon le statut de convention.
  *
  * @param int $status

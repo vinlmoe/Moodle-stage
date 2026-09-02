@@ -68,7 +68,12 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
 $periods = array_values(stage_get_or_seed_entry_periods($entry));
-$mform = new convention_review_form($baseurl, ['referentteachers' => $referentteachers, 'periods' => $periods]);
+$mform = new convention_review_form($baseurl, [
+    'referentteachers' => $referentteachers, 'periods' => $periods,
+    // Propre à l'enseignant référent : la DEVE ne voit pas cette case (convention_review.php),
+    // seulement son résultat combiné à celle de l'étudiant (voir stage_convention_paper_requested_info()).
+    'showpaperrequest' => true,
+]);
 
 $detail = stage_get_convention_detail($entry->id);
 $formdata = (object) ['id' => $cm->id, 'entryid' => $entryid];
@@ -117,6 +122,11 @@ if ($mform->is_cancelled()) {
     $newdetail->leavedays = $newdetail->hasleave ? $data->leavedays : null;
     $newdetail->leavemodalities = $newdetail->hasleave ? $data->leavemodalities : '';
     $newdetail->gratificationamount = $data->gratificationamount;
+    // La case de l'étudiant n'est pas éditable ici (voir convention_review_form) : sa valeur est
+    // reprise telle quelle depuis la demande initiale, plutôt que la case de l'enseignant référent
+    // ci-dessous, propre à ce formulaire.
+    $newdetail->paperrequestedbystudent = !empty($detail->paperrequestedbystudent) ? 1 : 0;
+    $newdetail->paperrequestedbyteacher = !empty($data->paperrequestedbyteacher) ? 1 : 0;
     stage_save_convention_detail($entry->id, $newdetail);
     stage_save_entry_periods($entry->id, stage_extract_submitted_periods($data));
 
