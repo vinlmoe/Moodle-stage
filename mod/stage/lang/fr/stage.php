@@ -392,6 +392,7 @@ $string['selfevalnotifsubject'] = 'Auto-évaluation de stage à évaluer - {$a}'
 $string['selfevalnotifbody'] = "{\$a->student} vient de s'auto-évaluer pour son stage \"{\$a->stage}\". "
     . "Vous pouvez consulter et évaluer cette saisie ici : {\$a->url}";
 $string['generateconvention'] = 'Générer la convention';
+$string['viewconvention'] = 'Consulter la convention';
 $string['downloadstarting'] = 'Le téléchargement démarre. Vous allez être ramené à la page précédente.';
 $string['downloadrestart'] = 'Relancer le téléchargement';
 $string['backtolist'] = 'Revenir à la liste';
@@ -444,6 +445,8 @@ $string['requestconvention_help'] = "Choisissez le modèle de convention corresp
     . 'possible qu\'une fois la convention signée.';
 $string['conventionalreadyrequested'] = 'La convention de ce stage a déjà été demandée.';
 $string['conventionrequested'] = 'La demande de convention a été envoyée à la DEVE.';
+$string['conventionnotedited'] = "La convention de ce stage n'est pas (ou plus) au statut « éditée » : elle n'est "
+    . 'donc pas accessible depuis ce lien.';
 $string['conventionnotemplatechosen'] = "Aucun modèle de convention n'a été choisi pour ce stage.";
 $string['conventionnotsignedyet'] = "La convention de stage doit être signée par la DEVE avant de pouvoir vous "
     . 'auto-évaluer. Consultez le statut de votre convention sur votre tableau de bord.';

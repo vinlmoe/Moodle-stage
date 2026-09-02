@@ -2621,6 +2621,13 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
             $rights->register && $conventionstatus >= STAGE_CONVENTION_EDITED
                 ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
                     'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
+        // L'enseignant référent (sans le droit d'enregistrement des stages) ne fait que consulter
+        // la convention déjà éditée par la DEVE, tant qu'elle n'est pas encore signée : au-delà,
+        // c'est la convention signée ci-dessous qui prend le relais (voir convention.php).
+        get_string('viewconvention', 'mod_stage') =>
+            !$rights->register && $rights->assignedteacher && $conventionstatus === STAGE_CONVENTION_EDITED
+                ? new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                    'returnurl' => $PAGE->url->out_as_local_url(false)]) : null,
         // Comme convention_signed.php, la convention signée est ouverte à la DEVE et à
         // l'enseignant référent de l'étudiant, mais pas à un simple droit de lecture.
         get_string('downloadsignedconvention', 'mod_stage') =>
@@ -2679,7 +2686,7 @@ function stage_render_entry_management_actions(stdClass $entry, stdClass $cm, co
  * @return void
  */
 function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $selfevallink = false, $detaillink = false) {
-    global $OUTPUT, $USER;
+    global $OUTPUT, $PAGE, $USER;
 
     $progress = stage_get_student_progress($stage->id, $userid);
     $mandatorythemes = array_filter($progress->themes, function($t) {
@@ -2942,9 +2949,17 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                             get_string('downloadsignedconvention', 'mod_stage'), $btn
                         );
                     }
+                } else if ((int) $entry->conventionstatus === STAGE_CONVENTION_EDITED) {
+                    // Convention éditée par la DEVE, prête à être imprimée et signée : l'étudiant
+                    // peut déjà la consulter/télécharger, avant même sa signature.
+                    $actions .= html_writer::link(
+                        new moodle_url('/mod/stage/convention.php', ['id' => $cm->id, 'entryid' => $entry->id,
+                            'returnurl' => $PAGE->url->out_as_local_url(false)]),
+                        get_string('viewconvention', 'mod_stage'), $btn
+                    );
                 }
-                // Convention demandée mais pas encore signée : rien à faire côté étudiant pour
-                // l'instant, le badge de statut ci-dessus suffit à le renseigner.
+                // Convention seulement demandée (pas encore éditée par la DEVE) : rien à faire côté
+                // étudiant pour l'instant, le badge de statut ci-dessus suffit à le renseigner.
             }
             // Actions de gestion de la DEVE et de l'enseignant référent : évaluer, valider,
             // relire la convention, modifier, annuler... selon leurs droits et l'état de la

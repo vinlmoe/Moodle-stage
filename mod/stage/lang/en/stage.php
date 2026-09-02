@@ -384,6 +384,7 @@ $string['selfevalnotifsubject'] = 'Internship self-assessment ready for review -
 $string['selfevalnotifbody'] = '{$a->student} has just self-assessed their internship "{$a->stage}". '
     . 'You can view and evaluate this entry here: {$a->url}';
 $string['generateconvention'] = 'Generate the convention';
+$string['viewconvention'] = 'View the convention';
 $string['downloadstarting'] = 'The download is starting. You will be taken back to the previous page.';
 $string['downloadrestart'] = 'Restart the download';
 $string['backtolist'] = 'Back to the list';
@@ -433,6 +434,8 @@ $string['requestconvention_help'] = 'Choose the agreement template matching your
     . 'be possible once the agreement has been signed.';
 $string['conventionalreadyrequested'] = 'The agreement for this internship has already been requested.';
 $string['conventionrequested'] = 'The agreement request has been sent to the DEVE.';
+$string['conventionnotedited'] = 'The agreement for this internship is not (or no longer) in the "edited" status, '
+    . 'so it is not accessible from this link.';
 $string['conventionnotemplatechosen'] = 'No agreement template has been chosen for this internship.';
 $string['conventionnotsignedyet'] = 'The internship agreement must be signed by the DEVE before you can '
     . 'self-assess. Check your agreement status on your dashboard.';
