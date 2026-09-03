@@ -39,7 +39,7 @@ function stagesynthesis_get_links($synthesisid) {
     global $DB;
 
     $sql = "SELECT l.id AS linkid, l.stagecmid, cm.visible, s.name AS stagename, c.id AS courseid,
-                   c.fullname AS coursename
+                   c.fullname AS coursename, c.visible AS coursevisible
               FROM {stagesynthesis_link} l
               JOIN {course_modules} cm ON cm.id = l.stagecmid
               JOIN {stage} s ON s.id = cm.instance
@@ -57,14 +57,18 @@ function stagesynthesis_get_links($synthesisid) {
 }
 
 /**
- * Liste de toutes les activités "Gestion des stages" existantes (tous cours confondus), pour le
- * formulaire d'administration des liens. Inclut les activités masquées et celles dans des cours
- * masqués : c'est justement ce qui permet d'exclure explicitement une promotion qui n'est plus
+ * Liste des activités "Gestion des stages" que l'utilisateur donné a le droit de lier, pour le
+ * formulaire d'administration des liens : uniquement celles où il a lui-même un rôle de gestion
+ * (mod/stage:manageteachers, déjà requis pour attribuer des référents dans l'activité d'origine),
+ * pour ne jamais exposer les noms de cours/activités d'une promotion à laquelle il n'a par
+ * ailleurs aucun accès. Inclut les activités masquées et celles dans des cours masqués parmi ces
+ * dernières : c'est justement ce qui permet d'exclure explicitement une promotion qui n'est plus
  * suivie plutôt que de devoir supprimer son activité d'origine.
  *
+ * @param int $userid
  * @return array cmid => stdClass{stagecmid, coursename, stagename, visible, coursevisible}
  */
-function stagesynthesis_get_available_stage_activities() {
+function stagesynthesis_get_available_stage_activities($userid) {
     global $DB;
 
     $sql = "SELECT cm.id AS stagecmid, cm.visible, s.name AS stagename, c.id AS courseid,
@@ -75,7 +79,16 @@ function stagesynthesis_get_available_stage_activities() {
               JOIN {course} c ON c.id = cm.course
           ORDER BY c.fullname ASC, s.name ASC";
 
-    return $DB->get_records_sql($sql);
+    $candidates = $DB->get_records_sql($sql);
+
+    $available = [];
+    foreach ($candidates as $candidate) {
+        $modcontext = context_module::instance($candidate->stagecmid, IGNORE_MISSING);
+        if ($modcontext && has_capability('mod/stage:manageteachers', $modcontext, $userid)) {
+            $available[(int) $candidate->stagecmid] = $candidate;
+        }
+    }
+    return $available;
 }
 
 /**
@@ -120,7 +133,7 @@ function stagesynthesis_get_teacher_rows($synthesisid, $userid) {
     $rows = [];
 
     foreach ($links as $stagecmid => $link) {
-        if (!$link->visible || !$DB->get_field('course', 'visible', ['id' => $link->courseid])) {
+        if (!$link->visible || !$link->coursevisible) {
             continue;
         }
 

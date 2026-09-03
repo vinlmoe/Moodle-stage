@@ -44,13 +44,19 @@ $PAGE->set_title(format_string($stagesynthesis->name) . ' - ' . get_string('mana
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
+$available = stagesynthesis_get_available_stage_activities($USER->id);
+
 if (optional_param('save', 0, PARAM_INT) && confirm_sesskey()) {
-    $selected = optional_param_array('stagecmid', [], PARAM_INT);
-    stagesynthesis_set_links($stagesynthesis->id, $selected);
+    // On ne retient, parmi les cases cochées, que les cmid effectivement proposés à cet
+    // utilisateur : une valeur ajoutée à la main dans la requête ne doit pas permettre de lier une
+    // activité à laquelle il n'a pas accès (mod/stage:manageteachers), même si elle existe ailleurs
+    // sur la plateforme. Les liens déjà en place vers des activités hors de sa portée (ajoutés par
+    // un autre gestionnaire) sont conservés tels quels plutôt que silencieusement supprimés.
+    $selected = array_intersect(optional_param_array('stagecmid', [], PARAM_INT), array_keys($available));
+    $outofscope = array_diff(array_keys(stagesynthesis_get_links($stagesynthesis->id)), array_keys($available));
+    stagesynthesis_set_links($stagesynthesis->id, array_merge($selected, $outofscope));
     redirect($baseurl, get_string('linkssaved', 'mod_stagesynthesis'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
-
-$available = stagesynthesis_get_available_stage_activities();
 $linked = stagesynthesis_get_links($stagesynthesis->id);
 
 echo $OUTPUT->header();
