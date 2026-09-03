@@ -67,7 +67,11 @@ if ((int) $entry->conventionstatus !== STAGE_CONVENTION_TEACHERPENDING) {
 
 $referentteachers = stage_get_student_teachers($stage->id, $entry->userid);
 
-$baseurl = new moodle_url('/mod/stage/convention_teacher_validate.php', ['id' => $cm->id, 'entryid' => $entryid]);
+// Le returnurl est intégré à l'URL d'action elle-même (et non ajouté en champ caché) : un
+// moodleform ne reporte pas automatiquement les paramètres GET de la requête d'origine sur sa
+// propre soumission, il serait donc perdu à la validation/au refus/à l'annulation sans cela.
+$baseurl = new moodle_url('/mod/stage/convention_teacher_validate.php',
+    ['id' => $cm->id, 'entryid' => $entryid, 'returnurl' => $returnurlparam]);
 $PAGE->set_url($baseurl);
 $PAGE->set_title(format_string($stage->name) . ' - ' . get_string('conventionteachervalidation', 'mod_stage'));
 $PAGE->set_heading(format_string($course->fullname));
