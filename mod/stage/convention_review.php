@@ -19,7 +19,8 @@
  * rempli par l'étudiant, éditable, avec deux actions possibles : valider (enregistre les
  * éventuelles corrections, fait passer la convention au statut "éditée" et télécharge
  * immédiatement le PDF généré) ou refuser avec un commentaire obligatoire (envoyé par courriel à
- * l'étudiant, qui peut alors corriger et resoumettre sa demande depuis convention_request.php).
+ * l'étudiant, qui peut alors corriger et resoumettre sa demande depuis student_register.php, en
+ * mode édition).
  *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
