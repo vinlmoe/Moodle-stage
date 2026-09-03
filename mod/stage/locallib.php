@@ -2994,7 +2994,7 @@ function stage_print_student_dashboard(stdClass $stage, $userid, $cm = null, $se
                 if ((int) $entry->conventionstatus === STAGE_CONVENTION_NONE
                         || (int) $entry->conventionstatus === STAGE_CONVENTION_REJECTED) {
                     $actions .= html_writer::link(
-                        new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]),
+                        new moodle_url('/mod/stage/student_register.php', ['id' => $cm->id, 'entryid' => $entry->id]),
                         get_string('requestconvention', 'mod_stage'), $btn
                     );
                 } else if (stage_convention_is_signed($entry->conventionstatus)) {
@@ -4051,7 +4051,7 @@ function stage_notify_student_convention_rejected(stdClass $stage, stdClass $cm,
         return;
     }
 
-    $url = new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    $url = new moodle_url('/mod/stage/student_register.php', ['id' => $cm->id, 'entryid' => $entry->id]);
     $text = stage_resolve_email_text($stage->id, 'studentrejected', [
         'stage' => format_string($stage->name),
         'comment' => $comment,
@@ -4111,7 +4111,10 @@ function stage_notify_student_convention_reminder(stdClass $stage, stdClass $cm,
     global $DB;
 
     // Le lien mène là où l'étudiant peut agir : sa demande de convention, à faire ou à corriger.
-    $url = new moodle_url('/mod/stage/convention_request.php', ['id' => $cm->id, 'entryid' => $entry->id]);
+    // S'il en existe déjà une bien avancée (en cours de validation, signée...), la page redirige
+    // simplement vers la vue d'ensemble : ce lien ne fait rien de plus que convention_request.php
+    // ne le faisait déjà dans ce cas.
+    $url = new moodle_url('/mod/stage/student_register.php', ['id' => $cm->id, 'entryid' => $entry->id]);
     $text = stage_resolve_email_text($stage->id, 'conventionreminder', [
         'student' => fullname($student),
         'stage' => format_string($stage->name),

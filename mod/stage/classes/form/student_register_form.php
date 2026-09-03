@@ -28,6 +28,11 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * référent, coordonnées de l'étudiant, organisme d'accueil, tuteur, modalités, gratification,
  * congés).
  *
+ * Également réutilisé en mode édition par student_register.php (customdata 'editing' et
+ * 'excludeentryid') pour une saisie déjà existante sans convention (enregistrée par la DEVE, ou
+ * demande refusée à corriger) : mêmes champs, mais la saisie existante est mise à jour plutôt que
+ * dupliquée.
+ *
  * @package   mod_stage
  * @copyright 2026 Sébastien Lefebvre
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -121,7 +126,7 @@ class student_register_form extends \moodleform {
         // de début et de fin en sont déduites (première et dernière date couvertes, voir
         // stage_save_entry_periods()). Des champs de début/fin distincts n'auraient rien pu
         // apporter de plus, et auraient pu les contredire.
-        stage_add_period_fields($this, $mform);
+        stage_add_period_fields($this, $mform, count($this->_customdata['periods'] ?? []));
 
         // Coordonnées de l'étudiant.
         $mform->addElement('header', 'studentheader', get_string('conventionstudent', 'mod_stage'));
@@ -208,7 +213,9 @@ class student_register_form extends \moodleform {
         $mform->setType('leavemodalities', PARAM_TEXT);
         $mform->hideIf('leavemodalities', 'hasleave', 'notchecked');
 
-        $this->add_action_buttons(true, get_string('registerstageandconvention', 'mod_stage'));
+        $submitlabel = !empty($this->_customdata['editing'])
+            ? get_string('requestconvention', 'mod_stage') : get_string('registerstageandconvention', 'mod_stage');
+        $this->add_action_buttons(true, $submitlabel);
     }
 
     /**
@@ -241,7 +248,7 @@ class student_register_form extends \moodleform {
             $data['themeid'],
             min(array_column($periods, 'datestart')),
             max(array_column($periods, 'dateend')),
-            0
+            $this->_customdata['excludeentryid'] ?? 0
         );
         if ($duplicate) {
             $errors['themeid'] = get_string('errorduplicateentry', 'mod_stage');
