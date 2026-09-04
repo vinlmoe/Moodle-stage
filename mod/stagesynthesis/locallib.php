@@ -29,6 +29,30 @@ require_once($CFG->dirroot . '/mod/stage/lib.php');
 require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
 /**
+ * Rend, pour les utilisateurs qui ont le droit de les modifier, le rappel du nombre d'activités
+ * liées et le lien vers leur gestion : affiché identiquement en tête de dashboard.php et
+ * entries.php, factorisé ici pour que les deux ne divergent pas.
+ *
+ * @param stdClass $stagesynthesis
+ * @param stdClass $cm
+ * @param context $context
+ * @return string HTML, ou '' si l'utilisateur n'a pas la capacité de gérer les liens.
+ */
+function stagesynthesis_render_managelinks_notice(stdClass $stagesynthesis, stdClass $cm, context $context) {
+    if (!has_capability('mod/stagesynthesis:managelinks', $context)) {
+        return '';
+    }
+
+    $links = stagesynthesis_get_links($stagesynthesis->id);
+    return html_writer::div(
+        get_string('linkedcount', 'mod_stagesynthesis', count($links)) . ' ' .
+        html_writer::link(new moodle_url('/mod/stagesynthesis/administration.php', ['id' => $cm->id]),
+            get_string('managelinks', 'mod_stagesynthesis')),
+        'mb-3'
+    );
+}
+
+/**
  * Liste des course-modules d'activités "Gestion des stages" actuellement liées à une instance de
  * Suivi des stages, dans l'ordre où ils ont été ajoutés.
  *
@@ -353,5 +377,27 @@ function stagesynthesis_get_pending_convention_entries(array $activelinks, $user
         return $a->conventionrequesttime <=> $b->conventionrequesttime;
     });
 
+    return $rows;
+}
+
+/**
+ * Construit la vue d'ensemble par étudiant (voir stage_get_pilotage_overview()), agrégée sur
+ * toutes les activités actives : une ligne par étudiant attribué, enrichie de son activité
+ * d'origine (cmid, cours, année d'étude courante) pour permettre le lien vers son détail.
+ *
+ * @param array $activelinks Voir stagesynthesis_get_active_links().
+ * @return array Lignes enrichies, non triées (le tri se fait à l'affichage, comme dashboard.php).
+ */
+function stagesynthesis_get_pilotage_rows(array $activelinks) {
+    $rows = [];
+    foreach ($activelinks as $stagecmid => $link) {
+        $overview = stage_get_pilotage_overview($link->stage->id, $link->context, $link->assignedids);
+        foreach ($overview as $row) {
+            $row->cmid = $link->cm->id;
+            $row->coursename = $link->coursename;
+            $row->currentstudyyear = (int) $link->stage->currentstudyyear;
+            $rows[] = $row;
+        }
+    }
     return $rows;
 }
