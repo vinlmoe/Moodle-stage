@@ -23,8 +23,9 @@ require_once($CFG->dirroot . '/mod/stagesynthesis/locallib.php');
 
 /**
  * Vérifie qui voit le lien de gestion des liens : lier une activité désigne des cours et des
- * promotions extérieurs à celui-ci, l'enseignant — même éditeur — ne doit donc ni pouvoir le faire
- * ni même voir le lien, alors que le gestionnaire le doit.
+ * promotions extérieurs à celui-ci, c'est donc à qui administre l'activité (enseignant éditeur,
+ * gestionnaire) de l'arbitrer. L'enseignant non éditeur, lui, ne doit ni pouvoir le faire ni même
+ * voir le lien, tout en gardant l'accès à la synthèse de ses propres étudiants.
  *
  * @package    mod_stagesynthesis
  * @copyright  2026 Sébastien Lefebvre
@@ -49,31 +50,43 @@ final class managelinks_access_test extends \advanced_testcase {
     }
 
     /**
-     * Ni l'enseignant non éditeur ni l'enseignant éditeur ne doivent avoir la capacité, ni voir le
-     * lien qu'elle commande.
+     * L'enseignant non éditeur n'a pas la capacité et ne voit pas le lien qu'elle commande, tout en
+     * conservant l'accès à la synthèse elle-même : c'est bien son usage normal.
      *
      * @return void
      */
-    public function test_teachers_cannot_manage_links(): void {
+    public function test_non_editing_teacher_cannot_manage_links(): void {
         [$synthesis, $cm, $context, $course] = $this->prepare();
 
-        foreach (['teacher', 'editingteacher'] as $archetype) {
-            $user = $this->getDataGenerator()->create_user();
-            $this->getDataGenerator()->enrol_user($user->id, $course->id, $archetype);
-            $this->setUser($user);
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'teacher');
+        $this->setUser($user);
 
-            $this->assertFalse(has_capability('mod/stagesynthesis:managelinks', $context),
-                "Le rôle $archetype ne doit pas pouvoir gérer les liens.");
-            $this->assertSame('', stagesynthesis_render_managelinks_notice($synthesis, $cm, $context),
-                "Le lien de gestion des liens ne doit pas être affiché au rôle $archetype.");
-
-            // La synthèse elle-même reste accessible : c'est bien son usage normal.
-            $this->assertTrue(has_capability('mod/stagesynthesis:view', $context));
-        }
+        $this->assertFalse(has_capability('mod/stagesynthesis:managelinks', $context));
+        $this->assertSame('', stagesynthesis_render_managelinks_notice($synthesis, $cm, $context));
+        $this->assertTrue(has_capability('mod/stagesynthesis:view', $context));
     }
 
     /**
-     * Le gestionnaire, lui, conserve la capacité et voit le lien.
+     * L'enseignant éditeur administre l'activité dans son cours : il conserve la capacité et voit
+     * le lien.
+     *
+     * @return void
+     */
+    public function test_editing_teacher_can_manage_links(): void {
+        [$synthesis, $cm, $context, $course] = $this->prepare();
+
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'editingteacher');
+        $this->setUser($user);
+
+        $this->assertTrue(has_capability('mod/stagesynthesis:managelinks', $context));
+        $this->assertStringContainsString('/mod/stagesynthesis/administration.php',
+            stagesynthesis_render_managelinks_notice($synthesis, $cm, $context));
+    }
+
+    /**
+     * Le gestionnaire, lui aussi, conserve la capacité et voit le lien.
      *
      * @return void
      */
