@@ -36,6 +36,10 @@ $string['modulename_help'] = "Regroupe, pour chaque enseignant référent, les s
 $string['modulename_link'] = 'mod/stagesynthesis/view';
 $string['pluginadministration'] = 'Administration de Suivi des stages';
 
+$string['stagesynthesis:addinstance'] = 'Ajouter une activité de suivi des stages';
+$string['stagesynthesis:view'] = "Voir l'activité de suivi des stages";
+$string['stagesynthesis:managelinks'] = 'Choisir les activités « Gestion des stages » liées';
+
 $string['stagesynthesisname'] = 'Nom de l\'activité';
 $string['linksnotice'] = 'Le choix des activités « Gestion des stages » à faire remonter ici se fait après '
     . 'l\'enregistrement, depuis la page de l\'activité (lien « Gérer les liens »).';

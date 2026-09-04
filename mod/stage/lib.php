@@ -114,7 +114,10 @@ function stage_supports($feature) {
         case FEATURE_GRADE_HAS_GRADE:
             return false;
         case FEATURE_BACKUP_MOODLE2:
-            return true;
+            // Faux tant que backup/moodle2/ n'est pas fourni : déclarer la prise en charge sans
+            // les classes de sauvegarde correspondantes fait échouer la sauvegarde de tout cours
+            // contenant l'activité, au lieu de simplement l'en exclure.
+            return false;
         case FEATURE_COMPLETION_TRACKS_VIEWS:
             return true;
         case FEATURE_MOD_PURPOSE:
@@ -173,6 +176,11 @@ function stage_delete_instance($id) {
     foreach ($entries as $entry) {
         $DB->delete_records('stage_answer', ['entryid' => $entry->id]);
         $DB->delete_records('stage_convention_detail', ['entryid' => $entry->id]);
+        // Périodes et jours ouvrés sont rattachés à la saisie, pas à l'instance : sans ces deux
+        // suppressions ils survivraient à la saisie et fausseraient tout recalcul de durée fait
+        // ultérieurement sur un identifiant de saisie réattribué.
+        $DB->delete_records('stage_entry_period', ['entryid' => $entry->id]);
+        $DB->delete_records('stage_entry_workday', ['entryid' => $entry->id]);
     }
     $DB->delete_records('stage_entry_teacher', ['stageid' => $id]);
     $DB->delete_records('stage_entry', ['stageid' => $id]);
@@ -186,9 +194,14 @@ function stage_delete_instance($id) {
     if ($themeids) {
         [$insql, $inparams] = $DB->get_in_or_equal($themeids);
         $DB->delete_records_select('stage_theme_teacher', "themeid $insql", $inparams);
+        // Durées par année d'étude : rattachées à la thématique, elles doivent disparaître avec elle.
+        $DB->delete_records_select('stage_theme_duration', "themeid $insql", $inparams);
     }
     $DB->delete_records('stage_theme', ['stageid' => $id]);
     $DB->delete_records('stage_convention_template', ['stageid' => $id]);
+    // Durées exigées par année et modèles de courriels sont rattachés à l'instance elle-même.
+    $DB->delete_records('stage_year_requirement', ['stageid' => $id]);
+    $DB->delete_records('stage_email_template', ['stageid' => $id]);
     $DB->delete_records('stage', ['id' => $id]);
 
     return true;

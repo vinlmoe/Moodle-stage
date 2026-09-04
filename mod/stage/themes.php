@@ -57,6 +57,15 @@ if ($action === 'delete' && $themeid) {
         // leurs lignes survivraient à la thématique et resteraient comptées par
         // stage_get_teacher_themes() (jointure sur une thématique disparue mise à part).
         $DB->delete_records('stage_theme_teacher', ['themeid' => $theme->id]);
+        // Même raisonnement pour les durées par année d'étude, rattachées à la thématique.
+        $DB->delete_records('stage_theme_duration', ['themeid' => $theme->id]);
+        // Les questions passent par stage_unlink_question_theme() plutôt que par une suppression
+        // directe des rattachements : une question partagée avec une autre thématique doit
+        // survivre, une question qui n'était plus rattachée qu'à celle-ci doit disparaître avec
+        // ses réponses, exactement comme lors d'une suppression depuis questions.php.
+        foreach ($DB->get_fieldset_select('stage_question_theme', 'questionid', 'themeid = ?', [$theme->id]) as $qid) {
+            stage_unlink_question_theme($qid, $theme->id);
+        }
         $DB->delete_records('stage_theme', ['id' => $theme->id]);
         redirect($baseurl, get_string('themedeleted', 'mod_stage'), null, \core\output\notification::NOTIFY_SUCCESS);
     } else {

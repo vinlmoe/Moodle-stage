@@ -36,6 +36,10 @@ $string['modulename_help'] = 'Groups, for each supervising teacher, the internsh
 $string['modulename_link'] = 'mod/stagesynthesis/view';
 $string['pluginadministration'] = 'Internship tracking administration';
 
+$string['stagesynthesis:addinstance'] = 'Add a new internship tracking activity';
+$string['stagesynthesis:view'] = 'View the internship tracking activity';
+$string['stagesynthesis:managelinks'] = 'Choose the linked "Internship management" activities';
+
 $string['stagesynthesisname'] = 'Activity name';
 $string['linksnotice'] = 'Choose which "Internship management" activities feed into this view after saving, from the '
     . 'activity page ("Manage links" link).';
