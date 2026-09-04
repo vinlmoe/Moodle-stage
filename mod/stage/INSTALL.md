@@ -6,7 +6,7 @@ l'étudiant, évaluation par l'enseignant référent et validation finale par la
 scolarité (DEVE).
 
 - **Prérequis** : Moodle 4.0 ou supérieur, PHP 7.4+.
-- **Dépendance incluse** : FPDI 2.6 (MIT), dans `thirdparty/vendor`, utilisée
+- **Dépendance incluse** : FPDI 2.6.8 (MIT), dans `thirdparty/vendor`, utilisée
   pour l'assemblage des conventions PDF.
 
 ## 1. Installation
@@ -293,6 +293,58 @@ POST https://votre-moodle/webservice/rest/server.php
      ?wstoken=JETON&wsfunction=mod_stage_register_entries&moodlewsrestformat=json
 ```
 
+## 11. Données personnelles (RGPD)
+
+Le plugin implémente le fournisseur de confidentialité Moodle
+(`classes/privacy/provider.php`) : il apparaît dans **Administration du site >
+Utilisateurs > Confidentialité et politiques**, et répond aux demandes d'export
+et de suppression de données.
+
+**Ce qui est déclaré** : les stages (`stage_entry`) et leurs évaluations, le
+détail de convention (date de naissance, adresse et téléphone de l'étudiant,
+coordonnées du maître de stage), les périodes et jours ouvrés, les réponses aux
+questionnaires, les attributions de référent, les responsabilités de thématique,
+et les fichiers joints (convention signée, rapport de stage).
+
+**Règle de suppression**, différente selon le rôle sous lequel la personne
+apparaît :
+
+| Personne supprimée | Effet |
+|---|---|
+| Étudiant (propriétaire de la saisie) | Suppression intégrale de ses stages et de tout ce qui en dépend : auto-évaluation, évaluations du référent et du maître de stage, détail de convention, périodes, jours ouvrés, réponses, attributions de référent, convention signée et rapport. |
+| Personnel (référent, responsable de thématique, DEVE) | Le stage appartient à l'étudiant et **survit**. Seules les références à la personne supprimée sont dissociées, et les textes dont elle est l'auteur (appréciation, commentaire DEVE, motif de refus ou d'annulation) effacés avec elles. |
+
+Une même personne relevant des deux rôles subit les deux traitements : ses
+propres stages sont supprimés, et elle est par ailleurs dissociée des stages
+d'autrui.
+
+**Export** : le dossier complet pour l'étudiant ; pour un membre du personnel,
+uniquement sa propre intervention (ce qu'il a rédigé, les étapes qu'il a
+franchies), sans le dossier de l'étudiant, qui relève de l'export de ce dernier.
+
+> **Conservation des conventions.** La suppression d'un étudiant emporte aussi
+> les PDF de conventions signées le concernant. Si votre établissement est tenu
+> de les conserver au titre d'une obligation contractuelle ou d'archivage,
+> extrayez-les avant de traiter la demande de suppression.
+
+## 12. Sauvegarde et restauration
+
+Le plugin **ne fournit pas** d'implémentation `backup/moodle2/` : il déclare
+donc `FEATURE_BACKUP_MOODLE2` à `false`. Conséquence pratique : une sauvegarde
+de cours Moodle s'exécute normalement mais **n'inclut pas** les données de
+l'activité (stages, conventions, évaluations). Une restauration recrée un cours
+sans elles.
+
+Prévoir donc, pour la conservation des données :
+
+- une sauvegarde de la base de données du site (tables `mdl_stage*`) ;
+- une sauvegarde du `moodledata` pour les fichiers (conventions signées,
+  rapports, gabarits, logos).
+
+Pour déplacer les stages d'un étudiant d'une instance à une autre à
+l'intérieur du même site, utiliser **Administration > Transférer un étudiant**,
+qui est prévu pour cela (voir `tests/transfer_test.php`).
+
 ## Tests unitaires
 
 Le plugin embarque une suite PHPUnit (`mod/stage/tests/`), au format standard
@@ -328,8 +380,16 @@ vendor/bin/phpunit mod/stage/tests/periods_test.php
 |---|---|
 | `periods_test.php` | Cohérence des plages de dates (`stage_validate_periods`) et leur statut de source unique des dates du stage (`stage_save_entry_periods`, `stage_register_entry`). |
 | `year_progress_test.php` | Bilan annuel d'un étudiant : thématique bornée à une plage d'années (vérifiée cumulativement à sa dernière année), mobilité internationale intégrée à l'année où elle est due, stages complémentaires exclus du décompte. |
+| `student_progress_test.php` | Bilan global d'un étudiant, en particulier la durée requise d'une thématique à durée globale unique plutôt que par année. |
 | `promotion_test.php` | Bilan de promotion : années échues uniquement, classement des étudiants en défaut par sévérité puis ancienneté du retard. |
 | `transfer_test.php` | Transfert d'un étudiant vers une autre instance : blocages (aucun stage, non-inscrit, thématique sans correspondance), rapprochement tolérant des noms, effets réels du transfert. |
+| `teacher_list_test.php` | Liste « Stages à évaluer » : sans filtre, seuls les stages réellement en attente d'évaluation apparaissent. |
+| `convention_access_test.php` | Accès à la convention générée non signée : lien « Générer » pour la DEVE, lien « Consulter » distinct pour le référent, et seulement entre l'édition et la signature. |
+| `convention_paper_request_test.php` | Message rappelé à la DEVE selon qui, de l'étudiant ou du référent, a demandé une convention papier. |
+| `deve_entry_form_test.php` | Régression : la DEVE doit pouvoir modifier une saisie sans changer ses dates, sans être rejetée comme doublon d'elle-même. |
+| `entry_actions_returnurl_test.php` | Les liens d'action transmettent la page appelante en `returnurl`, pour revenir là d'où l'on vient. |
+| `historical_importer_test.php` | Transformation du suivi Excel historique en une ligne par stage. |
+| `privacy_provider_test.php` | Règles de suppression RGPD (voir §11) : effacement intégral pour l'étudiant, dissociation seule pour le personnel. |
 | `helpers_test.php` | Petites fonctions utilitaires pures (libellés, normalisation de nom, rendu d'actions/badges). |
 
 `tests/generator/lib.php` fournit un générateur de données de test
