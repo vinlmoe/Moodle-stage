@@ -4950,3 +4950,43 @@ function stage_build_convention_pdf(stdClass $stage, stdClass $entry, context $c
 
     return ['error' => null, 'pdf' => $merger, 'filename' => $filename];
 }
+
+/**
+ * Supprime définitivement des saisies de stage et tout ce qui leur est rattaché : périodes, jours
+ * ouvrés, détail de convention, réponses aux questionnaires, et — si le contexte du module est
+ * fourni — la convention signée et le rapport de stage stockés dans ses zones de fichiers.
+ *
+ * Factorisé ici pour que les deux appelants (suppression de l'instance dans stage_delete_instance()
+ * et suppression des données personnelles d'un étudiant dans \mod_stage\privacy\provider) ne
+ * puissent pas diverger : une table rattachée ajoutée plus tard n'a ainsi qu'un seul endroit à
+ * mettre à jour pour être purgée dans les deux cas.
+ *
+ * @param int[] $entryids Identifiants de saisies. Un tableau vide ne fait rien.
+ * @param context|null $context Contexte du module, pour purger aussi les fichiers. Peut être omis
+ *        lorsque Moodle s'apprête de toute façon à supprimer le contexte et ses fichiers (cas de
+ *        la suppression de l'instance).
+ * @return void
+ */
+function stage_delete_entries(array $entryids, ?context $context = null) {
+    global $DB;
+
+    $entryids = array_values(array_filter(array_unique(array_map('intval', $entryids))));
+    if (empty($entryids)) {
+        return;
+    }
+
+    if ($context) {
+        $fs = get_file_storage();
+        foreach ($entryids as $entryid) {
+            foreach (['signedconvention', STAGE_REPORT_FILEAREA] as $filearea) {
+                $fs->delete_area_files($context->id, 'mod_stage', $filearea, $entryid);
+            }
+        }
+    }
+
+    [$insql, $inparams] = $DB->get_in_or_equal($entryids);
+    foreach (['stage_answer', 'stage_convention_detail', 'stage_entry_period', 'stage_entry_workday'] as $table) {
+        $DB->delete_records_select($table, "entryid $insql", $inparams);
+    }
+    $DB->delete_records_select('stage_entry', "id $insql", $inparams);
+}

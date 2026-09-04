@@ -166,24 +166,19 @@ function stage_update_instance($moduleinstance, $mform = null) {
  * @return bool True on success.
  */
 function stage_delete_instance($id) {
-    global $DB;
+    global $CFG, $DB;
+
+    require_once($CFG->dirroot . '/mod/stage/locallib.php');
 
     if (!$DB->get_record('stage', ['id' => $id])) {
         return false;
     }
 
-    $entries = $DB->get_records('stage_entry', ['stageid' => $id], '', 'id');
-    foreach ($entries as $entry) {
-        $DB->delete_records('stage_answer', ['entryid' => $entry->id]);
-        $DB->delete_records('stage_convention_detail', ['entryid' => $entry->id]);
-        // Périodes et jours ouvrés sont rattachés à la saisie, pas à l'instance : sans ces deux
-        // suppressions ils survivraient à la saisie et fausseraient tout recalcul de durée fait
-        // ultérieurement sur un identifiant de saisie réattribué.
-        $DB->delete_records('stage_entry_period', ['entryid' => $entry->id]);
-        $DB->delete_records('stage_entry_workday', ['entryid' => $entry->id]);
-    }
+    // Saisies et tout ce qui leur est rattaché (périodes, jours ouvrés, détail de convention,
+    // réponses). Les fichiers sont laissés à Moodle, qui supprime le contexte du module et ses
+    // zones de fichiers juste après.
+    stage_delete_entries($DB->get_fieldset_select('stage_entry', 'id', 'stageid = ?', [$id]));
     $DB->delete_records('stage_entry_teacher', ['stageid' => $id]);
-    $DB->delete_records('stage_entry', ['stageid' => $id]);
     $questionids = $DB->get_fieldset_select('stage_question', 'id', 'stageid = ?', [$id]);
     if ($questionids) {
         [$insql, $inparams] = $DB->get_in_or_equal($questionids);
