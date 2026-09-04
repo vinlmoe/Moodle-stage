@@ -41,8 +41,10 @@ $string['stagesynthesis:view'] = 'View the internship tracking activity';
 $string['stagesynthesis:managelinks'] = 'Choose the linked "Internship management" activities';
 
 $string['stagesynthesisname'] = 'Activity name';
-$string['linksnotice'] = 'Choose which "Internship management" activities feed into this view after saving, from the '
-    . 'activity page ("Manage links" link).';
+$string['linksnotice'] = 'Which "Internship management" activities feed into this view is chosen after saving, from '
+    . 'the activity page ("Manage links" link). Because linking designates courses and cohorts outside this one, '
+    . 'that choice is reserved to managers and administrators: supervising teachers only see the synthesis of '
+    . 'their own students.';
 
 $string['managelinks'] = 'Manage links';
 $string['managelinks_help'] = 'Tick the "Internship management" activities whose students should appear here for '

@@ -50,11 +50,16 @@ $capabilities = [
     ],
 
     // Gérer la liste des activités "Gestion des stages" dont les étudiants remontent ici.
+    //
+    // Réservé aux gestionnaires : lier une activité revient à désigner des cours et des promotions
+    // extérieurs à celui-ci, et l'écran de gestion en énumère les noms. Un enseignant référent n'a
+    // pas à arbitrer ce périmètre — il consulte la synthèse de ses propres étudiants, et le lien
+    // vers cette gestion ne doit pas même lui être affiché. L'archétype editingteacher est donc
+    // volontairement absent, contrairement à :addinstance.
     'mod/stagesynthesis:managelinks' => [
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
         ],
     ],

@@ -42,7 +42,9 @@ $string['stagesynthesis:managelinks'] = 'Choisir les activités « Gestion des s
 
 $string['stagesynthesisname'] = 'Nom de l\'activité';
 $string['linksnotice'] = 'Le choix des activités « Gestion des stages » à faire remonter ici se fait après '
-    . 'l\'enregistrement, depuis la page de l\'activité (lien « Gérer les liens »).';
+    . 'l\'enregistrement, depuis la page de l\'activité (lien « Gérer les liens »). Comme lier une activité revient '
+    . 'à désigner des cours et des promotions extérieurs à celui-ci, ce choix est réservé aux gestionnaires et aux '
+    . 'administrateurs : les enseignants référents ne voient que la synthèse de leurs propres étudiants.';
 
 $string['managelinks'] = 'Gérer les liens';
 $string['managelinks_help'] = 'Cochez les activités « Gestion des stages » dont les étudiants doivent apparaître ici '
