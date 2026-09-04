@@ -18,6 +18,9 @@ class historical_importer {
     /** @var string Nom de la feuille des stages obligatoires. */
     const MANDATORY_SHEET = 'stages validation er';
 
+    /** @var string Variante utilisée par le classeur de suivi 2025-26. */
+    const MANDATORY_SHEET_SINGULAR = 'stage validation er';
+
     /** @var string Nom de la feuille des stages EP. */
     const COMPLEMENTARY_SHEET = 'stage ep validation er';
 
@@ -28,6 +31,34 @@ class historical_importer {
      * @return array{records: array, warnings: array}
      */
     public static function read(string $filepath): array {
+        $allsheets = self::read_sheets($filepath);
+        $result = ['records' => [], 'warnings' => []];
+        foreach ($allsheets as $sheetname => $rows) {
+            $normalized = self::normalize($sheetname);
+            $mandatory = in_array($normalized,
+                [self::MANDATORY_SHEET, self::MANDATORY_SHEET_SINGULAR], true);
+            if (!$mandatory && $normalized !== self::COMPLEMENTARY_SHEET) {
+                continue;
+            }
+            $parsed = self::parse_rows($rows, $normalized === self::COMPLEMENTARY_SHEET, $sheetname);
+            $result['records'] = array_merge($result['records'], $parsed['records']);
+            $result['warnings'] = array_merge($result['warnings'], $parsed['warnings']);
+        }
+        if (empty($result['records']) && empty($result['warnings'])) {
+            throw new \moodle_exception('historicalimportnosheets', 'mod_stage');
+        }
+        return $result;
+    }
+
+    /**
+     * Lit toutes les feuilles d'un classeur XLSX sans interpréter leur contenu.
+     *
+     * Ce lecteur léger est aussi utilisé pour réimporter l'export global du module.
+     *
+     * @param string $filepath
+     * @return array<string, array>
+     */
+    public static function read_sheets(string $filepath): array {
         if (!class_exists('ZipArchive')) {
             throw new \moodle_exception('historicalimportnozip', 'mod_stage');
         }
@@ -40,19 +71,9 @@ class historical_importer {
         try {
             $sharedstrings = self::read_shared_strings($zip);
             $sheets = self::read_workbook_sheets($zip);
-            $result = ['records' => [], 'warnings' => []];
+            $result = [];
             foreach ($sheets as $sheetname => $sheetpath) {
-                $normalized = self::normalize($sheetname);
-                if ($normalized !== self::MANDATORY_SHEET && $normalized !== self::COMPLEMENTARY_SHEET) {
-                    continue;
-                }
-                $rows = self::read_sheet($zip, $sheetpath, $sharedstrings);
-                $parsed = self::parse_rows($rows, $normalized === self::COMPLEMENTARY_SHEET, $sheetname);
-                $result['records'] = array_merge($result['records'], $parsed['records']);
-                $result['warnings'] = array_merge($result['warnings'], $parsed['warnings']);
-            }
-            if (empty($result['records']) && empty($result['warnings'])) {
-                throw new \moodle_exception('historicalimportnosheets', 'mod_stage');
+                $result[$sheetname] = self::read_sheet($zip, $sheetpath, $sharedstrings);
             }
             return $result;
         } finally {
@@ -86,7 +107,8 @@ class historical_importer {
         $blockstarts = [];
         foreach ($headers as $col => $header) {
             $value = self::normalize((string) $header);
-            if ($value === 'lieu et date' || $value === 'lieu du stage') {
+            if ($value === 'lieu et date' || $value === 'lieu du stage'
+                    || $value === 'convention enregistree') {
                 $blockstarts[] = $col;
             }
         }

@@ -41,6 +41,29 @@ final class historical_importer_test extends \advanced_testcase {
     }
 
     /**
+     * Le suivi 2025-26 intitule la première colonne de chaque bloc « Convention enregistrée ».
+     */
+    public function test_mandatory_blocks_with_convention_header_are_imported(): void {
+        $rows = [
+            0 => [5 => "Clinique début de cursus\n2j min - 5j max / en A2"],
+            1 => [0 => 'NOM', 1 => 'Prénom', 2 => 'Email', 3 => 'NOM', 4 => 'Prénom',
+                5 => 'Convention enregistrée', 6 => 'Validation par l’ER',
+                7 => 'Durée (en jours)', 8 => 'Année d’études'],
+            2 => [0 => 'DUPONT', 1 => 'Zoé', 2 => 'zoe@example.test',
+                5 => 'Cabinet vétérinaire - du 10 au 14/04/2025', 6 => 1, 7 => 5, 8 => 2],
+        ];
+
+        $result = historical_importer::parse_rows($rows, false, 'STAGE - Validation ER');
+
+        $this->assertCount(1, $result['records']);
+        $record = reset($result['records']);
+        $this->assertSame('Clinique début de cursus', $record->themename);
+        $this->assertSame('Cabinet vétérinaire - du 10 au 14/04/2025', $record->structure);
+        $this->assertSame(5, $record->duration);
+        $this->assertSame('obligatoire', $record->stagetype);
+    }
+
+    /**
      * Les stages EP validés deviennent complémentaires et les EP non validés restent ignorés.
      */
     public function test_ep_stage_is_imported_as_complementary(): void {
