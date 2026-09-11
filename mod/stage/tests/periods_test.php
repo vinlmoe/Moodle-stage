@@ -136,8 +136,9 @@ final class periods_test extends \advanced_testcase {
 
         $periods = stage_get_or_seed_entry_periods($entry);
         $this->assertCount(1, $periods);
-        $this->assertEquals(make_timestamp(2026, 3, 1), $periods[0]->datestart);
-        $this->assertEquals(make_timestamp(2026, 3, 15), $periods[0]->dateend);
+        $period = reset($periods);
+        $this->assertEquals(make_timestamp(2026, 3, 1), $period->datestart);
+        $this->assertEquals(make_timestamp(2026, 3, 15), $period->dateend);
     }
 
     /**

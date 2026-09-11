@@ -42,6 +42,8 @@ final class promotion_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $stage = $this->getDataGenerator()->create_module('stage', ['course' => $course]);
         $DB->update_record('stage', (object) ['id' => $stage->id, 'currentstudyyear' => 3]);
+        // La fonction lit l'année courante sur l'objet qu'on lui passe, pas en base.
+        $stage->currentstudyyear = 3;
 
         $rows = [
             (object) ['yearprogress' => [
