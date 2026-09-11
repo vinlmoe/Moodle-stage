@@ -1,5 +1,7 @@
 # Moodle-stage
 
+[![CI](https://github.com/vinlmoe/Moodle-stage/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vinlmoe/Moodle-stage/actions/workflows/ci.yml)
+
 Deux modules d'activité Moodle pour la gestion des stages étudiants en école
 vétérinaire : l'enregistrement et la validation des stages promotion par
 promotion, et la vue transversale dont un enseignant référent a besoin quand ses
