@@ -51,10 +51,15 @@ configuration des conventions et des courriels — sont dans les deux `INSTALL.m
 
 ## Points à connaître avant une mise en production
 
-**Sauvegarde.** Aucun des deux modules ne fournit d'implémentation
-`backup/moodle2/`. Une sauvegarde de cours Moodle s'exécute normalement mais
-n'emporte pas les données des activités. La conservation passe par une
-sauvegarde de la base (`mdl_stage*`) et du `moodledata`.
+**Sauvegarde.** Les deux modules fournissent une implémentation
+`backup/moodle2/` : une sauvegarde de cours Moodle emporte le paramétrage des
+activités et, si les données utilisateur sont demandées, les stages, conventions
+et évaluations, ainsi que les fichiers associés. Deux réserves : le jeton d'accès
+du maître de stage n'est pas recopié (la copie en régénère un à la demande), et
+les liens d'une synthèse vers une activité restée hors de la sauvegarde ne sont
+conservés que lors d'une restauration sur le même site. La sauvegarde de cours
+ne dispense pas pour autant d'une sauvegarde de la base (`mdl_stage*`) et du
+`moodledata`, qui reste le filet de sécurité du site.
 
 **Données personnelles.** `mod_stage` implémente le fournisseur de
 confidentialité Moodle. La suppression d'un étudiant efface l'intégralité de ses
