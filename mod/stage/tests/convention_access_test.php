@@ -33,7 +33,6 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * @covers     ::stage_render_entry_management_actions
  */
 final class convention_access_test extends \advanced_testcase {
-
     /**
      * Prépare un stage, une thématique, une saisie et son contexte de module.
      *

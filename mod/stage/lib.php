@@ -22,8 +22,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /** Stage saisi par l'étudiant, pas encore auto-évalué. */
 define('STAGE_STATUS_ENREGISTRE', 0);
 /** Auto-évalué par l'étudiant. */

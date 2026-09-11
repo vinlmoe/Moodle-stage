@@ -23,8 +23,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Restaure l'arbre décrit par backup_stage_activity_structure_step.
  *
@@ -33,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_stage_activity_structure_step extends restore_activity_structure_step {
-
     /**
      * Déclare les chemins à restaurer.
      *
@@ -46,32 +43,54 @@ class restore_stage_activity_structure_step extends restore_activity_structure_s
 
         $paths[] = new restore_path_element('stage', '/activity/stage');
         $paths[] = new restore_path_element('stage_theme', '/activity/stage/themes/theme');
-        $paths[] = new restore_path_element('stage_theme_teacher',
-            '/activity/stage/themes/theme/themeteachers/themeteacher');
-        $paths[] = new restore_path_element('stage_theme_duration',
-            '/activity/stage/themes/theme/themedurations/themeduration');
-        $paths[] = new restore_path_element('stage_year_requirement',
-            '/activity/stage/yearrequirements/yearrequirement');
-        $paths[] = new restore_path_element('stage_convention_template',
-            '/activity/stage/conventiontemplates/conventiontemplate');
+        $paths[] = new restore_path_element(
+            'stage_theme_teacher',
+            '/activity/stage/themes/theme/themeteachers/themeteacher'
+        );
+        $paths[] = new restore_path_element(
+            'stage_theme_duration',
+            '/activity/stage/themes/theme/themedurations/themeduration'
+        );
+        $paths[] = new restore_path_element(
+            'stage_year_requirement',
+            '/activity/stage/yearrequirements/yearrequirement'
+        );
+        $paths[] = new restore_path_element(
+            'stage_convention_template',
+            '/activity/stage/conventiontemplates/conventiontemplate'
+        );
         $paths[] = new restore_path_element('stage_question', '/activity/stage/questions/question');
-        $paths[] = new restore_path_element('stage_question_theme',
-            '/activity/stage/questions/question/questionthemes/questiontheme');
-        $paths[] = new restore_path_element('stage_email_template',
-            '/activity/stage/emailtemplates/emailtemplate');
+        $paths[] = new restore_path_element(
+            'stage_question_theme',
+            '/activity/stage/questions/question/questionthemes/questiontheme'
+        );
+        $paths[] = new restore_path_element(
+            'stage_email_template',
+            '/activity/stage/emailtemplates/emailtemplate'
+        );
 
         if ($userinfo) {
-            $paths[] = new restore_path_element('stage_entry_teacher',
-                '/activity/stage/entryteachers/entryteacher');
+            $paths[] = new restore_path_element(
+                'stage_entry_teacher',
+                '/activity/stage/entryteachers/entryteacher'
+            );
             $paths[] = new restore_path_element('stage_entry', '/activity/stage/entries/entry');
-            $paths[] = new restore_path_element('stage_entry_period',
-                '/activity/stage/entries/entry/periods/period');
-            $paths[] = new restore_path_element('stage_entry_workday',
-                '/activity/stage/entries/entry/workdays/workday');
-            $paths[] = new restore_path_element('stage_convention_detail',
-                '/activity/stage/entries/entry/conventiondetails/conventiondetail');
-            $paths[] = new restore_path_element('stage_answer',
-                '/activity/stage/entries/entry/answers/answer');
+            $paths[] = new restore_path_element(
+                'stage_entry_period',
+                '/activity/stage/entries/entry/periods/period'
+            );
+            $paths[] = new restore_path_element(
+                'stage_entry_workday',
+                '/activity/stage/entries/entry/workdays/workday'
+            );
+            $paths[] = new restore_path_element(
+                'stage_convention_detail',
+                '/activity/stage/entries/entry/conventiondetails/conventiondetail'
+            );
+            $paths[] = new restore_path_element(
+                'stage_answer',
+                '/activity/stage/entries/entry/answers/answer'
+            );
         }
 
         return $this->prepare_activity_structure($paths);
@@ -295,8 +314,10 @@ class restore_stage_activity_structure_step extends restore_activity_structure_s
         $data->conventiontemplateid = empty($data->conventiontemplateid) ? null
             : ($this->get_mappingid('stage_convention_template', $data->conventiontemplateid) ?: null);
 
-        foreach (['teacherid', 'deveuserid', 'conventionrejectedby', 'conventionteachervalidatedby',
-                'conventioneditedby', 'conventionsignedby', 'cancelledby'] as $field) {
+        foreach (
+            ['teacherid', 'deveuserid', 'conventionrejectedby', 'conventionteachervalidatedby',
+                'conventioneditedby', 'conventionsignedby', 'cancelledby'] as $field
+        ) {
             $data->$field = empty($data->$field) ? null : ($this->get_mappingid('user', $data->$field) ?: null);
         }
 

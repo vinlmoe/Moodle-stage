@@ -39,7 +39,6 @@ require_once($CFG->dirroot . '/mod/stage/locallib.php');
  * @covers     ::stage_extract_submitted_periods
  */
 final class periods_test extends \advanced_testcase {
-
     /**
      * Une liste vide est refusée : les dates du stage en dépendent, il en faut au moins une.
      */

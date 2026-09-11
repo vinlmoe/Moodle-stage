@@ -39,7 +39,6 @@ require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
  * @covers     \restore_stage_activity_structure_step
  */
 final class backup_restore_test extends \advanced_testcase {
-
     /**
      * Sauvegarde un cours puis le restaure dans un nouveau cours, données utilisateur comprises.
      *
@@ -49,16 +48,31 @@ final class backup_restore_test extends \advanced_testcase {
     protected function backup_and_restore(\stdClass $course): \stdClass {
         global $USER;
 
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $course->id, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, $USER->id);
+        $bc = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $course->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id
+        );
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
         $bc->destroy();
 
         $newcourseid = \restore_dbops::create_new_course(
-            $course->fullname, $course->shortname . '_copie', $course->category);
-        $rc = new \restore_controller($backupid, $newcourseid, \backup::INTERACTIVE_NO,
-            \backup::MODE_GENERAL, $USER->id, \backup::TARGET_NEW_COURSE);
+            $course->fullname,
+            $course->shortname . '_copie',
+            $course->category
+        );
+        $rc = new \restore_controller(
+            $backupid,
+            $newcourseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_NEW_COURSE
+        );
         $rc->execute_precheck();
         $rc->execute_plan();
         $rc->destroy();
@@ -174,8 +188,11 @@ final class backup_restore_test extends \advanced_testcase {
         $this->assertSame('Stages A3', $newstage->name);
         $this->assertSame('VetAgro Sup', $newstage->establishmentname);
         $this->assertEquals(3, $newstage->currentstudyyear);
-        $this->assertEquals(20, $DB->get_field('stage_year_requirement', 'requiredduration',
-            ['stageid' => $newstage->id, 'studyyear' => 3]));
+        $this->assertEquals(20, $DB->get_field(
+            'stage_year_requirement',
+            'requiredduration',
+            ['stageid' => $newstage->id, 'studyyear' => 3]
+        ));
 
         // Thématique et son enseignant responsable.
         $newthemes = $DB->get_records('stage_theme', ['stageid' => $newstage->id]);
@@ -183,12 +200,16 @@ final class backup_restore_test extends \advanced_testcase {
         $newtheme = reset($newthemes);
         $this->assertNotEquals($theme->id, $newtheme->id);
         $this->assertSame('Animaux de compagnie', $newtheme->name);
-        $this->assertTrue($DB->record_exists('stage_theme_teacher',
-            ['themeid' => $newtheme->id, 'teacherid' => $teacher->id]));
+        $this->assertTrue($DB->record_exists(
+            'stage_theme_teacher',
+            ['themeid' => $newtheme->id, 'teacherid' => $teacher->id]
+        ));
 
         // Attribution de l'enseignant référent.
-        $this->assertTrue($DB->record_exists('stage_entry_teacher',
-            ['stageid' => $newstage->id, 'studentid' => $student->id, 'teacherid' => $teacher->id]));
+        $this->assertTrue($DB->record_exists(
+            'stage_entry_teacher',
+            ['stageid' => $newstage->id, 'studentid' => $student->id, 'teacherid' => $teacher->id]
+        ));
 
         // Saisie : rattachée aux thématique et gabarit de la copie, pas à ceux de l'original.
         $newentries = $DB->get_records('stage_entry', ['stageid' => $newstage->id]);
@@ -222,9 +243,21 @@ final class backup_restore_test extends \advanced_testcase {
 
         // Fichiers : gabarit de convention et rapport déposé, dans le contexte de la copie.
         $newcontext = \context_module::instance($newcm->id);
-        $this->assertCount(1, $fs->get_area_files($newcontext->id, 'mod_stage', 'conventiontemplate',
-            $newtemplate->id, 'itemid', false));
-        $this->assertCount(1, $fs->get_area_files($newcontext->id, 'mod_stage', STAGE_REPORT_FILEAREA,
-            $newentry->id, 'itemid', false));
+        $this->assertCount(1, $fs->get_area_files(
+            $newcontext->id,
+            'mod_stage',
+            'conventiontemplate',
+            $newtemplate->id,
+            'itemid',
+            false
+        ));
+        $this->assertCount(1, $fs->get_area_files(
+            $newcontext->id,
+            'mod_stage',
+            STAGE_REPORT_FILEAREA,
+            $newentry->id,
+            'itemid',
+            false
+        ));
     }
 }

@@ -36,7 +36,6 @@ require_once($CFG->dirroot . '/mod/stage/backup/moodle2/backup_stage_stepslib.ph
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_stage_activity_task extends backup_activity_task {
-
     /**
      * Aucun réglage propre à cette activité.
      */

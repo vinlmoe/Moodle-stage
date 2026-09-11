@@ -36,7 +36,6 @@ require_once($CFG->dirroot . '/mod/stage/backup/moodle2/restore_stage_stepslib.p
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_stage_activity_task extends restore_activity_task {
-
     /**
      * Aucun réglage propre à cette activité.
      */
@@ -60,13 +59,22 @@ class restore_stage_activity_task extends restore_activity_task {
 
         $contents[] = new restore_decode_content('stage', ['intro', 'abroadrule']);
         $contents[] = new restore_decode_content('stage_theme', ['description'], 'stage_theme');
-        $contents[] = new restore_decode_content('stage_question',
-            ['name', 'nameen', 'options', 'optionsen'], 'stage_question');
-        $contents[] = new restore_decode_content('stage_email_template',
-            ['subject', 'body'], 'stage_email_template');
-        $contents[] = new restore_decode_content('stage_entry',
+        $contents[] = new restore_decode_content(
+            'stage_question',
+            ['name', 'nameen', 'options', 'optionsen'],
+            'stage_question'
+        );
+        $contents[] = new restore_decode_content(
+            'stage_email_template',
+            ['subject', 'body'],
+            'stage_email_template'
+        );
+        $contents[] = new restore_decode_content(
+            'stage_entry',
             ['studentselfeval', 'teachereval', 'tutoreval', 'devecomment', 'cancelcomment',
-                'conventionrejectcomment'], 'stage_entry');
+            'conventionrejectcomment'],
+            'stage_entry'
+        );
         $contents[] = new restore_decode_content('stage_answer', ['answertext'], 'stage_answer');
 
         return $contents;

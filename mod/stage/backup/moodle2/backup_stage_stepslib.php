@@ -23,8 +23,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Décrit l'arbre XML (stage.xml) d'une instance de mod_stage, ses annotations d'identifiants et
  * ses zones de fichiers.
@@ -38,7 +36,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_stage_activity_structure_step extends backup_activity_structure_step {
-
     /**
      * Construit la structure sauvegardée.
      *

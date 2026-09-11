@@ -35,7 +35,6 @@ require_once($CFG->dirroot . '/mod/stagesynthesis/backup/moodle2/restore_stagesy
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_stagesynthesis_activity_task extends restore_activity_task {
-
     /**
      * Aucun réglage propre à cette activité.
      */
@@ -47,7 +46,9 @@ class restore_stagesynthesis_activity_task extends restore_activity_task {
      */
     protected function define_my_steps() {
         $this->add_step(new restore_stagesynthesis_activity_structure_step(
-            'stagesynthesis_structure', 'stagesynthesis.xml'));
+            'stagesynthesis_structure',
+            'stagesynthesis.xml'
+        ));
     }
 
     /**
@@ -73,8 +74,11 @@ class restore_stagesynthesis_activity_task extends restore_activity_task {
         $rules = [];
 
         $rules[] = new restore_decode_rule('STAGESYNTHESISINDEX', '/mod/stagesynthesis/index.php?id=$1', 'course');
-        $rules[] = new restore_decode_rule('STAGESYNTHESISVIEWBYID', '/mod/stagesynthesis/view.php?id=$1',
-            'course_module');
+        $rules[] = new restore_decode_rule(
+            'STAGESYNTHESISVIEWBYID',
+            '/mod/stagesynthesis/view.php?id=$1',
+            'course_module'
+        );
 
         return $rules;
     }
