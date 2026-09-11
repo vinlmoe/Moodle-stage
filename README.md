@@ -1,6 +1,9 @@
 # Moodle-stage
 
 [![CI](https://github.com/vinlmoe/Moodle-stage/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vinlmoe/Moodle-stage/actions/workflows/ci.yml)
+[![Moodle 4.0+](https://img.shields.io/badge/Moodle-4.0%2B-f98012?logo=moodle&logoColor=white)](https://moodle.org)
+[![PHP 8.2](https://img.shields.io/badge/PHP-8.2-777bb4?logo=php&logoColor=white)](https://www.php.net)
+[![Licence GPL v3+](https://img.shields.io/badge/licence-GPL%20v3%2B-blue)](https://www.gnu.org/licenses/gpl-3.0)
 
 Deux modules d'activité Moodle pour la gestion des stages étudiants en école
 vétérinaire : l'enregistrement et la validation des stages promotion par
